@@ -5,13 +5,13 @@ services:
     environment:
       POSTGRES_PASSWORD: pgpassword
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+#      - postgres_data:/var/lib/postgresql/data
       - ./database/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
       - "5533:5432"
   admin:
     build: .
-    restart: on-failure
+    restart: always
     env_file:
       - .env
     ports:
@@ -20,5 +20,5 @@ services:
       - db
     volumes:
       - .:/app
-volumes:
-  postgres_data:
+#volumes:
+#  postgres_data:

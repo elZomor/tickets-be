@@ -23,8 +23,8 @@ DJANGO_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
 ]
-PROJECT_APPS = []
-THIRD_PARTY_APPS = ['django_extensions']
+PROJECT_APPS = ['ticket']
+THIRD_PARTY_APPS = ['django_extensions', 'django_json_widget', ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
 

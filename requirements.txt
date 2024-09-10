@@ -13,3 +13,4 @@ flake8-html==0.4.3
 pre-commit==3.8.0
 coverage==7.6.1
 django-admin-interface==0.28.6
+django-json-widget==2.0.1
