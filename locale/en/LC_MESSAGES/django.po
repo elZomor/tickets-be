@@ -1,0 +1,47 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-09-11 03:45+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: config/settings.py:113
+msgid "English"
+msgstr "English"
+
+#: config/settings.py:114
+msgid "Arabic"
+msgstr "Arabic"
+
+#: ticket/serializer.py:15
+msgid "Performance does not exist."
+msgstr ""
+
+#: ticket/serializer.py:17
+msgid "Sorry, there is no available seats."
+msgstr "Sorry, there is no available seats."
+
+#: ticket/serializer.py:22
+msgid "You have already booked a ticket."
+msgstr ""
+
+#: ticket/views.py:18
+msgid "SUCCESS"
+msgstr ""
+
+#: ticket/views.py:18
+msgid "Ticket has been reserved successfully!"
+msgstr ""
