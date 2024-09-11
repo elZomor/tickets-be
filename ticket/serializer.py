@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ticket.models import Reservation, Performance
+from ticket.models import Reservation, Performance, Theater
 from django.utils.translation import gettext as _
 
 
@@ -23,7 +23,32 @@ class ReservationRequestSerializer(serializers.Serializer):
         return email
 
 
-class ReservationSerializer(serializers.ModelSerializer):
+class ReservationSerializer(serializers.Serializer):
+    hash = serializers.CharField(max_length=100, required=True)
+
+    def validate_hash(self, hash):
+        if hash is None:
+            raise serializers.ValidationError(_("Hash cannot be empty."))
+        reservation = Reservation.objects.filter(reservation_hash=hash).last()
+        if not reservation:
+            raise serializers.ValidationError(_("Reservation does not exist."))
+        if reservation.guest_arrived:
+            raise serializers.ValidationError(_("Ticket has been already used."))
+        return hash
+
+
+class TheaterSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Reservation
-        fields = ['name', 'email', 'performance']
+        model = Theater
+        fields = '__all__'
+
+
+class PerformanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Performance
+        fields = '__all__'
+
+    remaining_seats = serializers.SerializerMethodField()
+
+    def get_remaining_seats(self, obj):
+        return obj.remaining_seats

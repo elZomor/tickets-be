@@ -16,5 +16,10 @@ class Performance(models.Model):
     def remaining_seats(self):
         return self.theater.capacity - self.initial_reserved_seats - self.reserved_seats
 
+    @property
+    def total_attendees(self):
+        from ticket.models import Reservation
+        return Reservation.objects.filter(performance__pk=self.pk, guest_arrived=True).count()
+
     def __str__(self):
         return self.name.get('ar', '')
