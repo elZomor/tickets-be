@@ -20,7 +20,7 @@ class TicketReservationView(mixins.CreateModelMixin, GenericViewSet):
         request_serializer.is_valid(raise_exception=True)
         reservation = Reservation.objects.create(**request_serializer.validated_data)
         qr_path = generate_qr(f"http://localhost:8005/tickets/reservation/{reservation.reservation_hash}")
-        send_email(play_name=reservation.performance.name('en'),
+        send_email(play_name=reservation.performance.name.get('en'),
                    to_email=request_serializer.validated_data.get('email'),
                    qr_path=qr_path)
         try:
