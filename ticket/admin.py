@@ -24,6 +24,7 @@ class PerformanceAdmin(admin.ModelAdmin):
 
 @admin.register(Reservation)
 class ReservationAdmin(admin.ModelAdmin):
-    fields = ['name', 'email', 'performance', 'reservation_hash', 'initial_reserved_seats',
+    fields = ['name', 'email', 'performance',
               'link_delivered', 'guest_arrived', 'created_at', 'updated_at']
-    readonly_fields = ['reservation_hash', 'created_at', 'updated_at']
+    readonly_fields = ['name', 'email', 'performance',
+              'link_delivered', 'guest_arrived', 'created_at', 'updated_at']
