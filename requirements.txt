@@ -14,3 +14,4 @@ pre-commit==3.8.0
 coverage==7.6.1
 django-admin-interface==0.28.6
 django-json-widget==2.0.1
+qrcode[pil]==7.4.2

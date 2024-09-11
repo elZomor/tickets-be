@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_PASSWORD: pgpassword
     volumes:
-#      - postgres_data:/var/lib/postgresql/data
+      - tickets_data:/var/lib/postgresql/data
       - ./database/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
       - "5533:5432"
@@ -20,5 +20,5 @@ services:
       - db
     volumes:
       - .:/app
-#volumes:
-#  postgres_data:
+volumes:
+  tickets_data:
