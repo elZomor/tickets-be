@@ -20,7 +20,8 @@ class Reservation(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        self.reservation_hash = self.generate_reservation_hash()
+        if not self.pk:
+            self.reservation_hash = self.generate_reservation_hash()
         super().save(*args, **kwargs)
 
     def generate_reservation_hash(self):

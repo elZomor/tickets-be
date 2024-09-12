@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db import models
 
 from ticket.models import Theater
@@ -19,7 +21,14 @@ class Performance(models.Model):
     @property
     def total_attendees(self):
         from ticket.models import Reservation
-        return Reservation.objects.filter(performance__pk=self.pk, guest_arrived=True).count()
+
+        return Reservation.objects.filter(
+            performance__pk=self.pk, guest_arrived=True
+        ).count()
+
+    @property
+    def is_open(self):
+        return date.today() == self.time.date()
 
     def __str__(self):
         return self.name.get('ar', '')

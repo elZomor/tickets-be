@@ -1,6 +1,5 @@
 from rest_framework.routers import DefaultRouter
 
-from .models import Performance
 from .views import TicketReservationView, TheaterView, PerformanceView
 
 router = DefaultRouter(trailing_slash=False)

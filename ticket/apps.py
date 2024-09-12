@@ -6,4 +6,4 @@ class TicketConfig(AppConfig):
     name = 'ticket'
 
     def ready(self):
-        import ticket.signals
+        import ticket.signals  # noqa:F401

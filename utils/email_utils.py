@@ -2,14 +2,15 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
-
+import environ
 
 def send_email(play_name: str, to_email: str, qr_path: str):
+    env = environ.Env()
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587
-    smtp_user = 'zomor.at.work@gmail.com'  # Replace with your Gmail address
-    smtp_password = 'hzyviwiwosbyktrn'  # Replace with your Gmail password or App Password
-    from_email = 'zomor.at.work@gmail.com'
+    smtp_user = env.str('SMTP_USER')
+    smtp_password = env.str('SMTP_PASSWORD')
+    from_email = env.str('SMTP_USER')
     to_email = to_email
     subject = f'QR Code for play: {play_name}'
     body = f'Please find the QR code attached that redirects to the play: {play_name}.'

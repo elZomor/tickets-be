@@ -10,7 +10,9 @@ class ReservationRequestSerializer(serializers.Serializer):
     performance = serializers.CharField(max_length=100, required=True)
 
     def validate_performance(self, performance_name):
-        performance: Performance = Performance.objects.filter(name__en=performance_name).first()
+        performance: Performance = Performance.objects.filter(
+            name__en=performance_name
+        ).first()
         if not performance:
             raise serializers.ValidationError(_("Performance does not exist."))
         if performance.remaining_seats == 0:
@@ -18,7 +20,9 @@ class ReservationRequestSerializer(serializers.Serializer):
         return performance
 
     def validate_email(self, email):
-        if Reservation.objects.filter(email=email, performance__name__en=self.initial_data.get('performance')).exists():
+        if Reservation.objects.filter(
+            email=email, performance__name__en=self.initial_data.get('performance')
+        ).exists():
             raise serializers.ValidationError(_("You have already booked a ticket."))
         return email
 
@@ -34,6 +38,8 @@ class ReservationSerializer(serializers.Serializer):
             raise serializers.ValidationError(_("Reservation does not exist."))
         if reservation.guest_arrived:
             raise serializers.ValidationError(_("Ticket has been already used."))
+        if not reservation.performance.is_open:
+            raise serializers.ValidationError(_("Performance has been already closed."))
         return hash
 
 

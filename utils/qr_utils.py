@@ -1,5 +1,6 @@
 import qrcode
 
+
 def generate_qr(url: str):
     qr = qrcode.QRCode(
         version=1,
