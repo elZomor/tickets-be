@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 import environ
 
+
 def send_email(play_name: str, to_email: str, qr_path: str):
     env = environ.Env()
     smtp_server = 'smtp.gmail.com'

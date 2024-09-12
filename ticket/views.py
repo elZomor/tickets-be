@@ -42,8 +42,13 @@ class TicketReservationView(mixins.CreateModelMixin, GenericViewSet):
             pass
         reservation.link_delivered = True
         reservation.save()
-        return Response(data={"status": _("SUCCESS"), "data": _("Ticket has been reserved successfully!")},
-                        status=status.HTTP_201_CREATED)
+        return Response(
+            data={
+                "status": _("SUCCESS"),
+                "data": _("Ticket has been reserved successfully!"),
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def get(self, request, *args, **kwargs):
         serializer = ReservationSerializer(data=request.query_params)
@@ -53,8 +58,10 @@ class TicketReservationView(mixins.CreateModelMixin, GenericViewSet):
         ).last()
         reservation.guest_arrived = True
         reservation.save()
-        return Response(data={"status": _("SUCCESS"), "data": _("Guest has arrived successfully!")},
-                        status=status.HTTP_201_CREATED)
+        return Response(
+            data={"status": _("SUCCESS"), "data": _("Guest has arrived successfully!")},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class TheaterView(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewSet):

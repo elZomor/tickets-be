@@ -23,7 +23,7 @@ class PerformanceAdmin(admin.ModelAdmin):
         'initial_reserved_seats',
         'remaining_seats',
         'total_attendees',
-        'is_open'
+        'is_open',
     ]
     readonly_fields = ['remaining_seats', 'total_attendees', 'is_open']
     formfield_overrides = {
