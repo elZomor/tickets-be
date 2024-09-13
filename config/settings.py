@@ -3,6 +3,8 @@ import os
 from django.utils.translation import gettext_lazy as _
 import environ
 
+from config.constants import FE_URL
+
 env = environ.Env()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -149,3 +151,5 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 SOCIALACCOUNT_QUERY_EMAIL = True
+LOGOUT_REDIRECT_URL = FE_URL  # Redirect after logout if desired
+LOGIN_REDIRECT_URL = '/auth/login'  # Redirect after logout if desired
