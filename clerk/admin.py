@@ -6,3 +6,4 @@ from clerk.models import ClerkUser
 @admin.register(ClerkUser)
 class ClerkUserAdmin(admin.ModelAdmin):
     fields = ['user', 'source', 'clerk_id']
+    readonly_fields = ['user', 'source', 'clerk_id']
