@@ -1,10 +1,10 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 
 from utils.clerk_utils import clerk_secret
 
 
-class ClerkViewSet(viewsets.GenericViewSet):
+class ClerkViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
     @clerk_secret
     def post(self, request, *args, **kwargs):
