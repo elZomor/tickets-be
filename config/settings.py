@@ -3,8 +3,6 @@ import os
 from django.utils.translation import gettext_lazy as _
 import environ
 
-from config.constants import FE_URL
-
 env = environ.Env()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,12 +29,6 @@ PROJECT_APPS = ['ticket']
 THIRD_PARTY_APPS = [
     'django_extensions',
     'django_json_widget',
-    'django.contrib.sites',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.facebook',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -52,7 +44,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -134,22 +125,4 @@ STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-SITE_ID = 1
 
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-)
-
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP': {
-            'client_id': env.str('GOOGLE_CLIENT_ID'),
-            'secret': env.str('GOOGLE_CLIENT_SECRET'),
-            'key': '',
-        }
-    },
-}
-SOCIALACCOUNT_QUERY_EMAIL = True
-LOGOUT_REDIRECT_URL = FE_URL  # Redirect after logout if desired
-LOGIN_REDIRECT_URL = '/auth/login'  # Redirect after logout if desired
