@@ -14,8 +14,8 @@ class EventTypeEnum(Enum):
 
 class ClerkUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    source = models.CharField(choices=SourceChoices, default=SourceChoices.GOOGLE, max_length=50)
+    source = models.CharField(choices=SourceChoices, default=SourceChoices.GOOGLE.value, max_length=50)
     clerk_id = models.CharField(max_length=100)
-    
+
     def __str__(self):
         return self.user

@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 
-from clerk.models import EventTypeEnum, ClerkUser
+from clerk.models import EventTypeEnum, ClerkUser, SourceChoices
 from clerk.serializer import ClerkSerializer
 
 
@@ -19,7 +19,7 @@ class ClerkViewSet(viewsets.ViewSet, mixins.CreateModelMixin):
         serializer.validate(data=serializer_data)
         data = request.data
         user_data = data.get('data')
-        if data.get('type') == EventTypeEnum.USER_CREATED:
+        if data.get('type') == EventTypeEnum.USER_CREATED.value:
             user = User.objects.get_or_create(username=user_data.get('username'),
                                               defaults={
                                                   'email': user_data.get('email_addresses')[0].get('email_address'),
@@ -28,6 +28,7 @@ class ClerkViewSet(viewsets.ViewSet, mixins.CreateModelMixin):
             clerk_user = ClerkUser()
             clerk_user.user = user
             clerk_user.clerk_id = user_data.get('id')
+            clerk_user.source = SourceChoices.GOOGLE.value
             clerk_user.save()
             print("user created successfully!")
         return Response({'status': 'success'})
