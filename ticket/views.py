@@ -1,7 +1,6 @@
 import os
 
 import environ
-from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import mixins, status
 from rest_framework.response import Response

@@ -1,5 +1,3 @@
-# views.py
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from rest_framework.viewsets import GenericViewSet
 from django.contrib.auth import logout
