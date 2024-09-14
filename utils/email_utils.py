@@ -7,8 +7,8 @@ import environ
 
 def send_email(play_name: str, to_email: str, qr_path: str):
     env = environ.Env()
-    smtp_server = 'smtp.gmail.com'
-    smtp_port = 587
+    smtp_server = env.str('SMTP_SERVER')
+    smtp_port = 465
     smtp_user = env.str('SMTP_USER')
     smtp_password = env.str('SMTP_PASSWORD')
     from_email = env.str('SMTP_USER')
@@ -29,7 +29,6 @@ def send_email(play_name: str, to_email: str, qr_path: str):
         msg.attach(part)
 
     with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()  # Secure the connection
         server.login(smtp_user, smtp_password)
         server.send_message(msg)
 
