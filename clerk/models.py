@@ -5,7 +5,8 @@ from django.db import models
 
 
 class SourceChoices(models.TextChoices):
-    GOOGLE = 'oauth_google', 'Google'
+    GOOGLE = 'from_oauth_google', 'Google'
+    EMAIL = 'email_code', 'Email'
 
 
 class EventTypeEnum(Enum):

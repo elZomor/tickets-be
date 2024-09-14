@@ -20,15 +20,16 @@ class ClerkViewSet(viewsets.ViewSet, mixins.CreateModelMixin):
         data = request.data
         user_data = data.get('data')
         if data.get('type') == EventTypeEnum.USER_CREATED.value:
+            primary_mail_data = user_data.get('email_addresses')[0]
             user = User.objects.get_or_create(username=user_data.get('username'),
                                               defaults={
-                                                  'email': user_data.get('email_addresses')[0].get('email_address'),
+                                                  'email': primary_mail_data.get('email_address'),
                                                   'first_name': user_data.get('first_name'),
                                                   'last_name': user_data.get('last_name')})[0]
             clerk_user = ClerkUser()
             clerk_user.user = user
             clerk_user.clerk_id = user_data.get('id')
-            clerk_user.source = SourceChoices.GOOGLE.value
+            clerk_user.source = primary_mail_data.get('verification').get('strategy')
             clerk_user.save()
             print("user created successfully!")
         return Response({'status': 'success'})
