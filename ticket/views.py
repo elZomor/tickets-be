@@ -3,6 +3,7 @@ import os
 import environ
 from django.utils import timezone
 from rest_framework import mixins, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from django.utils.translation import gettext as _
@@ -28,7 +29,7 @@ class TicketReservationView(mixins.CreateModelMixin, GenericViewSet):
         request_serializer.is_valid(raise_exception=True)
         reservation = Reservation.objects.create(**request_serializer.validated_data)
         qr_path = generate_qr(
-            f"{env.str('BASE_URL')}/tickets/reservation?hash={reservation.reservation_hash}"
+            f"{env.str('BASE_URL')}/tickets/reservation/confirm?hash={reservation.reservation_hash}"
         )
         send_email(
             play_name=reservation.performance.name.get('en'),
@@ -49,7 +50,8 @@ class TicketReservationView(mixins.CreateModelMixin, GenericViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    def get(self, request, *args, **kwargs):
+    @action(detail=False, methods=['get'], url_path='confirm')
+    def confirm_reservation(self, request, *args, **kwargs):
         serializer = ReservationSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         reservation = Reservation.objects.filter(

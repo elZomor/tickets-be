@@ -28,7 +28,7 @@ class Performance(models.Model):
 
     @property
     def is_open(self):
-        return date.today() == self.time.date()
+        return date.today() <= self.time.date()
 
     def __str__(self):
         return self.name.get('ar', '')

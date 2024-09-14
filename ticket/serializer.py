@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import serializers
 
 from ticket.models import Reservation, Performance, Theater
@@ -38,8 +40,8 @@ class ReservationSerializer(serializers.Serializer):
             raise serializers.ValidationError(_("Reservation does not exist."))
         if reservation.guest_arrived:
             raise serializers.ValidationError(_("Ticket has been already used."))
-        if not reservation.performance.is_open:
-            raise serializers.ValidationError(_("Performance has been already closed."))
+        if reservation.performance.time.date() != datetime.today().date() :
+            raise serializers.ValidationError(_("Performance is not today!"))
         return hash
 
 
