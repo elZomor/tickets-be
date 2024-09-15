@@ -7,7 +7,7 @@ from clerk.serializer import ClerkSerializer
 
 
 class ClerkViewSet(viewsets.ViewSet, mixins.CreateModelMixin):
-    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def create(self, request, *args, **kwargs):
         serializer_data = {
