@@ -22,7 +22,7 @@ class ReservationRequestSerializer(serializers.Serializer):
 
     def validate_email(self, email):
         if Reservation.objects.filter(
-                email=email, performance__name__en=self.initial_data.get('performance')
+            email=email, performance__name__en=self.initial_data.get('performance')
         ).exists():
             raise serializers.ValidationError("You have already booked a ticket.")
         return email

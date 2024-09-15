@@ -1,8 +1,8 @@
 from django.contrib.auth.models import User
-from rest_framework import viewsets, mixins, permissions
+from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 
-from clerk.models import EventTypeEnum, ClerkUser, SourceChoices
+from clerk.models import EventTypeEnum, ClerkUser
 from clerk.serializer import ClerkSerializer
 
 
@@ -22,11 +22,14 @@ class ClerkViewSet(viewsets.ViewSet, mixins.CreateModelMixin):
         user_data = data.get('data')
         if data.get('type') == EventTypeEnum.USER_CREATED.value:
             primary_mail_data = user_data.get('email_addresses')[0]
-            user = User.objects.get_or_create(username=user_data.get('username'),
-                                              defaults={
-                                                  'email': primary_mail_data.get('email_address'),
-                                                  'first_name': user_data.get('first_name'),
-                                                  'last_name': user_data.get('last_name')})[0]
+            user = User.objects.get_or_create(
+                username=user_data.get('username'),
+                defaults={
+                    'email': primary_mail_data.get('email_address'),
+                    'first_name': user_data.get('first_name'),
+                    'last_name': user_data.get('last_name'),
+                },
+            )[0]
             clerk_user = ClerkUser()
             clerk_user.user = user
             clerk_user.clerk_id = user_data.get('id')

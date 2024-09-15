@@ -1,6 +1,3 @@
-import hashlib
-import hmac
-
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
@@ -18,10 +15,14 @@ class ClerkSerializer(serializers.Serializer):
     def validate(self, data):
         webhook = Webhook(CLERK_SIGNING_SECRET)
         try:
-            webhook.verify(data.get('body'), {
-                'svix-id': data.get('svix_id'),
-                'svix-timestamp': data.get('svix_timestamp'),
-                'svix-signature': data.get('svix_signature'),
-            })
+            webhook.verify(
+                data.get('body'),
+                {
+                    'svix-id': data.get('svix_id'),
+                    'svix-timestamp': data.get('svix_timestamp'),
+                    'svix-signature': data.get('svix_signature'),
+                },
+            )
         except WebhookVerificationError as e:
+            print(f'Error in verification: {str(e)}')
             raise APIException()
