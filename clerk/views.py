@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, permissions
 from rest_framework.response import Response
 
 from clerk.models import EventTypeEnum, ClerkUser, SourceChoices
@@ -7,6 +7,7 @@ from clerk.serializer import ClerkSerializer
 
 
 class ClerkViewSet(viewsets.ViewSet, mixins.CreateModelMixin):
+    permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
         serializer_data = {
