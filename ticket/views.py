@@ -6,7 +6,6 @@ from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from django.utils.translation import gettext as _
 
 from ticket.models import Reservation, Performance, Theater
 from ticket.serializer import (
@@ -44,8 +43,8 @@ class TicketReservationView(mixins.CreateModelMixin, GenericViewSet):
         reservation.save()
         return Response(
             data={
-                "status": _("SUCCESS"),
-                "data": _("Ticket has been reserved successfully!"),
+                "status": "SUCCESS",
+                "data": "Ticket has been reserved successfully!",
             },
             status=status.HTTP_201_CREATED,
         )
@@ -60,7 +59,7 @@ class TicketReservationView(mixins.CreateModelMixin, GenericViewSet):
         reservation.guest_arrived = True
         reservation.save()
         return Response(
-            data={"status": _("SUCCESS"), "data": _("Guest has arrived successfully!")},
+            data={"status": "SUCCESS", "data": "Guest has arrived successfully!"},
             status=status.HTTP_201_CREATED,
         )
 

@@ -1,6 +1,6 @@
 FROM python:3.12-alpine
 
-RUN apk update && apk add postgresql-client && apk add make && apk add gettext
+RUN apk update && apk add postgresql-client
 
 RUN mkdir -p /app
 

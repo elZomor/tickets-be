@@ -1,6 +1,5 @@
 import os
 
-from django.utils.translation import gettext_lazy as _
 import environ
 
 env = environ.Env()
@@ -43,7 +42,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -111,15 +109,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-LOCALE_PATHS = [
-    os.path.join(BASE_DIR, 'locale'),
-]
-
-LANGUAGES = [
-    ('en', _('English')),
-    ('ar', _('Arabic')),
-]
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')

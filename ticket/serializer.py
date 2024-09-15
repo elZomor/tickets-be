@@ -3,7 +3,6 @@ from datetime import datetime
 from rest_framework import serializers
 
 from ticket.models import Reservation, Performance, Theater
-from django.utils.translation import gettext as _
 
 
 class ReservationRequestSerializer(serializers.Serializer):
@@ -16,16 +15,16 @@ class ReservationRequestSerializer(serializers.Serializer):
             name__en=performance_name
         ).first()
         if not performance:
-            raise serializers.ValidationError(_("Performance does not exist."))
+            raise serializers.ValidationError("Performance does not exist.")
         if performance.remaining_seats == 0:
-            raise serializers.ValidationError(_("Sorry, there is no available seats."))
+            raise serializers.ValidationError("Sorry, there is no available seats.")
         return performance
 
     def validate_email(self, email):
         if Reservation.objects.filter(
-            email=email, performance__name__en=self.initial_data.get('performance')
+                email=email, performance__name__en=self.initial_data.get('performance')
         ).exists():
-            raise serializers.ValidationError(_("You have already booked a ticket."))
+            raise serializers.ValidationError("You have already booked a ticket.")
         return email
 
 
@@ -34,14 +33,14 @@ class ReservationSerializer(serializers.Serializer):
 
     def validate_hash(self, hash):
         if hash is None:
-            raise serializers.ValidationError(_("Hash cannot be empty."))
+            raise serializers.ValidationError("Hash cannot be empty.")
         reservation = Reservation.objects.filter(reservation_hash=hash).last()
         if not reservation:
-            raise serializers.ValidationError(_("Reservation does not exist."))
+            raise serializers.ValidationError("Reservation does not exist.")
         if reservation.guest_arrived:
-            raise serializers.ValidationError(_("Ticket has been already used."))
-        if reservation.performance.time.date() != datetime.today().date() :
-            raise serializers.ValidationError(_("Performance is not today!"))
+            raise serializers.ValidationError("Ticket has been already used.")
+        if reservation.performance.time.date() != datetime.today().date():
+            raise serializers.ValidationError("Performance is not today!")
         return hash
 
 
