@@ -6,3 +6,4 @@ media/**
 flake8-report
 .env
 coverage_report
+clerk/public_key.pem

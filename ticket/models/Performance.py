@@ -13,6 +13,7 @@ class Performance(models.Model):
     theater = models.ForeignKey(to=Theater, on_delete=models.DO_NOTHING)
     initial_reserved_seats = models.IntegerField(default=0)
     reserved_seats = models.IntegerField(default=0)
+    reviewed = models.BooleanField(default=False)
 
     @property
     def remaining_seats(self):
