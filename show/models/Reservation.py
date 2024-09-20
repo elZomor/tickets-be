@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.db import models
 
-from ticket.models import Performance
+from ticket.models import Show
 
 
 class Reservation(models.Model):
