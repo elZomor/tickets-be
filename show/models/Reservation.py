@@ -3,13 +3,13 @@ from datetime import datetime
 
 from django.db import models
 
-from ticket.models import Performance
+from show.models import Show
 
 
 class Reservation(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField()
-    performance = models.ForeignKey(to=Performance, on_delete=models.DO_NOTHING)
+    performance = models.ForeignKey(to=Show, on_delete=models.DO_NOTHING)
     reservation_hash = models.CharField(max_length=100, null=True)
     link_delivered = models.BooleanField(default=False)
     guest_arrived = models.BooleanField(default=False)
