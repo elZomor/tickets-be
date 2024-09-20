@@ -7,6 +7,7 @@ class ShowViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Show
         fields = [
+            'id',
             'theater_id',
             'name',
             'cast_name',
