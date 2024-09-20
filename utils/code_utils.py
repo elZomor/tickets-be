@@ -14,9 +14,7 @@ def upload_to(instance, filename):
 def create_super_user() -> None:
     if User.objects.filter(is_superuser=True).exists():
         return
-    user: User = User.objects.filter(
-        username="zomor"
-    ).last()
+    user: User = User.objects.filter(username="zomor").last()
     if not user:
         user = User.objects.create(
             username="zomor",

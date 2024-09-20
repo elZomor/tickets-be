@@ -1,6 +1,3 @@
-import datetime
-import os
-from datetime import date
 from django.utils import timezone
 
 from django.contrib.auth.models import User
@@ -32,16 +29,25 @@ class Show(models.Model):
     theater = models.ForeignKey(to=Theater, on_delete=models.DO_NOTHING)
     initial_reserved_seats = models.IntegerField(default=0)
     reserved_seats = models.IntegerField(default=0)
-    status = models.CharField(choices=ShowStatus.choices, default=ShowStatus.PENDING.value, max_length=50)
-    created_by = models.ForeignKey(to=User, on_delete=models.DO_NOTHING, related_name='created_by')
-    reviewed_by = models.ForeignKey(to=User, on_delete=models.DO_NOTHING, related_name='reviewed_by')
+    status = models.CharField(
+        choices=ShowStatus.choices, default=ShowStatus.PENDING.value, max_length=50
+    )
+    created_by = models.ForeignKey(
+        to=User, on_delete=models.DO_NOTHING, related_name='created_by'
+    )
+    reviewed_by = models.ForeignKey(
+        to=User, on_delete=models.DO_NOTHING, related_name='reviewed_by'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(to=ShowTag, blank=True)
 
     @property
     def remaining_seats(self):
-        return self.theater.capacity - self.initial_reserved_seats - self.reserved_seats or 0
+        return (
+            self.theater.capacity - self.initial_reserved_seats - self.reserved_seats
+            or 0
+        )
 
     @property
     def is_open(self):

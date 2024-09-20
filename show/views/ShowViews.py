@@ -18,16 +18,23 @@ class CustomPagination(PageNumberPagination):
         request_page_size = self.request.query_params.get('page_size')
         page_size = int(request_page_size) if request_page_size else self.page_size
         total_pages = math.ceil(self.page.paginator.count / page_size)
-        return Response({
-            'count': self.page.paginator.count,
-            'total_pages': total_pages,
-            'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
-            'results': data,
-        })
+        return Response(
+            {
+                'count': self.page.paginator.count,
+                'total_pages': total_pages,
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link(),
+                'results': data,
+            }
+        )
 
 
-class ShowViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, GenericViewSet):
+class ShowViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    GenericViewSet,
+):
     serializer_class = ShowViewSerializer
     queryset = Show.objects.filter(status=ShowStatus.APPROVED.value)
     pagination_class = CustomPagination

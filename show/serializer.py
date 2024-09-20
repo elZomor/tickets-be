@@ -6,9 +6,20 @@ from show.models import Show
 class ShowViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Show
-        fields = ['theater_id', 'name', 'cast_name', 'show_date', 'show_time',
-                  'booking_available',  'theater_name', 'link',
-                  'poster', 'author', 'director', 'tags']
+        fields = [
+            'theater_id',
+            'name',
+            'cast_name',
+            'show_date',
+            'show_time',
+            'booking_available',
+            'theater_name',
+            'link',
+            'poster',
+            'author',
+            'director',
+            'tags',
+        ]
 
     theater_name = serializers.SerializerMethodField()
     theater_id = serializers.SerializerMethodField()
