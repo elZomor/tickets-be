@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from django.contrib.auth.models import User
 
@@ -6,7 +7,7 @@ from django.contrib.auth.models import User
 def upload_to(instance, filename):
     name = instance.name.get('en')
     cast_name = instance.cast_name
-    created_at = instance.created_at.strftime('%Y-%m-%d')
+    created_at = datetime.now().strftime('%Y-%m-%d')
     file_name = f"{name} - {cast_name} - {created_at}{os.path.splitext(filename)[1]}"
     return os.path.join('media', 'shows', 'poster', file_name)
 
