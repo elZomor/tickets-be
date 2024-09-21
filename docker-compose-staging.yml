@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:14.5-alpine
+    container_name: stg_db
+    environment:
+      POSTGRES_PASSWORD: pgpassword
+    volumes:
+      - stg_data:/var/lib/postgresql/data
+      - ./database/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5433:5432"
+  admin:
+    container_name: stg_admin
+    build: .
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8004:8000"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+volumes:
+  stg_data:
