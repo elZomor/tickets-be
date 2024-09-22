@@ -1,10 +1,10 @@
 format:
-	docker exec -it tickets-py-admin-1 black .
+	docker exec -it admin black .
 lint:
-	docker exec -it tickets-py-admin-1 flake8
+	docker exec -it admin flake8
 lint-html:
-	docker exec -it tickets-py-admin-1 flake8 --format=html --htmldir=flake8-report
+	docker exec -it admin flake8 --format=html --htmldir=flake8-report
 make-migrations:
-	docker exec -it tickets-py-admin-1 python manage.py makemigrations
+	docker exec -it admin python manage.py makemigrations
 migrate:
-	docker exec -it tickets-py-admin-1 python manage.py migrate
+	docker exec -it admin python manage.py migrate

@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
+from config.constants import DEV_TOKEN
+
 
 def get_public_key():
     with open('/app/clerk/public_key.pem', 'r') as file:
@@ -22,6 +24,8 @@ class ClerkJWTAuthentication(BaseAuthentication):
 
         token = auth_header.split(' ')[1]
         try:
+            if DEV_TOKEN != '' and token == DEV_TOKEN:
+                return User.objects.get(username='test'), token
             decoded = jwt.decode(token, get_public_key())
             user = User.objects.get(email=decoded.get('email'))
             return user, token

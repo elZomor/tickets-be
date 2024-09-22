@@ -25,3 +25,6 @@ def create_super_user() -> None:
         )
     user.set_password("zomor")
     user.save()
+    test_user = User.objects.get_or_create(username='test')[0]
+    test_user.set_password("Test@123")
+    test_user.save()
