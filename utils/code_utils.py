@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime
 
 from django.contrib.auth.models import User
@@ -28,3 +29,15 @@ def create_super_user() -> None:
         test_user = User.objects.create(username='test')
         test_user.set_password("Test@123")
         test_user.save()
+
+
+def fill_initial_data():
+    from hita.models import TheaterRolesChoices, TheaterRoles
+    if TheaterRoles.objects.count() == 0:
+        TheaterRoles.objects.bulk_create([TheaterRoles(name=name) for name in TheaterRolesChoices.values])
+
+
+def get_upload_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    return os.path.join(instance.performer.hita_user.user.username, filename)

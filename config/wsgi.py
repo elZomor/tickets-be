@@ -15,6 +15,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 application = get_wsgi_application()
 
-from utils.code_utils import create_super_user  # noqa:E402
+from utils.code_utils import create_super_user, fill_initial_data  # noqa:E402
 
 create_super_user()
+fill_initial_data()

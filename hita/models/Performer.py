@@ -1,0 +1,59 @@
+from datetime import datetime
+
+from django.db import models
+
+
+class PerformerStatus(models.TextChoices):
+    AVAILABLE = 'AVAILABLE', 'Available'
+    NOT_AVAILABLE = 'NOT_AVAILABLE', 'Not Available'
+
+
+class Performer(models.Model):
+    hita_user = models.OneToOneField(to='hita.HITAMember', on_delete=models.CASCADE)
+    date_of_birth = models.DateField(null=True, blank=True)
+    height = models.FloatField(null=True, blank=True)
+    skills_tags = models.ManyToManyField('hita.TheaterRoles', blank=True)
+    status = models.CharField(max_length=20, choices=PerformerStatus.choices, default=PerformerStatus.AVAILABLE.value)
+    account_protected = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    white_list_members = models.ManyToManyField('hita.HITAMember', related_name='white_list_members', blank=True)
+
+    @property
+    def age(self):
+        if not self.date_of_birth:
+            return 0
+        today = datetime.today()
+        age = today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month,
+                                                                                  self.date_of_birth.day))
+        return age
+
+    @property
+    def experience(self):
+        return self.experiences.all()
+
+    @property
+    def achievement(self):
+        return self.achievements.all()
+
+
+
+    @property
+    def profile_picture(self):
+        profile_picture = self.galleries.filter(is_profile_picture=True).last()
+        if profile_picture:
+            return profile_picture.name
+        return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
+
+    def get_contact_details(self, user):
+        if not self.account_protected or self.white_list_members.filter(id=user.id).exists():
+            return self.contact_details_list.all()
+        return None
+
+    def get_gallery(self, user):
+        if not self.account_protected or self.white_list_members.filter(id=user.id).exists():
+            return self.galleries.all()
+        return None
+
+    def __str__(self):
+        return f'{self.hita_user.first_name} {self.hita_user.last_name}'

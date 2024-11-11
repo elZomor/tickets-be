@@ -2,9 +2,11 @@ import os
 
 import environ
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
 env = environ.Env()
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = env.str('SECRET_KEY')
 
@@ -24,7 +26,7 @@ DJANGO_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
 ]
-PROJECT_APPS = ['clerk', 'show']
+PROJECT_APPS = ['clerk', 'show', 'hita']
 THIRD_PARTY_APPS = [
     'django_extensions',
     'django_json_widget',
@@ -102,7 +104,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Egypt'
+TIME_ZONE = 'Africa/Cairo'
 
 USE_I18N = True
 
@@ -113,11 +115,14 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
+MEDIA_URL = 'media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
+    'DEFAULT_PAGINATION_CLASS': 'config.pagination.CustomPagination',
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_AUTHENTICATION_CLASSES': ('clerk.authentication.ClerkJWTAuthentication',),
 }
+X_FRAME_OPTIONS = 'SAMEORIGIN'
