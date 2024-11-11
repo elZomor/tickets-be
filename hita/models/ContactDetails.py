@@ -13,8 +13,12 @@ class ContactTypeChoices(models.TextChoices):
 
 
 class ContactDetails(models.Model):
-    performer = models.ForeignKey('hita.Performer', on_delete=models.CASCADE,
-                                        related_name='contact_details_list')
-    contact_type = models.CharField(max_length=20, choices=ContactTypeChoices.choices,
-                                    default=ContactTypeChoices.MOBILE.value)
+    performer = models.ForeignKey(
+        'hita.Performer', on_delete=models.CASCADE, related_name='contact_details_list'
+    )
+    contact_type = models.CharField(
+        max_length=20,
+        choices=ContactTypeChoices.choices,
+        default=ContactTypeChoices.MOBILE.value,
+    )
     contact_info = models.CharField(max_length=100)

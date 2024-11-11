@@ -33,8 +33,11 @@ def create_super_user() -> None:
 
 def fill_initial_data():
     from hita.models import TheaterRolesChoices, TheaterRoles
+
     if TheaterRoles.objects.count() == 0:
-        TheaterRoles.objects.bulk_create([TheaterRoles(name=name) for name in TheaterRolesChoices.values])
+        TheaterRoles.objects.bulk_create(
+            [TheaterRoles(name=name) for name in TheaterRolesChoices.values]
+        )
 
 
 def get_upload_path(instance, filename):

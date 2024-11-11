@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from hita.models import HITAMember, Performer, Experience, TheaterRoles, ContactDetails, Gallery
+from hita.models import (
+    HITAMember,
+    Performer,
+    Experience,
+    TheaterRoles,
+    ContactDetails,
+    Gallery,
+)
 from hita.models.Achievement import Achievement
 
 
@@ -28,6 +35,7 @@ class ContactDetailsInline(admin.StackedInline):
     model = ContactDetails
     extra = 0
 
+
 class GalleryInline(admin.StackedInline):
     model = Gallery
     extra = 0
@@ -41,7 +49,6 @@ class AchievementInline(admin.StackedInline):
 @admin.register(ContactDetails)
 class ContactDetailsAdmin(admin.ModelAdmin):
     pass
-
 
 
 @admin.register(Performer)

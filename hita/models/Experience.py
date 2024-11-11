@@ -19,15 +19,20 @@ class TheaterRolesChoices(models.TextChoices):
 
 
 class TheaterRoles(models.Model):
-    name = models.CharField(max_length=40, choices=TheaterRolesChoices.choices, default=TheaterRolesChoices.ACTOR.value)
+    name = models.CharField(
+        max_length=40,
+        choices=TheaterRolesChoices.choices,
+        default=TheaterRolesChoices.ACTOR.value,
+    )
 
     def __str__(self):
         return self.name
 
 
 class Experience(models.Model):
-    performer = models.ForeignKey('hita.Performer', on_delete=models.CASCADE,
-                                  related_name='experiences')
+    performer = models.ForeignKey(
+        'hita.Performer', on_delete=models.CASCADE, related_name='experiences'
+    )
 
     show_name = models.CharField(max_length=100)
     director = models.CharField(max_length=50)

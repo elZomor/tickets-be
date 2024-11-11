@@ -1,12 +1,7 @@
-from http import HTTPStatus
-
 from rest_framework import status
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from config.pagination import CustomPagination
-from hita import permissions
 from hita.models import Performer, HITAMember
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import PerformerViewSerializer
@@ -35,7 +30,12 @@ class PerformerViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=request.user).last()
         if Performer.objects.filter(hita_user=hita_member).exists():
-            return Response(data={'status': 'FAILED', 'message': 'Performer profile already exist'},
-                            status=status.HTTP_409_CONFLICT)
+            return Response(
+                data={'status': 'FAILED', 'message': 'Performer profile already exist'},
+                status=status.HTTP_409_CONFLICT,
+            )
         Performer.objects.create(hita_user=hita_member)
-        return Response(data={'status': 'SUCCESS', 'message': 'Created Successfully!'}, status=status.HTTP_201_CREATED)
+        return Response(
+            data={'status': 'SUCCESS', 'message': 'Created Successfully!'},
+            status=status.HTTP_201_CREATED,
+        )

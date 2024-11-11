@@ -13,19 +13,31 @@ class Performer(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
     skills_tags = models.ManyToManyField('hita.TheaterRoles', blank=True)
-    status = models.CharField(max_length=20, choices=PerformerStatus.choices, default=PerformerStatus.AVAILABLE.value)
+    status = models.CharField(
+        max_length=20,
+        choices=PerformerStatus.choices,
+        default=PerformerStatus.AVAILABLE.value,
+    )
     account_protected = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    white_list_members = models.ManyToManyField('hita.HITAMember', related_name='white_list_members', blank=True)
+    white_list_members = models.ManyToManyField(
+        'hita.HITAMember', related_name='white_list_members', blank=True
+    )
 
     @property
     def age(self):
         if not self.date_of_birth:
             return 0
         today = datetime.today()
-        age = today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month,
-                                                                                  self.date_of_birth.day))
+        age = (
+            today.year
+            - self.date_of_birth.year
+            - (
+                (today.month, today.day)
+                < (self.date_of_birth.month, self.date_of_birth.day)
+            )
+        )
         return age
 
     @property
@@ -36,8 +48,6 @@ class Performer(models.Model):
     def achievement(self):
         return self.achievements.all()
 
-
-
     @property
     def profile_picture(self):
         profile_picture = self.galleries.filter(is_profile_picture=True).last()
@@ -46,12 +56,18 @@ class Performer(models.Model):
         return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
 
     def get_contact_details(self, user):
-        if not self.account_protected or self.white_list_members.filter(id=user.id).exists():
+        if (
+            not self.account_protected
+            or self.white_list_members.filter(id=user.id).exists()
+        ):
             return self.contact_details_list.all()
         return None
 
     def get_gallery(self, user):
-        if not self.account_protected or self.white_list_members.filter(id=user.id).exists():
+        if (
+            not self.account_protected
+            or self.white_list_members.filter(id=user.id).exists()
+        ):
             return self.galleries.all()
         return None
 
