@@ -1,14 +1,12 @@
 from django.db import models
 
-from hita.models import HITAMember
 
-
-class RequestTypeChoices(models.Choices):
+class RequestTypeChoices(models.TextChoices):
     VIEW_CONTACT_DETAILS = 'CONTACT_DETAILS', 'View Contact Details'
     VIEW_GALLERY = 'GALLERY', 'View Gallery'
 
 
-class RequestStatus(models.Choices):
+class RequestStatus(models.TextChoices):
     APPROVED = 'APPROVED', 'Approved'
     PENDING = 'PENDING', 'Pending'
     REJECTED = 'REJECTED', 'Rejected'
@@ -16,10 +14,10 @@ class RequestStatus(models.Choices):
 
 class NotificationCenter(models.Model):
     performer = models.ForeignKey(
-        HITAMember, on_delete=models.CASCADE, related_name='notifications'
+        'hita.HITAMember', on_delete=models.CASCADE, related_name='notifications'
     )
     request_from = models.ForeignKey(
-        HITAMember, on_delete=models.DO_NOTHING, related_name='requests'
+        'hita.HITAMember', on_delete=models.DO_NOTHING, related_name='requests'
     )
     request_type = models.CharField(
         max_length=20,
