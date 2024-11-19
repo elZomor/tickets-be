@@ -42,11 +42,19 @@ class HITAMember(models.Model):
     )
     is_graduated = models.BooleanField(default=False)
     year_of_graduation = models.IntegerField(null=True, blank=True)
-    location = models.CharField(max_length=15, choices=Location.choices, default=Location.CAIRO.value)
+    location = models.CharField(
+        max_length=15, choices=Location.choices, default=Location.CAIRO.value
+    )
     favorite_performers = models.ManyToManyField(to='hita.Performer', blank=True)
-    request_status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING.value)
+    request_status = models.CharField(
+        max_length=10, choices=Status.choices, default=Status.PENDING.value
+    )
     reviewed_by = models.ForeignKey(
-        'hita.HITAMember', on_delete=models.DO_NOTHING, related_name='reviewer', null=True, blank=True
+        'hita.HITAMember',
+        on_delete=models.DO_NOTHING,
+        related_name='reviewer',
+        null=True,
+        blank=True,
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
 

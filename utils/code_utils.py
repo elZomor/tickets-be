@@ -14,6 +14,8 @@ def upload_to(instance, filename):
 
 
 def create_super_user() -> None:
+    from hita.models import HITAMember, Status
+
     if not User.objects.filter(is_superuser=True).exists():
         user: User = User.objects.filter(username="zomor").last()
         if not user:
@@ -35,6 +37,14 @@ def create_super_user() -> None:
         hita_admin_user.is_staff = True
         hita_admin_user.is_active = True
         hita_admin_user.save()
+        HITAMember.objects.create(
+            **{
+                'user': hita_admin_user,
+                'first_name': 'hita',
+                'last_name': 'admin',
+                'request_status': Status.APPROVED.value,
+            }
+        )
 
 
 def fill_initial_data():
@@ -53,8 +63,6 @@ def fill_initial_data():
         view_permission = Permission.objects.get(codename='view_hitamember')
         group.permissions.add(*[permission, view_permission])
         User.objects.get(username='hita_admin').groups.add(group)
-
-
 
 
 def get_upload_path(instance, filename):

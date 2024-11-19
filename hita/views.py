@@ -5,12 +5,18 @@ from rest_framework.response import Response
 
 from hita.models import Performer, HITAMember, Department, StudyType, Location
 from hita.permissions import IsHITAMemberPermission
-from hita.serializers import PerformerViewSerializer, HITAMemberViewSerializer, HITAMemberCreateSerializer
+from hita.serializers import (
+    PerformerViewSerializer,
+    HITAMemberViewSerializer,
+    HITAMemberCreateSerializer,
+)
 
 
 class PerformerViewSet(viewsets.ModelViewSet):
     model = Performer
-    queryset = Performer.objects.all().order_by('hita_member__first_name', 'hita_member__last_name')
+    queryset = Performer.objects.all().order_by(
+        'hita_member__first_name', 'hita_member__last_name'
+    )
     permission_classes = [IsHITAMemberPermission]
     serializer_class = PerformerViewSerializer
 
@@ -42,25 +48,28 @@ class PerformerViewSet(viewsets.ModelViewSet):
         )
 
 
-class DepartmentViewSet(viewsets.mixins.ListModelMixin,
-                        viewsets.GenericViewSet):
+class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         queryset = [label for label, _ in Department.choices]
-        return Response(data={'status': 'SUCCESS', 'data': queryset}, status=status.HTTP_200_OK)
+        return Response(
+            data={'status': 'SUCCESS', 'data': queryset}, status=status.HTTP_200_OK
+        )
 
 
-class StudyTypeViewSet(viewsets.mixins.ListModelMixin,
-                       viewsets.GenericViewSet):
+class StudyTypeViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         queryset = [label for label, _ in StudyType.choices]
-        return Response(data={'status': 'SUCCESS', 'data': queryset}, status=status.HTTP_200_OK)
+        return Response(
+            data={'status': 'SUCCESS', 'data': queryset}, status=status.HTTP_200_OK
+        )
 
 
-class HITALocationViewSet(viewsets.mixins.ListModelMixin,
-                          viewsets.GenericViewSet):
+class HITALocationViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         queryset = [label for label, _ in Location.choices]
-        return Response(data={'status': 'SUCCESS', 'data': queryset}, status=status.HTTP_200_OK)
+        return Response(
+            data={'status': 'SUCCESS', 'data': queryset}, status=status.HTTP_200_OK
+        )
 
 
 class HitaMemberViewSet(viewsets.ModelViewSet):
@@ -78,17 +87,33 @@ class HitaMemberViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         if not serializer.is_valid():
-            return Response({'status': 'FAILED', 'data': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'status': 'FAILED', 'data': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         member = serializer.save()
-        return Response({'status': 'SUCCESS', 'data': HITAMemberViewSerializer(member).data}, status=status.HTTP_201_CREATED)
+        return Response(
+            {'status': 'SUCCESS', 'data': HITAMemberViewSerializer(member).data},
+            status=status.HTTP_201_CREATED,
+        )
 
     def create(self, request, *args, **kwargs):
-        serializer = HITAMemberCreateSerializer(data=request.data, context={'request': request})
+        serializer = HITAMemberCreateSerializer(
+            data=request.data, context={'request': request}
+        )
         if not serializer.is_valid():
-            return Response({'status': 'FAILED', 'data': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'status': 'FAILED', 'data': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         member = serializer.save()
-        return Response({'status': 'SUCCESS', 'data': HITAMemberViewSerializer(member).data}, status=status.HTTP_201_CREATED)
+        return Response(
+            {'status': 'SUCCESS', 'data': HITAMemberViewSerializer(member).data},
+            status=status.HTTP_201_CREATED,
+        )
 
     def destroy(self, request, *args, **kwargs):
-        return Response({'status': 'FAILED', 'message': 'You are not allowed to delete.'},
-                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(
+            {'status': 'FAILED', 'message': 'You are not allowed to delete.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )

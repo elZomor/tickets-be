@@ -13,22 +13,28 @@ from hita.models.Achievement import Achievement
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
     reviewed_by = serializers.SerializerMethodField()
+
     class Meta:
         model = HITAMember
         exclude = ['user', 'favorite_performers']
+
     @staticmethod
     def get_reviewed_by(obj):
         return obj.reviewed_by.__str__()
 
+
 class HITAMemberCreateSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     class Meta:
         model = HITAMember
         fields = '__all__'
 
     def validate(self, attrs):
         if HITAMember.objects.filter(user=attrs['user']).exists():
-            raise serializers.ValidationError({'user': "A record for this user already exists."})
+            raise serializers.ValidationError(
+                {'user': "A record for this user already exists."}
+            )
         return attrs
 
 

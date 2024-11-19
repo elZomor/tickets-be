@@ -1,6 +1,12 @@
 from rest_framework.routers import DefaultRouter
 
-from hita.views import PerformerViewSet, DepartmentViewSet, StudyTypeViewSet, HITALocationViewSet, HitaMemberViewSet
+from hita.views import (
+    PerformerViewSet,
+    DepartmentViewSet,
+    StudyTypeViewSet,
+    HITALocationViewSet,
+    HitaMemberViewSet,
+)
 
 router = DefaultRouter(trailing_slash=False)
 
