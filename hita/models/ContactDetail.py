@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class ContactTypeChoices(models.TextChoices):
+class ContactType(models.TextChoices):
     MOBILE = 'MOBILE', 'Mobile'
     WHATSAPP = 'WHATSAPP', 'WhatsApp'
     FACEBOOK = 'FACEBOOK', 'Facebook'
@@ -12,13 +12,13 @@ class ContactTypeChoices(models.TextChoices):
     OTHER = 'OTHER', 'Other'
 
 
-class ContactDetails(models.Model):
+class ContactDetail(models.Model):
     performer = models.ForeignKey(
-        'hita.Performer', on_delete=models.CASCADE, related_name='contact_details_list'
+        'hita.Performer', on_delete=models.CASCADE, related_name='contact_detail_list'
     )
     contact_type = models.CharField(
         max_length=20,
-        choices=ContactTypeChoices.choices,
-        default=ContactTypeChoices.MOBILE.value,
+        choices=ContactType.choices,
+        default=ContactType.MOBILE.value,
     )
     contact_info = models.CharField(max_length=100)

@@ -9,10 +9,10 @@ class PerformerStatus(models.TextChoices):
 
 
 class Performer(models.Model):
-    hita_user = models.OneToOneField(to='hita.HITAMember', on_delete=models.CASCADE)
+    hita_member = models.OneToOneField(to='hita.HITAMember', on_delete=models.CASCADE)
     date_of_birth = models.DateField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
-    skills_tags = models.ManyToManyField('hita.TheaterRoles', blank=True)
+    skills_tags = models.ManyToManyField('hita.TheaterRole', blank=True)
     status = models.CharField(
         max_length=20,
         choices=PerformerStatus.choices,
@@ -72,4 +72,4 @@ class Performer(models.Model):
         return None
 
     def __str__(self):
-        return f'{self.hita_user.first_name} {self.hita_user.last_name}'
+        return f'{self.hita_member.first_name} {self.hita_member.last_name}'

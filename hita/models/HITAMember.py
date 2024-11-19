@@ -8,9 +8,21 @@ class Department(models.TextChoices):
     DECOR = 'DECOR', 'Decor'
 
 
-class StudyTypes(models.TextChoices):
+class StudyType(models.TextChoices):
     NORMAL = 'NORMAL', 'Normal'
     PARALLEL = 'PARALLEL', 'Parallel'
+
+
+class Location(models.TextChoices):
+    CAIRO = 'CAIRO', 'Cairo'
+    ALEXANDRIA = 'ALEXANDRIA', 'Alexandria'
+
+
+class Status(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    APPROVED = 'APPROVED', 'Approved'
+    REJECTED = 'REJECTED', 'Rejected'
+    BLOCKED = 'BLOCKED', 'Blocked'
 
 
 class HITAMember(models.Model):
@@ -26,11 +38,22 @@ class HITAMember(models.Model):
         max_length=10, choices=Department.choices, default=Department.ACTING.value
     )
     study_type = models.CharField(
-        max_length=15, choices=StudyTypes, default=StudyTypes.NORMAL.value
+        max_length=15, choices=StudyType.choices, default=StudyType.NORMAL.value
     )
     is_graduated = models.BooleanField(default=False)
     year_of_graduation = models.IntegerField(null=True, blank=True)
+    location = models.CharField(max_length=15, choices=Location.choices, default=Location.CAIRO.value)
     favorite_performers = models.ManyToManyField(to='hita.Performer', blank=True)
+    request_status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING.value)
+    reviewed_by = models.ForeignKey(
+        'hita.HITAMember', on_delete=models.DO_NOTHING, related_name='reviewer', null=True, blank=True
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+
+    class Meta:
+        permissions = [
+            ('can_approve_member_requests', 'Can approve member request'),
+        ]

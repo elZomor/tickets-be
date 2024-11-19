@@ -29,18 +29,35 @@ def create_super_user() -> None:
         test_user = User.objects.create(username='test')
         test_user.set_password("Test@123")
         test_user.save()
+    if not User.objects.filter(username='hita_admin').exists():
+        hita_admin_user = User.objects.create(username='hita_admin')
+        hita_admin_user.set_password("Hita@123")
+        hita_admin_user.is_staff = True
+        hita_admin_user.is_active = True
+        hita_admin_user.save()
 
 
 def fill_initial_data():
-    from hita.models import TheaterRolesChoices, TheaterRoles
+    from hita.models import TheaterRolesChoices, TheaterRole
+    from django.contrib.auth.models import User, Group, Permission
 
-    if TheaterRoles.objects.count() == 0:
-        TheaterRoles.objects.bulk_create(
-            [TheaterRoles(name=name) for name in TheaterRolesChoices.values]
+    if TheaterRole.objects.count() == 0:
+        TheaterRole.objects.bulk_create(
+            [TheaterRole(name=name) for name in TheaterRolesChoices.values]
         )
+
+    group, _ = Group.objects.get_or_create(name='HITA_ADMIN')
+
+    permission = Permission.objects.get(codename='can_approve_member_requests')
+    if not group.permissions.filter(id=permission.id).exists():
+        view_permission = Permission.objects.get(codename='view_hitamember')
+        group.permissions.add(*[permission, view_permission])
+        User.objects.get(username='hita_admin').groups.add(group)
+
+
 
 
 def get_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{ext}"
-    return os.path.join(instance.performer.hita_user.user.username, filename)
+    return os.path.join(instance.performer.hita_member.user.username, filename)

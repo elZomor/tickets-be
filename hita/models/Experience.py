@@ -18,7 +18,7 @@ class TheaterRolesChoices(models.TextChoices):
     DANCER = 'DANCER', 'Dancer'
 
 
-class TheaterRoles(models.Model):
+class TheaterRole(models.Model):
     name = models.CharField(
         max_length=40,
         choices=TheaterRolesChoices.choices,
@@ -37,6 +37,6 @@ class Experience(models.Model):
     show_name = models.CharField(max_length=100)
     director = models.CharField(max_length=50)
     venue = models.CharField(max_length=50)
-    role = models.ManyToManyField(TheaterRoles)
+    role = models.ManyToManyField(TheaterRole)
     year = models.IntegerField()
     duration = models.IntegerField()
