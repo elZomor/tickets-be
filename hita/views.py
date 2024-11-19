@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from hita.Exceptions import ResourceNotFound
 from hita.models import Performer, HITAMember, Department, StudyType, Location
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -19,6 +20,16 @@ class PerformerViewSet(viewsets.ModelViewSet):
     )
     permission_classes = [IsHITAMemberPermission]
     serializer_class = PerformerViewSerializer
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        filter_kwargs = {'hita_member__user__username': self.kwargs[lookup_url_kwarg]}
+        obj = queryset.filter(**filter_kwargs).first()
+        if not obj:
+            raise ResourceNotFound(f'Performer profile with username: {self.kwargs[lookup_url_kwarg]} does not exist')
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     def get_serializer_context(self):
         context = super(PerformerViewSet, self).get_serializer_context()
@@ -82,6 +93,16 @@ class HitaMemberViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return [AllowAny()]
         return [IsHITAMemberPermission()]
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        filter_kwargs = {'user__username': self.kwargs[lookup_url_kwarg]}
+        obj = queryset.filter(**filter_kwargs).first()
+        if not obj:
+            raise ResourceNotFound(f'HITAMember profile with username: {self.kwargs[lookup_url_kwarg]} does not exist')
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
