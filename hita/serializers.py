@@ -55,6 +55,8 @@ class TheaterRoleViewSerializer(serializers.ModelSerializer):
         model = TheaterRole
         fields = ['name']
 
+    def to_representation(self, instance):
+        return instance.name
 
 class ExperienceViewSerializer(serializers.ModelSerializer):
     role = TheaterRoleViewSerializer(many=True)
@@ -70,6 +72,42 @@ class AchievementViewSerializer(serializers.ModelSerializer):
         exclude = ['performer']
 
 
+class PerformerViewAllSerializer(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+    profile_picture = serializers.SerializerMethodField()
+    skills_tags = TheaterRoleViewSerializer(many=True)
+    class Meta:
+        model = Performer
+        fields = [
+            'username',
+            'full_name',
+            'department',
+            'skills_tags',
+            'biography',
+            'profile_picture',
+            'status'
+        ]
+    @staticmethod
+    def get_username(obj):
+        return obj.hita_member.user.username
+
+    @staticmethod
+    def get_full_name(obj):
+        return obj.full_name
+
+    @staticmethod
+    def get_department(obj):
+        return obj.hita_member.department
+    @staticmethod
+    def get_profile_picture(obj):
+        return obj.profile_picture
+
+
+
+
+
 class PerformerViewSerializer(serializers.ModelSerializer):
     hita_member = HITAMemberViewSerializer()
     experience = ExperienceViewSerializer(many=True)
@@ -83,7 +121,8 @@ class PerformerViewSerializer(serializers.ModelSerializer):
             'age',
             'height',
             'status',
-            'account_protected',
+            'gallery_protected',
+            'contact_detail_protected',
             'achievement',
             'skills_tags',
             'hita_member',

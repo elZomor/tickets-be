@@ -9,7 +9,7 @@ from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
     PerformerViewSerializer,
     HITAMemberViewSerializer,
-    HITAMemberCreateSerializer,
+    HITAMemberCreateSerializer, PerformerViewAllSerializer,
 )
 
 
@@ -40,7 +40,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         page = self.paginate_queryset(self.get_queryset())
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = PerformerViewAllSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(self.get_queryset(), many=True)
         return Response(serializer.data)

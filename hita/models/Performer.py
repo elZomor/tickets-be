@@ -18,12 +18,14 @@ class Performer(models.Model):
         choices=PerformerStatus.choices,
         default=PerformerStatus.AVAILABLE.value,
     )
-    account_protected = models.BooleanField(default=False)
+    gallery_protected = models.BooleanField(default=False)
+    contact_detail_protected = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     white_list_members = models.ManyToManyField(
         'hita.HITAMember', related_name='white_list_members', blank=True
     )
+    biography = models.CharField(max_length=300, null=True, blank=True)
 
     @property
     def age(self):
@@ -52,12 +54,12 @@ class Performer(models.Model):
     def profile_picture(self):
         profile_picture = self.galleries.filter(is_profile_picture=True).last()
         if profile_picture:
-            return profile_picture.name
+            return profile_picture.file.url
         return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
 
     def get_contact_details(self, user):
         if (
-            not self.account_protected
+            not self.contact_detail_protected
             or self.white_list_members.filter(id=user.id).exists()
         ):
             return self.contact_detail_list.all()
@@ -65,11 +67,15 @@ class Performer(models.Model):
 
     def get_gallery(self, user):
         if (
-            not self.account_protected
+            not self.gallery_protected
             or self.white_list_members.filter(id=user.id).exists()
         ):
             return self.galleries.all()
         return None
 
+    @property
+    def full_name(self):
+        return self.hita_member.first_name + ' ' + self.hita_member.last_name
+
     def __str__(self):
-        return f'{self.hita_member.first_name} {self.hita_member.last_name}'
+        return self.full_name
