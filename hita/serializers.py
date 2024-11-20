@@ -71,7 +71,7 @@ class AchievementViewSerializer(serializers.ModelSerializer):
 
 
 class PerformerViewSerializer(serializers.ModelSerializer):
-    hita_user = HITAMemberViewSerializer()
+    hita_member = HITAMemberViewSerializer()
     experience = ExperienceViewSerializer(many=True)
     achievement = AchievementViewSerializer(many=True)
     skills_tags = TheaterRoleViewSerializer(many=True)
@@ -86,7 +86,7 @@ class PerformerViewSerializer(serializers.ModelSerializer):
             'account_protected',
             'achievement',
             'skills_tags',
-            'hita_user',
+            'hita_member',
             'profile_picture',
             'experience',
             'contact_details',

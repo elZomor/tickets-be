@@ -47,12 +47,12 @@ class PerformerViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=request.user).last()
-        if Performer.objects.filter(hita_user=hita_member).exists():
+        if Performer.objects.filter(hita_member=hita_member).exists():
             return Response(
                 data={'status': 'FAILED', 'message': 'Performer profile already exist'},
                 status=status.HTTP_409_CONFLICT,
             )
-        Performer.objects.create(hita_user=hita_member)
+        Performer.objects.create(hita_member=hita_member)
         return Response(
             data={'status': 'SUCCESS', 'message': 'Created Successfully!'},
             status=status.HTTP_201_CREATED,

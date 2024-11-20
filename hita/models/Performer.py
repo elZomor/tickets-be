@@ -60,7 +60,7 @@ class Performer(models.Model):
             not self.account_protected
             or self.white_list_members.filter(id=user.id).exists()
         ):
-            return self.contact_details_list.all()
+            return self.contact_detail_list.all()
         return None
 
     def get_gallery(self, user):
