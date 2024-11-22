@@ -9,7 +9,7 @@ from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
     PerformerViewSerializer,
     HITAMemberViewSerializer,
-    HITAMemberCreateSerializer, PerformerViewAllSerializer,
+    HITAMemberCreateSerializer, PerformerViewAllSerializer, PerformerViewOneSerializer,
 )
 
 
@@ -19,7 +19,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
         'hita_member__first_name', 'hita_member__last_name'
     )
     permission_classes = [IsHITAMemberPermission]
-    serializer_class = PerformerViewSerializer
+    serializer_class = PerformerViewOneSerializer
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
@@ -36,6 +36,14 @@ class PerformerViewSet(viewsets.ModelViewSet):
         hita_member = HITAMember.objects.filter(user=self.request.user).last()
         context.update({'hita_member': hita_member})
         return context
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(
+            data={'status': 'SUCCESS', 'data': serializer.data},
+            status=status.HTTP_200_OK,
+        )
 
     def list(self, request, *args, **kwargs):
         page = self.paginate_queryset(self.get_queryset())

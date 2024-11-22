@@ -57,6 +57,7 @@ class HITAMember(models.Model):
         blank=True,
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    gender = models.CharField(max_length=1, choices=(('M', 'Male'), ('F', 'Female')))
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'

@@ -58,6 +58,7 @@ class TheaterRoleViewSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return instance.name
 
+
 class ExperienceViewSerializer(serializers.ModelSerializer):
     role = TheaterRoleViewSerializer(many=True)
 
@@ -77,7 +78,9 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
     profile_picture = serializers.SerializerMethodField()
+    gender = serializers.SerializerMethodField()
     skills_tags = TheaterRoleViewSerializer(many=True)
+
     class Meta:
         model = Performer
         fields = [
@@ -87,8 +90,10 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
             'skills_tags',
             'biography',
             'profile_picture',
-            'status'
+            'status',
+            'gender'
         ]
+
     @staticmethod
     def get_username(obj):
         return obj.hita_member.user.username
@@ -100,13 +105,85 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_department(obj):
         return obj.hita_member.department
+
     @staticmethod
     def get_profile_picture(obj):
         return obj.profile_picture
 
+    @staticmethod
+    def get_gender(obj):
+        return obj.hita_member.gender
 
 
+class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
+    grade = serializers.SerializerMethodField()
+    graduation_year = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
+    study_type = serializers.SerializerMethodField()
+    height = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Performer
+        fields = PerformerViewAllSerializer.Meta.fields + [
+            'grade',
+            'graduation_year',
+            'age',
+            'study_type',
+            'height',
+        ]
+
+    @staticmethod
+    def get_grade(obj):
+        return obj.hita_member.grade
+
+    @staticmethod
+    def get_graduation_year(obj):
+        return obj.hita_member.year_of_graduation
+
+    @staticmethod
+    def get_age(obj):
+        return obj.age
+
+    @staticmethod
+    def get_study_type(obj):
+        return obj.hita_member.study_type
+
+    @staticmethod
+    def get_height(obj):
+        return obj.height
+
+
+class PerformerViewOneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Performer
+        fields = [
+            'performer',
+            'experiences',
+            'achievements',
+            'contact_detail_protected',
+            'gallery_protected',
+            'contact_details',
+            'gallery',
+        ]
+
+    performer = serializers.SerializerMethodField()
+    contact_details = serializers.SerializerMethodField()
+    gallery = serializers.SerializerMethodField()
+    experiences = ExperienceViewSerializer(many=True)
+    achievements = AchievementViewSerializer(many=True)
+
+    @staticmethod
+    def get_performer(obj):
+        return PerformerDataViewOneSerializer(obj).data
+    def get_contact_details(self, obj):
+        return ContactDetailsViewSerializer(
+            obj.get_contact_details(self.context.get('hita_member')), many=True
+        ).data
+
+    def get_gallery(self, obj):
+        return GalleryViewSerializer(
+            obj.get_gallery(self.context.get('hita_member')), many=True
+        ).data
 
 class PerformerViewSerializer(serializers.ModelSerializer):
     hita_member = HITAMemberViewSerializer()
