@@ -1,7 +1,7 @@
 import requests
 from django.contrib.auth.models import User
-from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
+
 
 class GoogleJWTAuthentication:
 
@@ -15,7 +15,7 @@ class GoogleJWTAuthentication:
         ):
             raise AuthenticationFailed('No token supplied')
         try:
-            token_url = f"https://www.googleapis.com/oauth2/v3/userinfo"
+            token_url = "https://www.googleapis.com/oauth2/v3/userinfo"
             response = requests.get(token_url, headers={'Authorization': auth_header})
             token_info = response.json()
             user = User.objects.filter(email=token_info['email']).first()

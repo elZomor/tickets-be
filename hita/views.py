@@ -7,9 +7,10 @@ from hita.Exceptions import ResourceNotFound
 from hita.models import Performer, HITAMember, Department, StudyType, Location
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
-    PerformerViewSerializer,
     HITAMemberViewSerializer,
-    HITAMemberCreateSerializer, PerformerViewAllSerializer, PerformerViewOneSerializer,
+    HITAMemberCreateSerializer,
+    PerformerViewAllSerializer,
+    PerformerViewOneSerializer,
 )
 
 
@@ -27,7 +28,9 @@ class PerformerViewSet(viewsets.ModelViewSet):
         filter_kwargs = {'hita_member__user__username': self.kwargs[lookup_url_kwarg]}
         obj = queryset.filter(**filter_kwargs).first()
         if not obj:
-            raise ResourceNotFound(f'Performer profile with username: {self.kwargs[lookup_url_kwarg]} does not exist')
+            raise ResourceNotFound(
+                f'Performer profile with username: {self.kwargs[lookup_url_kwarg]} does not exist'
+            )
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -108,7 +111,9 @@ class HitaMemberViewSet(viewsets.ModelViewSet):
         filter_kwargs = {'user__username': self.kwargs[lookup_url_kwarg]}
         obj = queryset.filter(**filter_kwargs).first()
         if not obj:
-            raise ResourceNotFound(f'HITAMember profile with username: {self.kwargs[lookup_url_kwarg]} does not exist')
+            raise ResourceNotFound(
+                f'HITAMember profile with username: {self.kwargs[lookup_url_kwarg]} does not exist'
+            )
         self.check_object_permissions(self.request, obj)
         return obj
 

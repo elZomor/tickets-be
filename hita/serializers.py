@@ -91,7 +91,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
             'biography',
             'profile_picture',
             'status',
-            'gender'
+            'gender',
         ]
 
     @staticmethod
@@ -175,6 +175,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_performer(obj):
         return PerformerDataViewOneSerializer(obj).data
+
     def get_contact_details(self, obj):
         return ContactDetailsViewSerializer(
             obj.get_contact_details(self.context.get('hita_member')), many=True
@@ -184,6 +185,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
         return GalleryViewSerializer(
             obj.get_gallery(self.context.get('hita_member')), many=True
         ).data
+
 
 class PerformerViewSerializer(serializers.ModelSerializer):
     hita_member = HITAMemberViewSerializer()

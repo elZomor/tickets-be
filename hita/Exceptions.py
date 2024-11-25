@@ -8,6 +8,7 @@ class ResourceNotFound(APIException):
     default_code = 'resource_not_found'
 
     data = {}
+
     def __init__(self, message='Resource not found'):
         if message:
             self.detail = {'status': 'FAILED', 'message': message}

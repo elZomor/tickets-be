@@ -150,7 +150,7 @@ SOCIALACCOUNT_PROVIDERS = {
         'APP': {
             'client_id': env.str('GOOGLE_CLIENT_ID', default=''),
             'secret': env.str('GOOGLE_CLIENT_SECRET', default=''),
-            'key': ''
+            'key': '',
         }
     }
 }
@@ -160,7 +160,8 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),}
+    ),
+}
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
