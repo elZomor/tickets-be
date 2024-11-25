@@ -127,10 +127,13 @@ class HitaMemberViewSet(viewsets.ModelViewSet):
         )
 
     def create(self, request, *args, **kwargs):
+
         serializer = HITAMemberCreateSerializer(
             data=request.data, context={'request': request}
         )
         if not serializer.is_valid():
+            print(serializer.errors, flush=True)
+            print(serializer.error_messages, flush=True)
             return Response(
                 {'status': 'FAILED', 'data': serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST,

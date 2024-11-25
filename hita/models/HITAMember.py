@@ -29,6 +29,7 @@ class HITAMember(models.Model):
     user = models.OneToOneField(to=User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
+    nick_name = models.CharField(max_length=50, null=True, blank=True)
     grade = models.IntegerField(
         choices=((1, 'First'), (2, 'Second'), (3, 'Third'), (4, 'Forth')),
         null=True,
