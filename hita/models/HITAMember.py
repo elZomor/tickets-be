@@ -67,3 +67,18 @@ class HITAMember(models.Model):
         permissions = [
             ('can_approve_member_requests', 'Can approve member request'),
         ]
+
+    @property
+    def full_name(self):
+        return self.first_name + ' ' + self.last_name
+
+    @property
+    def username(self):
+        return str(self.user)
+
+    @property
+    def has_performer(self):
+        try:
+            return self.performer is not None
+        except Exception:
+            return False

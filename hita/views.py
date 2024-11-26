@@ -1,7 +1,7 @@
 from rest_framework import status
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from hita.Exceptions import ResourceNotFound
@@ -95,20 +95,20 @@ class HITALocationViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSe
         )
 
 
-class HitaMemberViewSet(viewsets.ModelViewSet):
+class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     model = HITAMember
     queryset = HITAMember.objects.all().order_by('first_name', 'last_name')
     serializer_class = HITAMemberViewSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'member_status']:
-            return [AllowAny()]
+        if self.action in ['create', 'member_status', 'retrieve_member']:
+            return [IsAuthenticated()]
         return [IsHITAMemberPermission()]
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        filter_kwargs = {'user__username': self.kwargs[lookup_url_kwarg]}
+        filter_kwargs = {'user': self.request.user}
         obj = queryset.filter(**filter_kwargs).first()
         if not obj:
             raise ResourceNotFound(
@@ -117,19 +117,24 @@ class HitaMemberViewSet(viewsets.ModelViewSet):
         self.check_object_permissions(self.request, obj)
         return obj
 
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        if not serializer.is_valid():
+    @action(detail=False, methods=['GET'], url_path='me')
+    def retrieve_member(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
             return Response(
-                {'status': 'FAILED', 'data': serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
+                {
+                    'status': 'SUCCESS',
+                    'data': serializer.data,
+                }
             )
-        member = serializer.save()
-        return Response(
-            {'status': 'SUCCESS', 'data': HITAMemberViewSerializer(member).data},
-            status=status.HTTP_201_CREATED,
-        )
+        except ResourceNotFound:
+            return Response(
+                {
+                    'status': 'FAILED',
+                    'message': 'No Member Found',
+                }
+            )
 
     def create(self, request, *args, **kwargs):
 
@@ -147,12 +152,6 @@ class HitaMemberViewSet(viewsets.ModelViewSet):
         return Response(
             {'status': 'SUCCESS', 'data': HITAMemberViewSerializer(member).data},
             status=status.HTTP_201_CREATED,
-        )
-
-    def destroy(self, request, *args, **kwargs):
-        return Response(
-            {'status': 'FAILED', 'message': 'You are not allowed to delete.'},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     @action(methods=['GET'], detail=False, url_path='status')

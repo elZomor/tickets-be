@@ -12,11 +12,23 @@ from hita.models.Achievement import Achievement
 
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
-    reviewed_by = serializers.SerializerMethodField()
 
     class Meta:
         model = HITAMember
-        exclude = ['user', 'favorite_performers']
+        fields = [
+            'username',
+            'full_name',
+            'nick_name',
+            'department',
+            'grade',
+            'is_graduated',
+            'year_of_graduation',
+            'study_type',
+            'location',
+            'gender',
+            'request_status',
+            'has_performer',
+        ]
 
     @staticmethod
     def get_reviewed_by(obj):

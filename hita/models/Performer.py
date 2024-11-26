@@ -9,7 +9,9 @@ class PerformerStatus(models.TextChoices):
 
 
 class Performer(models.Model):
-    hita_member = models.OneToOneField(to='hita.HITAMember', on_delete=models.CASCADE)
+    hita_member = models.OneToOneField(
+        to='hita.HITAMember', on_delete=models.CASCADE, related_name='performer'
+    )
     date_of_birth = models.DateField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
     skills_tags = models.ManyToManyField('hita.TheaterRole', blank=True)
