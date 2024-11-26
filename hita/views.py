@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
@@ -98,10 +99,9 @@ class HitaMemberViewSet(viewsets.ModelViewSet):
     model = HITAMember
     queryset = HITAMember.objects.all().order_by('first_name', 'last_name')
     serializer_class = HITAMemberViewSerializer
-    permission_classes = [IsHITAMemberPermission]
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'member_status']:
             return [AllowAny()]
         return [IsHITAMemberPermission()]
 
@@ -153,4 +153,17 @@ class HitaMemberViewSet(viewsets.ModelViewSet):
         return Response(
             {'status': 'FAILED', 'message': 'You are not allowed to delete.'},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    @action(methods=['GET'], detail=False, url_path='status')
+    def member_status(self, request, *args, **kwargs):
+        hita_member = HITAMember.objects.filter(user=request.user).last()
+        if not hita_member:
+            return Response(
+                data={'status': 'SUCCESS', 'data': {'status': 'NOT_REGISTERED'}},
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            data={'status': 'SUCCESS', 'data': {'status': hita_member.request_status}},
+            status=status.HTTP_200_OK,
         )
