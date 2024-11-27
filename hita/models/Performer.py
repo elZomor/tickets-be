@@ -5,7 +5,13 @@ from django.db import models
 
 class PerformerStatus(models.TextChoices):
     AVAILABLE = 'AVAILABLE', 'Available'
-    NOT_AVAILABLE = 'NOT_AVAILABLE', 'Not Available'
+    UNAVAILABLE = 'UNAVAILABLE', 'Unavailable'
+
+class OpenForEnum(models.TextChoices):
+    FREE = 'FREE', 'Free'
+    PAID = 'PAID', 'Paid'
+    BOTH = 'BOTH', 'Both'
+
 
 
 class Performer(models.Model):
@@ -28,6 +34,11 @@ class Performer(models.Model):
         'hita.HITAMember', related_name='white_list_members', blank=True
     )
     biography = models.CharField(max_length=300, null=True, blank=True)
+    open_for = models.CharField(
+        max_length=20,
+        choices=OpenForEnum.choices,
+        default=OpenForEnum.FREE.value,
+    )
 
     @property
     def age(self):

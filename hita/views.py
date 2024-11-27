@@ -5,13 +5,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from hita.Exceptions import ResourceNotFound
-from hita.models import Performer, HITAMember, Department, StudyType, Location
+from hita.models import Performer, HITAMember, Department, StudyType, Location, TheaterRole
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
     HITAMemberViewSerializer,
     HITAMemberCreateSerializer,
     PerformerViewAllSerializer,
-    PerformerViewOneSerializer,
+    PerformerViewOneSerializer, PerformerCreateSerializer, TheaterRoleViewSerializer,
 )
 
 
@@ -64,7 +64,19 @@ class PerformerViewSet(viewsets.ModelViewSet):
                 data={'status': 'FAILED', 'message': 'Performer profile already exist'},
                 status=status.HTTP_409_CONFLICT,
             )
-        Performer.objects.create(hita_member=hita_member)
+        performer_data = request.data.get('performer_data')
+        performer_data['hita_member'] = hita_member.id
+        serializer = PerformerCreateSerializer(data=performer_data)
+        if not serializer.is_valid():
+            return Response(
+                {'status': 'FAILED', 'data': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        performer = serializer.save()
+        skills = TheaterRole.objects.filter(name__in=performer_data.get('skills_tags'))
+        performer.skills_tags.add(*skills)
+        print('performer', flush=True)
+        print(performer, flush=True)
         return Response(
             data={'status': 'SUCCESS', 'message': 'Created Successfully!'},
             status=status.HTTP_201_CREATED,
@@ -84,6 +96,14 @@ class StudyTypeViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
         queryset = [label for label, _ in StudyType.choices]
         return Response(
             data={'status': 'SUCCESS', 'data': queryset}, status=status.HTTP_200_OK
+        )
+
+
+class SkillsViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
+    def list(self, request, *args, **kwargs):
+        data = list(TheaterRole.objects.values_list('name', flat=True))
+        return Response(
+            data={'status': 'SUCCESS', 'data': data}, status=status.HTTP_200_OK
         )
 
 

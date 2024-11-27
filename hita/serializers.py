@@ -199,6 +199,20 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
         ).data
 
 
+class PerformerCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Performer
+        fields = [
+            'hita_member',
+            'date_of_birth',
+            'height',
+            'status',
+            'gallery_protected',
+            'contact_detail_protected',
+            'biography',
+            'open_for'
+        ]
+
 class PerformerViewSerializer(serializers.ModelSerializer):
     hita_member = HITAMemberViewSerializer()
     experience = ExperienceViewSerializer(many=True)
