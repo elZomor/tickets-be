@@ -5,13 +5,21 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from hita.Exceptions import ResourceNotFound
-from hita.models import Performer, HITAMember, Department, StudyType, Location, TheaterRole
+from hita.models import (
+    Performer,
+    HITAMember,
+    Department,
+    StudyType,
+    Location,
+    TheaterRole,
+)
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
     HITAMemberViewSerializer,
     HITAMemberCreateSerializer,
     PerformerViewAllSerializer,
-    PerformerViewOneSerializer, PerformerCreateSerializer, TheaterRoleViewSerializer,
+    PerformerViewOneSerializer,
+    PerformerCreateSerializer,
 )
 
 

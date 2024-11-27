@@ -210,8 +210,9 @@ class PerformerCreateSerializer(serializers.ModelSerializer):
             'gallery_protected',
             'contact_detail_protected',
             'biography',
-            'open_for'
+            'open_for',
         ]
+
 
 class PerformerViewSerializer(serializers.ModelSerializer):
     hita_member = HITAMemberViewSerializer()

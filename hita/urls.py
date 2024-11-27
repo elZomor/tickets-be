@@ -5,7 +5,8 @@ from hita.views import (
     DepartmentViewSet,
     StudyTypeViewSet,
     HITALocationViewSet,
-    HitaMemberViewSet, SkillsViewSet,
+    HitaMemberViewSet,
+    SkillsViewSet,
 )
 
 router = DefaultRouter(trailing_slash=False)

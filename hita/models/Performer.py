@@ -7,11 +7,11 @@ class PerformerStatus(models.TextChoices):
     AVAILABLE = 'AVAILABLE', 'Available'
     UNAVAILABLE = 'UNAVAILABLE', 'Unavailable'
 
+
 class OpenForEnum(models.TextChoices):
     FREE = 'FREE', 'Free'
     PAID = 'PAID', 'Paid'
     BOTH = 'BOTH', 'Both'
-
 
 
 class Performer(models.Model):
