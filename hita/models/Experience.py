@@ -18,6 +18,14 @@ class TheaterRolesChoices(models.TextChoices):
     DANCER = 'DANCER', 'Dancer'
 
 
+class ShowTypeChoices(models.TextChoices):
+    THEATER = 'THEATER', 'Theater'
+    TV = 'TV', 'TV'
+    MOVIE = 'MOVIE', 'Movie'
+    RADIO = 'RADIO', 'Radio'
+    DUBBING = 'DUBBING', 'Dubbing'
+
+
 class TheaterRole(models.Model):
     name = models.CharField(
         max_length=40,
@@ -36,7 +44,8 @@ class Experience(models.Model):
 
     show_name = models.CharField(max_length=100)
     director = models.CharField(max_length=50)
-    venue = models.CharField(max_length=50)
+    venue = models.CharField(max_length=50, null=True, blank=True)
     role = models.ManyToManyField(TheaterRole)
     year = models.IntegerField()
-    duration = models.IntegerField()
+    duration = models.IntegerField(null=True, blank=True)
+    show_type = models.CharField(max_length=20, )

@@ -6,7 +6,7 @@ from hita.models import (
     Experience,
     TheaterRole,
     ContactDetail,
-    Gallery,
+    Gallery, PublicChannel,
 )
 from hita.models.Achievement import Achievement
 
@@ -62,6 +62,16 @@ class GalleryViewSerializer(serializers.ModelSerializer):
         exclude = ['performer']
 
 
+class GalleryCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallery
+        fields = [
+            'performer',
+            'description',
+            'file',
+            'is_profile_picture'
+        ]
+
 class TheaterRoleViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = TheaterRole
@@ -77,6 +87,59 @@ class ExperienceViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Experience
         exclude = ['performer']
+
+
+class ExperienceCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Experience
+        fields = [
+            'performer',
+            'show_name',
+            'director',
+            'venue',
+            'year',
+            'duration',
+            'show_type'
+        ]
+
+
+class AchievementCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Achievement
+        fields = [
+            'performer',
+            'position',
+            'field',
+            'festival_name',
+            'show_name',
+            'year'
+        ]
+
+
+class PublicChannelCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PublicChannel
+        fields = [
+            'performer',
+            'channel_type',
+            'channel_info'
+        ]
+
+
+class PublicChannelViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PublicChannel
+        exclude = ['performer']
+
+
+class ContactDetailsCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactDetail
+        fields = [
+            'performer',
+            'contact_type',
+            'contact_info'
+        ]
 
 
 class AchievementViewSerializer(serializers.ModelSerializer):
@@ -176,6 +239,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
             'gallery_protected',
             'contact_details',
             'gallery',
+            'public_channels',
         ]
 
     performer = serializers.SerializerMethodField()
@@ -183,6 +247,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
     gallery = serializers.SerializerMethodField()
     experiences = ExperienceViewSerializer(many=True)
     achievements = AchievementViewSerializer(many=True)
+    public_channels = PublicChannelViewSerializer(many=True)
 
     @staticmethod
     def get_performer(obj):

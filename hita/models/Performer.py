@@ -60,6 +60,10 @@ class Performer(models.Model):
         return self.experiences.all()
 
     @property
+    def public_channels(self):
+        return self.public_channel_list.all()
+
+    @property
     def achievement(self):
         return self.achievements.all()
 
