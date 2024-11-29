@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 from django.db.transaction import atomic
 from rest_framework import status
@@ -61,7 +62,9 @@ class PerformerViewSet(viewsets.ModelViewSet):
         )
 
     def list(self, request, *args, **kwargs):
-        page = self.paginate_queryset(self.get_queryset())
+        queryset = self.filter_data(request.query_params.copy())
+
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = PerformerViewAllSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
@@ -121,6 +124,32 @@ class PerformerViewSet(viewsets.ModelViewSet):
         return Response(data={'status': 'SUCCESS', 'data': {'user': hita_member.user.username}},
                         status=status.HTTP_200_OK)
 
+    def filter_data(self, query_params):
+        query_params.pop('page')
+        query_params.pop('page_size')
+        queryset = self.get_queryset()
+
+        if not len(query_params):
+            return queryset
+        print(queryset, flush=True)
+        filter_query = Q()
+        if query_params.get('name'):
+            name = query_params.pop('name')[0]
+            print('name', flush=True)
+            print(type(name), flush=True)
+            filter_query |= Q(hita_member__first_name__icontains=name)
+            filter_query |= Q(hita_member__last_name__icontains=name)
+            filter_query |= Q(hita_member__nick_name__icontains=name)
+            filter_query |= Q(hita_member__user__username__icontains=name)
+
+        # Check if 'department' parameter is present
+        if query_params.get('department'):
+            department = query_params.pop('department')
+            filter_query |= Q(hita_member__department__icontains=department)
+        print('filter_query', flush=True)
+        print(filter_query, flush=True)
+        print(queryset.filter(filter_query), flush=True)
+        return queryset.filter(filter_query)
     @atomic
     def create_performer_with_data(self, data, hita_member):
         user = hita_member.user
