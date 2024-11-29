@@ -135,17 +135,19 @@ class PerformerViewSet(viewsets.ModelViewSet):
         filter_query = Q()
         if query_params.get('name'):
             name = query_params.pop('name')[0]
-            print('name', flush=True)
-            print(type(name), flush=True)
             filter_query |= Q(hita_member__first_name__icontains=name)
             filter_query |= Q(hita_member__last_name__icontains=name)
             filter_query |= Q(hita_member__nick_name__icontains=name)
             filter_query |= Q(hita_member__user__username__icontains=name)
-
-        # Check if 'department' parameter is present
+        if query_params.get('gender'):
+            gender = query_params.pop('gender')
+            filter_query |= Q(hita_member__gender__in=gender)
         if query_params.get('department'):
             department = query_params.pop('department')
-            filter_query |= Q(hita_member__department__icontains=department)
+            filter_query |= Q(hita_member__department__in=department)
+        if query_params.get('skills'):
+            skills = query_params.pop('skills')
+            filter_query |= Q(skills_tags__name__in=skills)
         print('filter_query', flush=True)
         print(filter_query, flush=True)
         print(queryset.filter(filter_query), flush=True)
