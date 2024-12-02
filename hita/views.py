@@ -126,9 +126,10 @@ class PerformerViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_200_OK)
 
     def build_permissions(self, instance):
-        permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS'}
+        permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
         if instance.hita_member.user.id == self.request.user.id:
             return permissions
+        permissions.discard('CAN_EDIT')
         if instance.get_contact_details(user=self.request.user) is None:
             permissions.discard('VIEW_CONTACT_DETAILS')
         if instance.get_gallery(user=self.request.user) is None:
