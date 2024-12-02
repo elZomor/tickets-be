@@ -154,6 +154,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     department = serializers.SerializerMethodField()
     profile_picture = serializers.SerializerMethodField()
     gender = serializers.SerializerMethodField()
+    nick_name = serializers.SerializerMethodField()
     skills_tags = TheaterRoleViewSerializer(many=True)
 
     class Meta:
@@ -161,17 +162,23 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
         fields = [
             'username',
             'full_name',
+            'nick_name',
             'department',
             'skills_tags',
             'biography',
             'profile_picture',
             'status',
             'gender',
+            'open_for'
         ]
 
     @staticmethod
     def get_username(obj):
         return obj.hita_member.user.username
+
+    @staticmethod
+    def get_nick_name(obj):
+        return obj.hita_member.nick_name
 
     @staticmethod
     def get_full_name(obj):

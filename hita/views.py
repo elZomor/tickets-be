@@ -56,8 +56,9 @@ class PerformerViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
+        permissions = self.build_permissions(instance)
         return Response(
-            data={'status': 'SUCCESS', 'data': serializer.data},
+            data={'status': 'SUCCESS', 'data': serializer.data, 'permissions': permissions},
             status=status.HTTP_200_OK,
         )
 
@@ -124,9 +125,21 @@ class PerformerViewSet(viewsets.ModelViewSet):
         return Response(data={'status': 'SUCCESS', 'data': {'user': hita_member.user.username}},
                         status=status.HTTP_200_OK)
 
+    def build_permissions(self, instance):
+        permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS'}
+        if instance.hita_member.user.id == self.request.user.id:
+            return permissions
+        if instance.get_contact_details(user=self.request.user) is None:
+            permissions.discard('VIEW_CONTACT_DETAILS')
+        if instance.get_gallery(user=self.request.user) is None:
+            permissions.discard('VIEW_GALLERY')
+        return permissions
+
+
+
     def filter_data(self, query_params):
-        query_params.pop('page')
-        query_params.pop('page_size')
+        query_params.pop('page', None)
+        query_params.pop('page_size', None)
         queryset = self.get_queryset()
 
         if not len(query_params):
@@ -141,13 +154,13 @@ class PerformerViewSet(viewsets.ModelViewSet):
             filter_query |= Q(hita_member__user__username__icontains=name)
         if query_params.get('gender'):
             gender = query_params.pop('gender')
-            filter_query |= Q(hita_member__gender__in=gender)
+            filter_query &= Q(hita_member__gender__in=gender)
         if query_params.get('department'):
             department = query_params.pop('department')
-            filter_query |= Q(hita_member__department__in=department)
+            filter_query &= Q(hita_member__department__in=department)
         if query_params.get('skills'):
             skills = query_params.pop('skills')
-            filter_query |= Q(skills_tags__name__in=skills)
+            filter_query &= Q(skills_tags__name__in=skills)
         print('filter_query', flush=True)
         print(filter_query, flush=True)
         print(queryset.filter(filter_query), flush=True)
@@ -320,6 +333,6 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             )
         return Response(
             data={'status': 'SUCCESS',
-                  'data': {'status': hita_member.request_status, 'performer': hita_member.has_performer}},
+                  'data': {'status': hita_member.request_status, 'performer': hita_member.has_performer, 'username': hita_member.user.username}},
             status=status.HTTP_200_OK,
         )
