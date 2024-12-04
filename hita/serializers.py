@@ -212,6 +212,7 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
             'age',
             'study_type',
             'height',
+            'date_of_birth'
         ]
 
     @staticmethod
@@ -281,6 +282,17 @@ class PerformerCreateSerializer(serializers.ModelSerializer):
             'status',
             'gallery_protected',
             'contact_detail_protected',
+            'biography',
+            'open_for',
+        ]
+
+class PerformerUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Performer
+        fields = [
+            'date_of_birth',
+            'height',
+            'status',
             'biography',
             'open_for',
         ]

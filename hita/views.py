@@ -23,7 +23,7 @@ from hita.serializers import (
     PerformerViewAllSerializer,
     PerformerViewOneSerializer,
     PerformerCreateSerializer, ExperienceCreateSerializer, AchievementCreateSerializer, ContactDetailsCreateSerializer,
-    PublicChannelCreateSerializer, GalleryCreateSerializer,
+    PublicChannelCreateSerializer, GalleryCreateSerializer, PerformerUpdateSerializer,
 )
 
 
@@ -72,6 +72,20 @@ class PerformerViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(self.get_queryset(), many=True)
         return Response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        performer_data = request.data
+        performer_data['hita_member'] = hita_member.id
+        serializer = PerformerCreateSerializer(hita_member.performer, data=performer_data, partial=True)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={'status': 'FAILED', 'message': 'Data not updated successfully!'})
+        serializer.save()
+        if skills_tags := performer_data.get('skills_tags'):
+            skills = TheaterRole.objects.filter(name__in=skills_tags)
+            hita_member.performer.skills_tags.set(skills)
+        return Response(status=status.HTTP_200_OK, data={'status': 'SUCCESS', 'message': 'Data updated successfully!'})
+
     def create(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=request.user).last()
         if Performer.objects.filter(hita_member=hita_member).exists():
@@ -95,6 +109,16 @@ class PerformerViewSet(viewsets.ModelViewSet):
                 {'status': 'FAILED', 'data': str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        permissions = self.build_permissions(instance)
+        if 'CAN_EDIT' not in permissions:
+            return Response(data={'status': 'FAILED', 'message': 'Not Allowed'},
+                            status=status.HTTP_401_UNAUTHORIZED, )
+        instance.delete()
+        return Response(data={'status': 'SUCCESS', 'message': 'Performer account has been deleted successfully!'},
+                        status=status.HTTP_200_OK, )
 
     @action(detail=False, methods=['POST'], url_path='gallery')
     def add_gallery(self, request, *args, **kwargs):
@@ -136,8 +160,6 @@ class PerformerViewSet(viewsets.ModelViewSet):
             permissions.discard('VIEW_GALLERY')
         return permissions
 
-
-
     def filter_data(self, query_params):
         query_params.pop('page', None)
         query_params.pop('page_size', None)
@@ -166,6 +188,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
         print(filter_query, flush=True)
         print(queryset.filter(filter_query), flush=True)
         return queryset.filter(filter_query)
+
     @atomic
     def create_performer_with_data(self, data, hita_member):
         user = hita_member.user
@@ -334,6 +357,7 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             )
         return Response(
             data={'status': 'SUCCESS',
-                  'data': {'status': hita_member.request_status, 'performer': hita_member.has_performer, 'username': hita_member.user.username}},
+                  'data': {'status': hita_member.request_status, 'performer': hita_member.has_performer,
+                           'username': hita_member.user.username}},
             status=status.HTTP_200_OK,
         )
