@@ -14,7 +14,7 @@ from hita.models import (
     Department,
     StudyType,
     Location,
-    TheaterRole, ContactType,
+    TheaterRole, ContactType, Experience,
 )
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -23,7 +23,7 @@ from hita.serializers import (
     PerformerViewAllSerializer,
     PerformerViewOneSerializer,
     PerformerCreateSerializer, ExperienceCreateSerializer, AchievementCreateSerializer, ContactDetailsCreateSerializer,
-    PublicChannelCreateSerializer, GalleryCreateSerializer, PerformerUpdateSerializer,
+    PublicChannelCreateSerializer, GalleryCreateSerializer, PerformerUpdateSerializer, ExperienceViewSerializer,
 )
 
 
@@ -246,6 +246,45 @@ class PerformerViewSet(viewsets.ModelViewSet):
             public_channel_serializer = PublicChannelCreateSerializer(data=channel)
             public_channel_serializer.is_valid(raise_exception=True)
             public_channel_serializer.save()
+
+
+class ExperienceViewSet(viewsets.ModelViewSet):
+    queryset = Experience.objects.all()
+    permission_classes = [IsHITAMemberPermission]
+    serializer_class = ExperienceCreateSerializer
+
+    def create(self, request, *args, **kwargs):
+        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        experience_data = request.data
+        experience_data['performer'] = hita_member.performer.id
+        serializer = ExperienceCreateSerializer(data=experience_data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={'status': 'FAILED', 'message': 'Data not create successfully!'})
+        instance = serializer.save()
+        if roles := experience_data.get('roles'):
+            roles = TheaterRole.objects.filter(name__in=roles)
+            instance.role.set(roles)
+        return Response(status=status.HTTP_201_CREATED,
+                        data={'status': 'SUCCESS', 'message': 'Experience created successfully!',
+                              'data': {'id': instance.id}})
+
+    def list(self, request, *args, **kwargs):
+        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        experiences = hita_member.performer.experiences.all().order_by('-year')
+        serializer = ExperienceViewSerializer(experiences, many=True)
+        return Response(status=status.HTTP_200_OK,
+                        data={'status': 'SUCCESS', 'message': 'Experience created successfully!',
+                              'data': serializer.data})
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        instance = self.get_object()
+        if roles := request.data.get('roles'):
+            roles = TheaterRole.objects.filter(name__in=roles)
+            instance.role.set(roles)
+        return Response(status=status.HTTP_200_OK,
+                        data={'status': 'SUCCESS', 'message': 'Experience updated successfully!'})
 
 
 class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
