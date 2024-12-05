@@ -253,13 +253,18 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
     performer = serializers.SerializerMethodField()
     contact_details = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
-    experiences = ExperienceViewSerializer(many=True)
+    experiences = serializers.SerializerMethodField()
     achievements = AchievementViewSerializer(many=True)
     public_channels = PublicChannelViewSerializer(many=True)
 
     @staticmethod
     def get_performer(obj):
         return PerformerDataViewOneSerializer(obj).data
+
+    @staticmethod
+    def get_experiences(obj):
+        experiences = obj.experiences.order_by('-year')
+        return ExperienceViewSerializer(experiences, many=True).data
 
     def get_contact_details(self, obj):
         return ContactDetailsViewSerializer(

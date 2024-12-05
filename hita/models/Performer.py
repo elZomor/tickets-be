@@ -56,10 +56,6 @@ class Performer(models.Model):
         return age
 
     @property
-    def experience(self):
-        return self.experiences.all()
-
-    @property
     def public_channels(self):
         return self.public_channel_list.all()
 
