@@ -60,10 +60,6 @@ class Performer(models.Model):
         return self.public_channel_list.all()
 
     @property
-    def achievement(self):
-        return self.achievements.all()
-
-    @property
     def profile_picture(self):
         profile_picture = self.galleries.filter(is_profile_picture=True).last()
         if profile_picture:

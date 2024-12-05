@@ -14,7 +14,10 @@ from hita.models import (
     Department,
     StudyType,
     Location,
-    TheaterRole, ContactType, Experience,
+    TheaterRole,
+    ContactType,
+    Experience,
+    Achievement,
 )
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -22,8 +25,14 @@ from hita.serializers import (
     HITAMemberCreateSerializer,
     PerformerViewAllSerializer,
     PerformerViewOneSerializer,
-    PerformerCreateSerializer, ExperienceCreateSerializer, AchievementCreateSerializer, ContactDetailsCreateSerializer,
-    PublicChannelCreateSerializer, GalleryCreateSerializer, PerformerUpdateSerializer, ExperienceViewSerializer,
+    PerformerCreateSerializer,
+    ExperienceCreateSerializer,
+    AchievementCreateSerializer,
+    ContactDetailsCreateSerializer,
+    PublicChannelCreateSerializer,
+    GalleryCreateSerializer,
+    ExperienceViewSerializer,
+    AchievementViewSerializer,
 )
 
 
@@ -58,7 +67,11 @@ class PerformerViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         permissions = self.build_permissions(instance)
         return Response(
-            data={'status': 'SUCCESS', 'data': serializer.data, 'permissions': permissions},
+            data={
+                'status': 'SUCCESS',
+                'data': serializer.data,
+                'permissions': permissions,
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -76,15 +89,22 @@ class PerformerViewSet(viewsets.ModelViewSet):
         hita_member = HITAMember.objects.filter(user=self.request.user).last()
         performer_data = request.data
         performer_data['hita_member'] = hita_member.id
-        serializer = PerformerCreateSerializer(hita_member.performer, data=performer_data, partial=True)
+        serializer = PerformerCreateSerializer(
+            hita_member.performer, data=performer_data, partial=True
+        )
         if not serializer.is_valid():
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={'status': 'FAILED', 'message': 'Data not updated successfully!'})
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={'status': 'FAILED', 'message': 'Data not updated successfully!'},
+            )
         serializer.save()
         if skills_tags := performer_data.get('skills_tags'):
             skills = TheaterRole.objects.filter(name__in=skills_tags)
             hita_member.performer.skills_tags.set(skills)
-        return Response(status=status.HTTP_200_OK, data={'status': 'SUCCESS', 'message': 'Data updated successfully!'})
+        return Response(
+            status=status.HTTP_200_OK,
+            data={'status': 'SUCCESS', 'message': 'Data updated successfully!'},
+        )
 
     def create(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=request.user).last()
@@ -114,11 +134,18 @@ class PerformerViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         permissions = self.build_permissions(instance)
         if 'CAN_EDIT' not in permissions:
-            return Response(data={'status': 'FAILED', 'message': 'Not Allowed'},
-                            status=status.HTTP_401_UNAUTHORIZED, )
+            return Response(
+                data={'status': 'FAILED', 'message': 'Not Allowed'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         instance.delete()
-        return Response(data={'status': 'SUCCESS', 'message': 'Performer account has been deleted successfully!'},
-                        status=status.HTTP_200_OK, )
+        return Response(
+            data={
+                'status': 'SUCCESS',
+                'message': 'Performer account has been deleted successfully!',
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['POST'], url_path='gallery')
     def add_gallery(self, request, *args, **kwargs):
@@ -133,12 +160,14 @@ class PerformerViewSet(viewsets.ModelViewSet):
             )
         image_list = []
         for key, value in files.items():
-            image_list.append({
-                'performer': performer.id,
-                'description': data.get(f'{key[:1]}[description]'),
-                'file': data.get(f'{key[:1]}[file]'),
-                'is_profile_picture': data.get(f'{key[:1]}[isProfilePicture]')
-            })
+            image_list.append(
+                {
+                    'performer': performer.id,
+                    'description': data.get(f'{key[:1]}[description]'),
+                    'file': data.get(f'{key[:1]}[file]'),
+                    'is_profile_picture': data.get(f'{key[:1]}[isProfilePicture]'),
+                }
+            )
         serializer = GalleryCreateSerializer(data=image_list, many=True)
         if not serializer.is_valid():
             return Response(
@@ -146,8 +175,10 @@ class PerformerViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         serializer.save()
-        return Response(data={'status': 'SUCCESS', 'data': {'user': hita_member.user.username}},
-                        status=status.HTTP_200_OK)
+        return Response(
+            data={'status': 'SUCCESS', 'data': {'user': hita_member.user.username}},
+            status=status.HTTP_200_OK,
+        )
 
     def build_permissions(self, instance):
         permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
@@ -207,7 +238,9 @@ class PerformerViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         performer = serializer.save()
         if performer_data.get('skills_tags'):
-            skills = TheaterRole.objects.filter(name__in=performer_data.get('skills_tags'))
+            skills = TheaterRole.objects.filter(
+                name__in=performer_data.get('skills_tags')
+            )
             performer.skills_tags.add(*skills)
         return performer
 
@@ -220,7 +253,9 @@ class PerformerViewSet(viewsets.ModelViewSet):
             experience_serializer.is_valid(raise_exception=True)
             saved_experience = experience_serializer.save()
             if experience_roles:
-                experience_db_roles = TheaterRole.objects.filter(name__in=experience_roles)
+                experience_db_roles = TheaterRole.objects.filter(
+                    name__in=experience_roles
+                )
                 saved_experience.role.add(*experience_db_roles)
 
     @staticmethod
@@ -259,23 +294,35 @@ class ExperienceViewSet(viewsets.ModelViewSet):
         experience_data['performer'] = hita_member.performer.id
         serializer = ExperienceCreateSerializer(data=experience_data)
         if not serializer.is_valid():
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={'status': 'FAILED', 'message': 'Data not create successfully!'})
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={'status': 'FAILED', 'message': 'Data not create successfully!'},
+            )
         instance = serializer.save()
         if roles := experience_data.get('roles'):
             roles = TheaterRole.objects.filter(name__in=roles)
             instance.role.set(roles)
-        return Response(status=status.HTTP_201_CREATED,
-                        data={'status': 'SUCCESS', 'message': 'Experience created successfully!',
-                              'data': {'id': instance.id}})
+        return Response(
+            status=status.HTTP_201_CREATED,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Experience created successfully!',
+                'data': {'id': instance.id},
+            },
+        )
 
     def list(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=self.request.user).last()
         experiences = hita_member.performer.experiences.all().order_by('-year')
         serializer = ExperienceViewSerializer(experiences, many=True)
-        return Response(status=status.HTTP_200_OK,
-                        data={'status': 'SUCCESS', 'message': 'Experience created successfully!',
-                              'data': serializer.data})
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Experience created successfully!',
+                'data': serializer.data,
+            },
+        )
 
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
@@ -283,8 +330,56 @@ class ExperienceViewSet(viewsets.ModelViewSet):
         if roles := request.data.get('roles'):
             roles = TheaterRole.objects.filter(name__in=roles)
             instance.role.set(roles)
-        return Response(status=status.HTTP_200_OK,
-                        data={'status': 'SUCCESS', 'message': 'Experience updated successfully!'})
+        return Response(
+            status=status.HTTP_200_OK,
+            data={'status': 'SUCCESS', 'message': 'Experience updated successfully!'},
+        )
+
+
+class AchievementViewSet(viewsets.ModelViewSet):
+    queryset = Achievement.objects.all()
+    permission_classes = [IsHITAMemberPermission]
+    serializer_class = AchievementCreateSerializer
+
+    def create(self, request, *args, **kwargs):
+        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        achievement_data = request.data
+        achievement_data['performer'] = hita_member.performer.id
+        serializer = self.get_serializer(data=achievement_data)
+        if not serializer.is_valid():
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={'status': 'FAILED', 'message': 'Data not create successfully!'},
+            )
+        instance = serializer.save()
+        return Response(
+            status=status.HTTP_201_CREATED,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Achievement created successfully!',
+                'data': {'id': instance.id},
+            },
+        )
+
+    def list(self, request, *args, **kwargs):
+        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        achievements = hita_member.performer.achievements.all().order_by('-year')
+        serializer = AchievementViewSerializer(achievements, many=True)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Achievement created successfully!',
+                'data': serializer.data,
+            },
+        )
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={'status': 'SUCCESS', 'message': 'Achievement updated successfully!'},
+        )
 
 
 class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -395,8 +490,13 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_200_OK,
             )
         return Response(
-            data={'status': 'SUCCESS',
-                  'data': {'status': hita_member.request_status, 'performer': hita_member.has_performer,
-                           'username': hita_member.user.username}},
+            data={
+                'status': 'SUCCESS',
+                'data': {
+                    'status': hita_member.request_status,
+                    'performer': hita_member.has_performer,
+                    'username': hita_member.user.username,
+                },
+            },
             status=status.HTTP_200_OK,
         )

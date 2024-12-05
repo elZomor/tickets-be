@@ -6,7 +6,8 @@ from hita.models import (
     Experience,
     TheaterRole,
     ContactDetail,
-    Gallery, PublicChannel,
+    Gallery,
+    PublicChannel,
 )
 from hita.models.Achievement import Achievement
 
@@ -65,12 +66,8 @@ class GalleryViewSerializer(serializers.ModelSerializer):
 class GalleryCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gallery
-        fields = [
-            'performer',
-            'description',
-            'file',
-            'is_profile_picture'
-        ]
+        fields = ['performer', 'description', 'file', 'is_profile_picture']
+
 
 class TheaterRoleViewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -99,7 +96,7 @@ class ExperienceCreateSerializer(serializers.ModelSerializer):
             'venue',
             'year',
             'duration',
-            'show_type'
+            'show_type',
         ]
 
 
@@ -112,18 +109,14 @@ class AchievementCreateSerializer(serializers.ModelSerializer):
             'field',
             'festival_name',
             'show_name',
-            'year'
+            'year',
         ]
 
 
 class PublicChannelCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PublicChannel
-        fields = [
-            'performer',
-            'channel_type',
-            'channel_info'
-        ]
+        fields = ['performer', 'channel_type', 'channel_info']
 
 
 class PublicChannelViewSerializer(serializers.ModelSerializer):
@@ -135,11 +128,7 @@ class PublicChannelViewSerializer(serializers.ModelSerializer):
 class ContactDetailsCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactDetail
-        fields = [
-            'performer',
-            'contact_type',
-            'contact_info'
-        ]
+        fields = ['performer', 'contact_type', 'contact_info']
 
 
 class AchievementViewSerializer(serializers.ModelSerializer):
@@ -169,7 +158,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
             'profile_picture',
             'status',
             'gender',
-            'open_for'
+            'open_for',
         ]
 
     @staticmethod
@@ -212,7 +201,7 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
             'age',
             'study_type',
             'height',
-            'date_of_birth'
+            'date_of_birth',
         ]
 
     @staticmethod
@@ -290,6 +279,7 @@ class PerformerCreateSerializer(serializers.ModelSerializer):
             'biography',
             'open_for',
         ]
+
 
 class PerformerUpdateSerializer(serializers.ModelSerializer):
     class Meta:

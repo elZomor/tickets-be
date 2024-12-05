@@ -9,7 +9,8 @@ from hita.models import (
     TheaterRole,
     ContactDetail,
     Gallery,
-    Status, PublicChannel,
+    Status,
+    PublicChannel,
 )
 from hita.models.Achievement import Achievement
 
@@ -156,4 +157,10 @@ class ContactDetailsAdmin(admin.ModelAdmin):
 
 @admin.register(Performer)
 class PerformerAdmin(admin.ModelAdmin):
-    inlines = [GalleryInline, ExperienceInline, ContactDetailsInline, AchievementInline, PublicChannelInline]
+    inlines = [
+        GalleryInline,
+        ExperienceInline,
+        ContactDetailsInline,
+        AchievementInline,
+        PublicChannelInline,
+    ]

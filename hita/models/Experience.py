@@ -48,4 +48,6 @@ class Experience(models.Model):
     role = models.ManyToManyField(TheaterRole)
     year = models.IntegerField()
     duration = models.IntegerField(null=True, blank=True)
-    show_type = models.CharField(max_length=20, )
+    show_type = models.CharField(
+        max_length=20,
+    )
