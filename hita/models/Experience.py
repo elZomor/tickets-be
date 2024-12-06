@@ -51,3 +51,6 @@ class Experience(models.Model):
     show_type = models.CharField(
         max_length=20,
     )
+
+    class Meta:
+        ordering = ('-year',)

@@ -13,3 +13,6 @@ class PublicChannel(models.Model):
         default=ContactType.YOUTUBE.value,
     )
     channel_info = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ('channel_type',)

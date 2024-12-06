@@ -10,3 +10,6 @@ class Achievement(models.Model):
     show_name = models.CharField(max_length=100)
     festival_name = models.CharField(max_length=100)
     year = models.IntegerField()
+
+    class Meta:
+        ordering = ['-year']

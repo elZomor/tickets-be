@@ -1,8 +1,21 @@
 import os
 import uuid
 from datetime import datetime
+from functools import wraps
 
 from django.contrib.auth.models import User
+
+def get_hita_member_from_request(func):
+    @wraps(func)
+    def wrapper(viewset, request, *args, **kwargs):
+        data = request.data
+        from hita.models import HITAMember
+        hita_member = HITAMember.objects.filter(user=request.user).last()
+        data['performer'] = hita_member.performer.id
+        request._full_data = data
+        response = func(viewset, request, hita_member.performer, *args, **kwargs)
+        return response
+    return wrapper
 
 
 def upload_to(instance, filename):

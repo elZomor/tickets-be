@@ -9,6 +9,10 @@ class ContactType(models.TextChoices):
     TIK_TOK = 'TIK_TOK', 'TikTok'
     YOUTUBE = 'YOUTUBE', 'YouTube'
     TWITTER = 'TWITTER', 'Twitter'
+    SHOWREEL = 'SHOWREEL', 'ShowReel'
+    VIMEO = 'VIMEO', 'Vimeo'
+    BEHANCE = 'BEHANCE', 'Behance'
+    GOOGLE_DRIVE = 'GOOGLE_DRIVE', 'Google Drive'
     OTHER = 'OTHER', 'Other'
 
 
@@ -22,3 +26,6 @@ class ContactDetail(models.Model):
         default=ContactType.MOBILE.value,
     )
     contact_info = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ('contact_type',)

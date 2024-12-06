@@ -17,7 +17,7 @@ from hita.models import (
     TheaterRole,
     ContactType,
     Experience,
-    Achievement,
+    Achievement, PublicChannel,
 )
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -32,8 +32,9 @@ from hita.serializers import (
     PublicChannelCreateSerializer,
     GalleryCreateSerializer,
     ExperienceViewSerializer,
-    AchievementViewSerializer,
+    AchievementViewSerializer, PublicChannelViewSerializer,
 )
+from utils.code_utils import get_hita_member_from_request
 
 
 class PerformerViewSet(viewsets.ModelViewSet):
@@ -380,6 +381,44 @@ class AchievementViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
             data={'status': 'SUCCESS', 'message': 'Achievement updated successfully!'},
         )
+
+
+class PublicChannelsViewSet(viewsets.ModelViewSet):
+    queryset = PublicChannel.objects.all()
+    permission_classes = [IsHITAMemberPermission]
+    serializer_class = PublicChannelCreateSerializer
+
+    @get_hita_member_from_request
+    def create(self, request, *args, **kwargs):
+        super().create(request, *args, **kwargs)
+        return Response(
+            status=status.HTTP_201_CREATED,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Channel created successfully!',
+            },
+        )
+
+    @get_hita_member_from_request
+    def list(self, request, performer, *args, **kwargs):
+        channels = performer.public_channel_list.all()
+        serializer = PublicChannelViewSerializer(channels, many=True)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Channel created successfully!',
+                'data': serializer.data,
+            },
+        )
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={'status': 'SUCCESS', 'message': 'Channel updated successfully!'},
+        )
+
 
 
 class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
