@@ -70,6 +70,7 @@ class Performer(models.Model):
         if (
             not self.contact_detail_protected
             or self.white_list_members.filter(id=user.id).exists()
+            or self.hita_member.user == user
         ):
             return self.contact_detail_list.all()
         return None

@@ -17,7 +17,7 @@ from hita.models import (
     TheaterRole,
     ContactType,
     Experience,
-    Achievement, PublicChannel,
+    Achievement, PublicChannel, ContactDetail,
 )
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -32,7 +32,7 @@ from hita.serializers import (
     PublicChannelCreateSerializer,
     GalleryCreateSerializer,
     ExperienceViewSerializer,
-    AchievementViewSerializer, PublicChannelViewSerializer,
+    AchievementViewSerializer, PublicChannelViewSerializer, ContactDetailsViewSerializer,
 )
 from utils.code_utils import get_hita_member_from_request
 
@@ -216,10 +216,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
         if query_params.get('skills'):
             skills = query_params.pop('skills')
             filter_query &= Q(skills_tags__name__in=skills)
-        print('filter_query', flush=True)
-        print(filter_query, flush=True)
-        print(queryset.filter(filter_query), flush=True)
-        return queryset.filter(filter_query)
+        return queryset.filter(filter_query).distinct()
 
     @atomic
     def create_performer_with_data(self, data, hita_member):
@@ -417,6 +414,42 @@ class PublicChannelsViewSet(viewsets.ModelViewSet):
         return Response(
             status=status.HTTP_200_OK,
             data={'status': 'SUCCESS', 'message': 'Channel updated successfully!'},
+        )
+
+class ContactDetailsViewSet(viewsets.ModelViewSet):
+    queryset = ContactDetail.objects.all()
+    permission_classes = [IsHITAMemberPermission]
+    serializer_class = ContactDetailsCreateSerializer
+
+    @get_hita_member_from_request
+    def create(self, request, *args, **kwargs):
+        super().create(request, *args, **kwargs)
+        return Response(
+            status=status.HTTP_201_CREATED,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Contact Detail created successfully!',
+            },
+        )
+
+    @get_hita_member_from_request
+    def list(self, request, performer, *args, **kwargs):
+        contact_details = performer.get_contact_details(request.user).all()
+        serializer = ContactDetailsViewSerializer(contact_details, many=True)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Contact Detail created successfully!',
+                'data': serializer.data,
+            },
+        )
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={'status': 'SUCCESS', 'message': 'Contact Detail updated successfully!'},
         )
 
 

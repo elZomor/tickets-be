@@ -257,12 +257,12 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
 
     def get_contact_details(self, obj):
         return ContactDetailsViewSerializer(
-            obj.get_contact_details(self.context.get('hita_member')), many=True
+            obj.get_contact_details(self.context.get('hita_member').user), many=True
         ).data
 
     def get_gallery(self, obj):
         return GalleryViewSerializer(
-            obj.get_gallery(self.context.get('hita_member')), many=True
+            obj.get_gallery(self.context.get('hita_member').user), many=True
         ).data
 
 
@@ -322,10 +322,10 @@ class PerformerViewSerializer(serializers.ModelSerializer):
 
     def get_contact_details(self, obj):
         return ContactDetailsViewSerializer(
-            obj.get_contact_details(self.context.get('hita_member')), many=True
+            obj.get_contact_details(self.context.get('hita_member').user), many=True
         ).data
 
     def get_gallery(self, obj):
         return GalleryViewSerializer(
-            obj.get_gallery(self.context.get('hita_member')), many=True
+            obj.get_gallery(self.context.get('hita_member').user), many=True
         ).data
