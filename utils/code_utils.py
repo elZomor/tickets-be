@@ -4,6 +4,7 @@ from datetime import datetime
 from functools import wraps
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 
@@ -103,3 +104,9 @@ def get_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join(instance.performer.hita_member.user.username, filename)
+
+
+def validate_file_size(value):
+    max_size_mb = 50
+    if value.size > max_size_mb * 1024 * 1024:
+        raise ValidationError(f"File size must be less than {max_size_mb} MB")
