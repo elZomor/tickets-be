@@ -1,4 +1,7 @@
+import os
+
 from django.db.models import Q
+from django.http import StreamingHttpResponse
 from rest_framework.exceptions import ValidationError
 from django.db.transaction import atomic
 from rest_framework import status
@@ -6,7 +9,9 @@ from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+import boto3
 
+from config.storages import get_s3_object
 from hita.Exceptions import ResourceNotFound
 from hita.models import (
     Performer,
@@ -19,7 +24,9 @@ from hita.models import (
     Experience,
     Achievement,
     PublicChannel,
-    ContactDetail, Gallery, ShowReel,
+    ContactDetail,
+    Gallery,
+    ShowReel,
 )
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -36,7 +43,10 @@ from hita.serializers import (
     ExperienceViewSerializer,
     AchievementViewSerializer,
     PublicChannelViewSerializer,
-    ContactDetailsViewSerializer, GalleryViewSerializer, ShowReelCreateSerializer, ShowReelViewSerializer,
+    ContactDetailsViewSerializer,
+    GalleryViewSerializer,
+    ShowReelCreateSerializer,
+    ShowReelViewSerializer,
 )
 from utils.code_utils import get_hita_member_from_request, authorize_performer_data
 
@@ -342,6 +352,7 @@ class ExperienceViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
+
 class AchievementViewSet(viewsets.ModelViewSet):
     queryset = Achievement.objects.all()
     permission_classes = [IsHITAMemberPermission]
@@ -392,6 +403,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
+
 class PublicChannelsViewSet(viewsets.ModelViewSet):
     queryset = PublicChannel.objects.all()
     permission_classes = [IsHITAMemberPermission]
@@ -432,6 +444,7 @@ class PublicChannelsViewSet(viewsets.ModelViewSet):
     @authorize_performer_data
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
 
 class ContactDetailsViewSet(viewsets.ModelViewSet):
     queryset = ContactDetail.objects.all()
@@ -477,6 +490,7 @@ class ContactDetailsViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
+
 class GalleryViewSet(viewsets.ModelViewSet):
     queryset = Gallery.objects.all()
     permission_classes = [IsHITAMemberPermission]
@@ -488,7 +502,9 @@ class GalleryViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         instance: Gallery = serializer.save()
         if instance.is_profile_picture:
-            instance.performer.get_gallery(request.user).exclude(id=instance.id).update(is_profile_picture=False)
+            instance.performer.get_gallery(request.user).exclude(id=instance.id).update(
+                is_profile_picture=False
+            )
         return Response(
             status=status.HTTP_201_CREATED,
             data={
@@ -515,7 +531,9 @@ class GalleryViewSet(viewsets.ModelViewSet):
         super().update(request, *args, **kwargs)
         instance: Gallery = self.get_object()
         if instance.is_profile_picture:
-            instance.performer.get_gallery(request.user).exclude(id=instance.id).update(is_profile_picture=False)
+            instance.performer.get_gallery(request.user).exclude(id=instance.id).update(
+                is_profile_picture=False
+            )
         return Response(
             status=status.HTTP_200_OK,
             data={
@@ -527,6 +545,7 @@ class GalleryViewSet(viewsets.ModelViewSet):
     @authorize_performer_data
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
 
 class ShowReelViewSet(viewsets.ModelViewSet):
     queryset = ShowReel.objects.all()
@@ -572,7 +591,36 @@ class ShowReelViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
+    @action(detail=True, methods=['get'], url_path='stream')
+    def stream_video(self, request, pk=None):
+        show_reel = self.get_show_reel()
+        file_name = show_reel.file.name
+        s3_object = get_s3_object(file_name)
 
+        def file_iterator():
+            chunk_size = 8192
+            file_obj = s3_object['Body']
+            while chunk := file_obj.read(chunk_size):
+                yield chunk
+
+        response = StreamingHttpResponse(file_iterator(), content_type='video/mp4')
+        response['Content-Disposition'] = (
+            f'inline; filename="{os.path.basename(file_name)}"'
+        )
+
+        return response
+
+    def get_show_reel(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        filter_kwargs = {'user': self.request.user}
+        obj = queryset.filter(**filter_kwargs).first()
+        if not obj:
+            raise ResourceNotFound(
+                f'HITAMember profile with username: {self.kwargs[lookup_url_kwarg]} does not exist'
+            )
+        self.check_object_permissions(self.request, obj)
+        return obj
 class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         queryset = [label for label, _ in Department.choices]

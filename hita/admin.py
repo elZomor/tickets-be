@@ -10,7 +10,8 @@ from hita.models import (
     ContactDetail,
     Gallery,
     Status,
-    PublicChannel, ShowReel,
+    PublicChannel,
+    ShowReel,
 )
 from hita.models.Achievement import Achievement
 
@@ -139,9 +140,11 @@ class GalleryInline(admin.StackedInline):
     model = Gallery
     extra = 0
 
+
 class ShowReelInline(admin.StackedInline):
     model = ShowReel
     extra = 0
+
 
 class AchievementInline(admin.StackedInline):
     model = Achievement

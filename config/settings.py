@@ -1,4 +1,5 @@
 import os
+from constants import *
 from datetime import timedelta
 
 import environ
@@ -41,7 +42,7 @@ THIRD_PARTY_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'storages'
+    'storages',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -179,13 +180,16 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
-AWS_ACCESS_KEY_ID = env.str('AWS_ACCESS_KEY_ID', default='')
-AWS_SECRET_ACCESS_KEY = env.str('AWS_SECRET_ACCESS_KEY', default='')
-AWS_STORAGE_BUCKET_NAME = env.str('AWS_STORAGE_BUCKET_NAME', default='')
-AWS_S3_SIGNATURE_NAME = env.str('AWS_S3_SIGNATURE_NAME', default='')
-AWS_S3_REGION_NAME = env.str('AWS_S3_REGION_NAME', default='')
+AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
+AWS_STORAGE_BUCKET_NAME = AWS_STORAGE_BUCKET_NAME
+AWS_S3_SIGNATURE_NAME = AWS_S3_SIGNATURE_NAME
+AWS_S3_REGION_NAME = AWS_S3_REGION_NAME
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 AWS_S3_VERIFY = True
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage' if environment != 'local' else local_storage
+DEFAULT_FILE_STORAGE = (
+    'storages.backends.s3boto3.S3Boto3Storage'
+    if environment != 'local'
+    else local_storage
+)

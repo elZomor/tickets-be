@@ -11,7 +11,9 @@ from hita.views import (
     ExperienceViewSet,
     AchievementViewSet,
     PublicChannelsViewSet,
-    ContactDetailsViewSet, GalleryViewSet, ShowReelViewSet,
+    ContactDetailsViewSet,
+    GalleryViewSet,
+    ShowReelViewSet,
 )
 
 router = DefaultRouter(trailing_slash=False)

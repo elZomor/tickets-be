@@ -81,7 +81,6 @@ class ShowReelCreateSerializer(serializers.ModelSerializer):
         fields = ['performer', 'file']
 
 
-
 class TheaterRoleViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = TheaterRole
@@ -173,7 +172,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
             'status',
             'gender',
             'open_for',
-            'age'
+            'age',
         ]
 
     @staticmethod
