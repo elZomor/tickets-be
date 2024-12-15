@@ -1,5 +1,5 @@
 from django.core.files.storage import FileSystemStorage
-from constants import (
+from .constants import (
     AWS_S3_REGION_NAME,
     AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY,
