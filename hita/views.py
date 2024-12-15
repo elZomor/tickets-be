@@ -17,7 +17,9 @@ from hita.models import (
     TheaterRole,
     ContactType,
     Experience,
-    Achievement, PublicChannel, ContactDetail,
+    Achievement,
+    PublicChannel,
+    ContactDetail, Gallery,
 )
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -32,9 +34,11 @@ from hita.serializers import (
     PublicChannelCreateSerializer,
     GalleryCreateSerializer,
     ExperienceViewSerializer,
-    AchievementViewSerializer, PublicChannelViewSerializer, ContactDetailsViewSerializer,
+    AchievementViewSerializer,
+    PublicChannelViewSerializer,
+    ContactDetailsViewSerializer, GalleryViewSerializer,
 )
-from utils.code_utils import get_hita_member_from_request
+from utils.code_utils import get_hita_member_from_request, authorize_performer_data
 
 
 class PerformerViewSet(viewsets.ModelViewSet):
@@ -322,6 +326,7 @@ class ExperienceViewSet(viewsets.ModelViewSet):
             },
         )
 
+    @authorize_performer_data
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
         instance = self.get_object()
@@ -332,6 +337,10 @@ class ExperienceViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
             data={'status': 'SUCCESS', 'message': 'Experience updated successfully!'},
         )
+
+    @authorize_performer_data
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class AchievementViewSet(viewsets.ModelViewSet):
@@ -372,6 +381,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
             },
         )
 
+    @authorize_performer_data
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
         return Response(
@@ -379,6 +389,9 @@ class AchievementViewSet(viewsets.ModelViewSet):
             data={'status': 'SUCCESS', 'message': 'Achievement updated successfully!'},
         )
 
+    @authorize_performer_data
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 class PublicChannelsViewSet(viewsets.ModelViewSet):
     queryset = PublicChannel.objects.all()
@@ -409,12 +422,18 @@ class PublicChannelsViewSet(viewsets.ModelViewSet):
             },
         )
 
+    @authorize_performer_data
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
         return Response(
             status=status.HTTP_200_OK,
             data={'status': 'SUCCESS', 'message': 'Channel updated successfully!'},
         )
+
+    @authorize_performer_data
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
 
 class ContactDetailsViewSet(viewsets.ModelViewSet):
     queryset = ContactDetail.objects.all()
@@ -445,13 +464,71 @@ class ContactDetailsViewSet(viewsets.ModelViewSet):
             },
         )
 
+    @authorize_performer_data
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
         return Response(
             status=status.HTTP_200_OK,
-            data={'status': 'SUCCESS', 'message': 'Contact Detail updated successfully!'},
+            data={
+                'status': 'SUCCESS',
+                'message': 'Contact Detail updated successfully!',
+            },
         )
 
+    @authorize_performer_data
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+class GalleryViewSet(viewsets.ModelViewSet):
+    queryset = Gallery.objects.all()
+    permission_classes = [IsHITAMemberPermission]
+    serializer_class = GalleryCreateSerializer
+
+    @get_hita_member_from_request
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance: Gallery = serializer.save()
+        if instance.is_profile_picture:
+            instance.performer.get_gallery(request.user).exclude(id=instance.id).update(is_profile_picture=False)
+        return Response(
+            status=status.HTTP_201_CREATED,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Image uploaded successfully!',
+            },
+        )
+
+    @get_hita_member_from_request
+    def list(self, request, performer, *args, **kwargs):
+        gallery = performer.get_gallery(request.user).all()
+        serializer = GalleryViewSerializer(gallery, many=True)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Gallery retrieved successfully!',
+                'data': serializer.data,
+            },
+        )
+
+    @authorize_performer_data
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        instance: Gallery = self.get_object()
+        if instance.is_profile_picture:
+            instance.performer.get_gallery(request.user).exclude(id=instance.id).update(is_profile_picture=False)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'status': 'SUCCESS',
+                'message': 'Gallery updated successfully!',
+            },
+        )
+
+    @authorize_performer_data
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):

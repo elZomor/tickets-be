@@ -9,7 +9,9 @@ from hita.views import (
     SkillsViewSet,
     ContactTypeViewSet,
     ExperienceViewSet,
-    AchievementViewSet, PublicChannelsViewSet, ContactDetailsViewSet,
+    AchievementViewSet,
+    PublicChannelsViewSet,
+    ContactDetailsViewSet, GalleryViewSet,
 )
 
 router = DefaultRouter(trailing_slash=False)
@@ -19,6 +21,7 @@ router.register(r"departments", DepartmentViewSet, basename="department")
 router.register(r"contact-types", ContactTypeViewSet, basename="contact_types")
 router.register(r"skills", SkillsViewSet, basename="skills")
 router.register(r"experiences", ExperienceViewSet, basename="experiences")
+router.register(r"gallery", GalleryViewSet, basename="gallery")
 router.register(r"achievements", AchievementViewSet, basename="achievements")
 router.register(r"public-channels", PublicChannelsViewSet, basename="public_channels")
 router.register(r"contact-details", ContactDetailsViewSet, basename="contact_details")

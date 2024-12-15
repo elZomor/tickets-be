@@ -4,17 +4,38 @@ from datetime import datetime
 from functools import wraps
 
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import PermissionDenied
+
 
 def get_hita_member_from_request(func):
     @wraps(func)
     def wrapper(viewset, request, *args, **kwargs):
         data = request.data
         from hita.models import HITAMember
+
         hita_member = HITAMember.objects.filter(user=request.user).last()
         data['performer'] = hita_member.performer.id
         request._full_data = data
         response = func(viewset, request, hita_member.performer, *args, **kwargs)
         return response
+
+    return wrapper
+
+
+def authorize_performer_data(func):
+    @wraps(func)
+    def wrapper(viewset, request, *args, **kwargs):
+        from hita.models import HITAMember
+
+        hita_member = HITAMember.objects.filter(user=request.user).last()
+        queryset = viewset.get_queryset()
+        instance = get_object_or_404(queryset, pk=kwargs.get('pk'))
+        if instance.performer.id != hita_member.performer.id:
+            raise PermissionDenied("You are not authorized to access this resource.")
+        response = func(viewset, request, hita_member.performer, *args, **kwargs)
+        return response
+
     return wrapper
 
 

@@ -144,6 +144,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
     gender = serializers.SerializerMethodField()
     nick_name = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
     skills_tags = TheaterRoleViewSerializer(many=True)
 
     class Meta:
@@ -159,6 +160,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
             'status',
             'gender',
             'open_for',
+            'age'
         ]
 
     @staticmethod
@@ -184,6 +186,10 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_gender(obj):
         return obj.hita_member.gender
+
+    @staticmethod
+    def get_age(obj):
+        return obj.age
 
 
 class PerformerDataViewOneSerializer(PerformerViewAllSerializer):

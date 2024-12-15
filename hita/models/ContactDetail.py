@@ -14,7 +14,7 @@ class ContactType(models.TextChoices):
     BEHANCE = 'BEHANCE', 'Behance'
     GOOGLE_DRIVE = 'GOOGLE_DRIVE', 'Google Drive'
     TELEGRAM = 'TELEGRAM', 'Telegram'
-    SOUND_CLOUD = 'SOUND_CLOUD' , 'SoundCloud'
+    SOUND_CLOUD = 'SOUND_CLOUD', 'SoundCloud'
     OTHER = 'OTHER', 'Other'
 
 

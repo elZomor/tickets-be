@@ -79,6 +79,7 @@ class Performer(models.Model):
         if (
             not self.gallery_protected
             or self.white_list_members.filter(id=user.id).exists()
+            or self.hita_member.user == user
         ):
             return self.galleries.all()
         return None
