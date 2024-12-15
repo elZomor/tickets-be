@@ -19,7 +19,7 @@ from hita.models import (
     Experience,
     Achievement,
     PublicChannel,
-    ContactDetail, Gallery,
+    ContactDetail, Gallery, ShowReel,
 )
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -36,7 +36,7 @@ from hita.serializers import (
     ExperienceViewSerializer,
     AchievementViewSerializer,
     PublicChannelViewSerializer,
-    ContactDetailsViewSerializer, GalleryViewSerializer,
+    ContactDetailsViewSerializer, GalleryViewSerializer, ShowReelCreateSerializer, ShowReelViewSerializer,
 )
 from utils.code_utils import get_hita_member_from_request, authorize_performer_data
 
@@ -342,7 +342,6 @@ class ExperienceViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-
 class AchievementViewSet(viewsets.ModelViewSet):
     queryset = Achievement.objects.all()
     permission_classes = [IsHITAMemberPermission]
@@ -434,7 +433,6 @@ class PublicChannelsViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-
 class ContactDetailsViewSet(viewsets.ModelViewSet):
     queryset = ContactDetail.objects.all()
     permission_classes = [IsHITAMemberPermission]
@@ -523,6 +521,50 @@ class GalleryViewSet(viewsets.ModelViewSet):
             data={
                 'status': 'SUCCESS',
                 'message': 'Gallery updated successfully!',
+            },
+        )
+
+    @authorize_performer_data
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+class ShowReelViewSet(viewsets.ModelViewSet):
+    queryset = ShowReel.objects.all()
+    permission_classes = [IsHITAMemberPermission]
+    serializer_class = ShowReelCreateSerializer
+
+    @get_hita_member_from_request
+    def create(self, request, *args, **kwargs):
+        super().create(request, *args, **kwargs)
+        return Response(
+            status=status.HTTP_201_CREATED,
+            data={
+                'status': 'SUCCESS',
+                'message': 'ShowReel uploaded successfully!',
+            },
+        )
+
+    @get_hita_member_from_request
+    def list(self, request, performer, *args, **kwargs):
+        show_reel = performer.show_reel.all()
+        serializer = ShowReelViewSerializer(show_reel, many=True)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'status': 'SUCCESS',
+                'message': 'ShowReel retrieved successfully!',
+                'data': serializer.data,
+            },
+        )
+
+    @authorize_performer_data
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'status': 'SUCCESS',
+                'message': 'ShowReel updated successfully!',
             },
         )
 

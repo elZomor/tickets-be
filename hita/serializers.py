@@ -69,6 +69,19 @@ class GalleryCreateSerializer(serializers.ModelSerializer):
         fields = ['performer', 'description', 'file', 'is_profile_picture']
 
 
+class ShowReelViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallery
+        exclude = ['performer']
+
+
+class ShowReelCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallery
+        fields = ['performer', 'file']
+
+
+
 class TheaterRoleViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = TheaterRole

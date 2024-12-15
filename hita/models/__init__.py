@@ -6,3 +6,4 @@ from .HITAMember import *  # noqa:F401, F403
 from .NotificationCenter import *  # noqa:F401, F403
 from .Performer import *  # noqa:F401, F403
 from .PublicChannel import *  # noqa:F401, F403
+from .ShowReel import *  # noqa:F401, F403
