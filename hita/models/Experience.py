@@ -43,7 +43,10 @@ class Experience(models.Model):
     )
 
     show_name = models.CharField(max_length=100)
-    director = models.CharField(max_length=50)
+    role_name = models.CharField(max_length=20, null=True, blank=True)
+    role_brief = models.CharField(max_length=50, null=True, blank=True)
+    producer = models.CharField(max_length=30, null=True, blank=True)
+    director = models.CharField(max_length=20)
     venue = models.CharField(max_length=50, null=True, blank=True)
     role = models.ManyToManyField(TheaterRole)
     year = models.IntegerField()

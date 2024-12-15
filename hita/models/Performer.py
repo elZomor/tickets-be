@@ -20,6 +20,7 @@ class Performer(models.Model):
     )
     date_of_birth = models.DateField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
+    weight = models.FloatField(null=True, blank=True)
     skills_tags = models.ManyToManyField('hita.TheaterRole', blank=True)
     status = models.CharField(
         max_length=20,

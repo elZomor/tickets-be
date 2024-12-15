@@ -3,10 +3,14 @@ from datetime import timedelta
 
 import environ
 
+from config.storages import local_storage
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 env = environ.Env()
+
+environment = env.str('ENVIRONMENT', default='local')
 
 SECRET_KEY = env.str('SECRET_KEY')
 
@@ -174,3 +178,13 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+AWS_ACCESS_KEY_ID = env.str('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = env.str('AWS_SECRET_ACCESS_KEY', default='')
+AWS_STORAGE_BUCKET_NAME = env.str('AWS_STORAGE_BUCKET_NAME', default='')
+AWS_S3_SIGNATURE_NAME = env.str('AWS_S3_SIGNATURE_NAME', default='')
+AWS_S3_REGION_NAME = env.str('AWS_S3_REGION_NAME', default='')
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+AWS_S3_VERIFY = True
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage' if environment != 'local' else local_storage
