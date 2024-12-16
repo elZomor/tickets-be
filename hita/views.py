@@ -592,7 +592,7 @@ class ShowReelViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'], url_path='stream')
-    def stream_video(self, request, pk=None):
+    def stream_video(self, request, *args, **kwargs):
         show_reel = self.get_show_reel()
         file_name = show_reel.file.name
         s3_object = get_s3_object(file_name)
@@ -613,7 +613,7 @@ class ShowReelViewSet(viewsets.ModelViewSet):
     def get_show_reel(self):
         queryset = self.filter_queryset(self.get_queryset())
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        filter_kwargs = {'user': self.request.user}
+        filter_kwargs = {'performer__hita_member__user__username': self.kwargs[lookup_url_kwarg]}
         obj = queryset.filter(**filter_kwargs).first()
         if not obj:
             raise ResourceNotFound(
