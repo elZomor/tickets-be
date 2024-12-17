@@ -576,20 +576,26 @@ class ShowReelViewSet(viewsets.ModelViewSet):
             },
         )
 
-    @authorize_performer_data
     def update(self, request, *args, **kwargs):
-        super().update(request, *args, **kwargs)
+        return Response(
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            data={
+                'status': 'FAILED',
+                'message': 'Not Allowed!',
+            },
+        )
+
+    @action(detail=False, methods=['delete'], url_path='delete')
+    @get_hita_member_from_request
+    def delete_show_reel(self, request, performer, *args, **kwargs):
+        performer.show_reel.delete()
         return Response(
             status=status.HTTP_200_OK,
             data={
                 'status': 'SUCCESS',
-                'message': 'ShowReel updated successfully!',
+                'message': 'ShowReel deleted successfully!',
             },
         )
-
-    @authorize_performer_data
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'], url_path='stream')
     def stream_video(self, request, *args, **kwargs):

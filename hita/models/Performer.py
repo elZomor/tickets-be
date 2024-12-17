@@ -89,5 +89,14 @@ class Performer(models.Model):
     def full_name(self):
         return self.hita_member.first_name + ' ' + self.hita_member.last_name
 
+    @property
+    def has_show_reel(self):
+        try:
+            if self.show_reel:
+                return True
+        except Exception:
+            return False
+
+
     def __str__(self):
         return self.full_name

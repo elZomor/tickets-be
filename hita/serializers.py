@@ -255,6 +255,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
             'contact_details',
             'gallery',
             'public_channels',
+            'has_show_reel'
         ]
 
     performer = serializers.SerializerMethodField()
@@ -263,6 +264,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
     experiences = serializers.SerializerMethodField()
     achievements = AchievementViewSerializer(many=True)
     public_channels = PublicChannelViewSerializer(many=True)
+    has_show_reel = serializers.SerializerMethodField()
 
     @staticmethod
     def get_performer(obj):
@@ -282,6 +284,10 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
         return GalleryViewSerializer(
             obj.get_gallery(self.context.get('hita_member').user), many=True
         ).data
+
+    @staticmethod
+    def get_has_show_reel(obj):
+        return obj.has_show_reel
 
 
 class PerformerCreateSerializer(serializers.ModelSerializer):

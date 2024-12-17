@@ -107,6 +107,6 @@ def get_upload_path(instance, filename):
 
 
 def validate_file_size(value):
-    max_size_mb = 50
+    max_size_mb = 80
     if value.size > max_size_mb * 1024 * 1024:
         raise ValidationError(f"File size must be less than {max_size_mb} MB")
