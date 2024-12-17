@@ -85,7 +85,7 @@ class PolicyViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @action(detail=False, methods=['GET'], url_path='privacy_policy')
+    @action(detail=False, methods=['GET'], url_path='privacy-policy')
     def privacy_policy(self, request, *args, **kwargs):
         policy = Policy.objects.filter(type='PRIVACY', is_active=True).last()
         return Response(data={'content': policy.content, 'last_updated': policy.updated_at}, status=status.HTTP_200_OK)
