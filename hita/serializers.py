@@ -109,6 +109,9 @@ class ExperienceCreateSerializer(serializers.ModelSerializer):
             'year',
             'duration',
             'show_type',
+            'producer',
+            'role_name',
+            'role_brief',
         ]
 
 
@@ -209,7 +212,6 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
     graduation_year = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
     study_type = serializers.SerializerMethodField()
-    height = serializers.SerializerMethodField()
 
     class Meta:
         model = Performer
@@ -219,6 +221,7 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
             'age',
             'study_type',
             'height',
+            'weight',
             'date_of_birth',
         ]
 
@@ -238,9 +241,6 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
     def get_study_type(obj):
         return obj.hita_member.study_type
 
-    @staticmethod
-    def get_height(obj):
-        return obj.height
 
 
 class PerformerViewOneSerializer(serializers.ModelSerializer):
@@ -297,6 +297,7 @@ class PerformerCreateSerializer(serializers.ModelSerializer):
             'hita_member',
             'date_of_birth',
             'height',
+            'weight',
             'status',
             'gallery_protected',
             'contact_detail_protected',
