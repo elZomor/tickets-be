@@ -28,6 +28,8 @@ class GoogleJWTAuthentication:
     def get_extra_actions(self):
         # If you don't need extra actions, just return an empty list
         return []
+
+
 class FacebookJWTAuthentication:
 
     @staticmethod

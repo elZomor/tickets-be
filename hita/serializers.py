@@ -160,6 +160,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     gender = serializers.SerializerMethodField()
     nick_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
+    total_experiences = serializers.SerializerMethodField()
     skills_tags = TheaterRoleViewSerializer(many=True)
 
     class Meta:
@@ -176,6 +177,9 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
             'gender',
             'open_for',
             'age',
+            'height',
+            'weight',
+            'total_experiences',
         ]
 
     @staticmethod
@@ -205,6 +209,10 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_age(obj):
         return obj.age
+
+    @staticmethod
+    def get_total_experiences(obj):
+        return obj.experiences.count()
 
 
 class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
@@ -242,7 +250,6 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
         return obj.hita_member.study_type
 
 
-
 class PerformerViewOneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Performer
@@ -255,7 +262,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
             'contact_details',
             'gallery',
             'public_channels',
-            'has_show_reel'
+            'has_show_reel',
         ]
 
     performer = serializers.SerializerMethodField()

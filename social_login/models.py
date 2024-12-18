@@ -1,7 +1,10 @@
 from django.db import models
 
+
 class Policy(models.Model):
-    title = models.CharField(max_length=255, default="Privacy Policy")  # Stores the title of the policy
+    title = models.CharField(
+        max_length=255, default="Privacy Policy"
+    )  # Stores the title of the policy
     content = models.TextField()  # Stores the actual content of the privacy policy
     type = models.CharField(max_length=20)
     version = models.IntegerField()
@@ -14,5 +17,7 @@ class Policy(models.Model):
 
     def save(self, *args, **kwargs):
         if self.is_active:
-            Policy.objects.filter(type=self.type).exclude(id=self.id).update(is_active=False)
+            Policy.objects.filter(type=self.type).exclude(id=self.id).update(
+                is_active=False
+            )
         super(Policy, self).save(*args, **kwargs)

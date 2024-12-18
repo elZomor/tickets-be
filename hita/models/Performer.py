@@ -97,6 +97,5 @@ class Performer(models.Model):
         except Exception:
             return False
 
-
     def __str__(self):
         return self.full_name
