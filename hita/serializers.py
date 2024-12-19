@@ -7,7 +7,7 @@ from hita.models import (
     TheaterRole,
     ContactDetail,
     Gallery,
-    PublicChannel,
+    PublicChannel, ShowReel,
 )
 from hita.models.Achievement import Achievement
 
@@ -71,13 +71,13 @@ class GalleryCreateSerializer(serializers.ModelSerializer):
 
 class ShowReelViewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Gallery
+        model = ShowReel
         exclude = ['performer']
 
 
 class ShowReelCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Gallery
+        model = ShowReel
         fields = ['performer', 'file']
 
 
