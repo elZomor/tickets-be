@@ -21,7 +21,7 @@ class ExperienceViewSet(viewsets.ModelViewSet):
         if not serializer.is_valid():
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
-                data={'status': 'FAILED', 'message': 'Data not create successfully!'},
+                data={'status': 'FAILED', 'message': 'Data not create successfully!', 'data': serializer.errors},
             )
         instance = serializer.save()
         if roles := experience_data.get('roles'):

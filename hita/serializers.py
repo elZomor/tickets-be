@@ -101,18 +101,7 @@ class ExperienceViewSerializer(serializers.ModelSerializer):
 class ExperienceCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Experience
-        fields = [
-            'performer',
-            'show_name',
-            'director',
-            'venue',
-            'year',
-            'duration',
-            'show_type',
-            'producer',
-            'role_name',
-            'role_brief',
-        ]
+        exclude = ['role']
 
 
 class AchievementCreateSerializer(serializers.ModelSerializer):

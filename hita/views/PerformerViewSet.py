@@ -103,9 +103,11 @@ class PerformerViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_409_CONFLICT,
             )
         try:
-            self.create_performer_with_data(request.data, hita_member)
+            performer = self.create_performer_with_data(request.data, hita_member)
             return Response(
-                data={'status': 'SUCCESS', 'message': 'Created Successfully!'},
+                data={'status': 'SUCCESS', 'message': 'Created Successfully!', 'data': {
+                    'username': performer.hita_member.user.username
+                }},
                 status=status.HTTP_201_CREATED,
             )
         except ValidationError as e:
@@ -246,10 +248,11 @@ class PerformerViewSet(viewsets.ModelViewSet):
         user.username = data.get('performer_data').pop('username')
         user.save()
         performer = self.create_performer(data.get('performer_data'), hita_member.id)
-        self.save_experiences(data.get('experiences'), performer.id)
-        self.save_achievements(data.get('achievements'), performer.id)
-        self.save_contact_details(data.get('contact_section'), performer.id)
-        self.save_public_channels(data.get('public_links_section'), performer.id)
+        data.get('experiences') and self.save_experiences(data.get('experiences'), performer.id)
+        data.get('achievements') and self.save_achievements(data.get('achievements'), performer.id)
+        data.get('contact_section') and self.save_contact_details(data.get('contact_section'), performer.id)
+        data.get('public_links_section') and self.save_public_channels(data.get('public_links_section'), performer.id)
+        return performer
 
     @staticmethod
     def create_performer(performer_data, hita_member_id):
