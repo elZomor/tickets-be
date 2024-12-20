@@ -18,7 +18,7 @@ def send_approve_email(self, to_email: str):
                 <p>Hello,</p>
                 <p>Thank you for registering with us in "Actogram"!</p>
                 <p>Kindly note that your profile has been approved, you can continue your registration through this link</p>
-                <a href="{env.str('BASE_URL')}/performers/registration">{env.str('BASE_URL')}/performers/registration</a>
+                <a href="{env.str('FE_URL')}/performers/registration">{env.str('FE_URL')}/performers/registration</a>
                 <p>Thank you!</p>
                 <p>Actogram Team</p>
             </div>
@@ -26,7 +26,7 @@ def send_approve_email(self, to_email: str):
                 <p>إزيك</p>
                 <p>شكراً لطلبك الانضمام لينا في Actogram</p>
                 <p>لقد تم الموافقة على طلبك، تقدر دلوقتي تعمل صفحتك الشخصية من الرابط ده</p>
-                <a href="{env.str('BASE_URL')}/performers/registration">{env.str('BASE_URL')}/performers/registration</a>
+                <a href="{env.str('FE_URL')}/performers/registration">{env.str('FE_URL')}/performers/registration</a>
                 <p>شكرا!</p>
                 <p>Actogram فريق عمل</p>
             </div>
