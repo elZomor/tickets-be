@@ -59,14 +59,14 @@ class HITAMemberAdmin(admin.ModelAdmin):
     @staticmethod
     def prevent_update_approved_members(func):
         def call(modeladmin, request, queryset, *args, **kwargs):
-            # hita_member = HITAMember.objects.filter(user=request.user).last()
-            # if hita_member is None:
-            #     modeladmin.message_user(
-            #         request,
-            #         'You can not perform this action because you are not HITA member.',
-            #         level=messages.ERROR,
-            #     )
-            #     return
+            hita_member = HITAMember.objects.filter(user=request.user).last()
+            if hita_member is None:
+                modeladmin.message_user(
+                    request,
+                    'You can not perform this action because you are not HITA member.',
+                    level=messages.ERROR,
+                )
+                return
             if (
                 queryset.filter(request_status=Status.APPROVED.value).first()
                 is not None
@@ -78,7 +78,7 @@ class HITAMemberAdmin(admin.ModelAdmin):
                     level=messages.ERROR,
                 )
                 return
-            result = func(modeladmin, request, queryset, HITAMember.objects.first(), *args, **kwargs)
+            result = func(modeladmin, request, queryset, hita_member, *args, **kwargs)
             return result
 
         return call
