@@ -21,5 +21,23 @@ services:
       - db
     volumes:
       - .:/app
+  redis:
+    image: redis:6
+    container_name: stg_redis
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build: .
+    container_name: stg_celery_worker
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - .env
+    entrypoint: [ ]
 volumes:
   stg_data:
