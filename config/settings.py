@@ -5,6 +5,8 @@ from .constants import (
     AWS_STORAGE_BUCKET_NAME,
     AWS_S3_SIGNATURE_NAME,
     AWS_S3_REGION_NAME,
+ACCESS_TOKEN_LIFETIME,
+REFRESH_TOKEN_LIFETIME
 )
 from datetime import timedelta
 
@@ -49,6 +51,7 @@ THIRD_PARTY_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'storages',
+    'django_celery_results'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -178,8 +181,8 @@ REST_FRAMEWORK = {
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=ACCESS_TOKEN_LIFETIME),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=REFRESH_TOKEN_LIFETIME),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',
@@ -199,3 +202,11 @@ DEFAULT_FILE_STORAGE = (
     if environment != 'local'
     else local_storage
 )
+
+# Celery configuration
+CELERY_BROKER_URL = 'redis://redis:6379/0'  # Redis broker URL
+CELERY_RESULT_BACKEND = 'django-db'          # Store results in the Django database
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_EXTENDED = True                # Store additional task info
+CELERY_TIMEZONE = 'UTC'

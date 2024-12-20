@@ -22,3 +22,5 @@ django-allauth==65.2.0
 requests==2.32.3
 boto3==1.35.81
 django-storages==1.14.4
+celery[redis]==5.3.6
+django-celery-results==2.5.1
