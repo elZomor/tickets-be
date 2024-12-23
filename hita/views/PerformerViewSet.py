@@ -191,7 +191,11 @@ class PerformerViewSet(viewsets.ModelViewSet):
             return queryset
         filter_query = Q()
         if query_params.get('name'):
-            name = query_params.pop('name')[0]
+            name:str = query_params.pop('name')[0]
+            if name.__contains__(' ') and len(name) > 1:
+                splitted_name = name.split(' ')
+                filter_query |= Q(hita_member__first_name__icontains=splitted_name[0])
+                filter_query |= Q(hita_member__last_name__icontains=splitted_name[1])
             filter_query |= Q(hita_member__first_name__icontains=name)
             filter_query |= Q(hita_member__last_name__icontains=name)
             filter_query |= Q(hita_member__nick_name__icontains=name)

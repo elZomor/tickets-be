@@ -42,6 +42,7 @@ class HITAMember(models.Model):
         max_length=15, choices=StudyType.choices, default=StudyType.NORMAL.value
     )
     is_graduated = models.BooleanField(default=False)
+    is_post_grad = models.BooleanField(default=False)
     year_of_graduation = models.IntegerField(null=True, blank=True)
     location = models.CharField(
         max_length=15, choices=Location.choices, default=Location.CAIRO.value

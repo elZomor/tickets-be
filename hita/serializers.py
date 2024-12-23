@@ -13,7 +13,6 @@ from hita.models.Achievement import Achievement
 
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = HITAMember
         fields = [
@@ -23,6 +22,7 @@ class HITAMemberViewSerializer(serializers.ModelSerializer):
             'department',
             'grade',
             'is_graduated',
+            'is_post_grad',
             'year_of_graduation',
             'study_type',
             'location',
@@ -209,6 +209,7 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
     graduation_year = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
     study_type = serializers.SerializerMethodField()
+    is_post_grad = serializers.SerializerMethodField()
 
     class Meta:
         model = Performer
@@ -220,6 +221,7 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
             'height',
             'weight',
             'date_of_birth',
+            'is_post_grad'
         ]
 
     @staticmethod
@@ -237,6 +239,10 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
     @staticmethod
     def get_study_type(obj):
         return obj.hita_member.study_type
+
+    @staticmethod
+    def get_is_post_grad(obj):
+        return obj.hita_member.is_post_grad
 
 
 class PerformerViewOneSerializer(serializers.ModelSerializer):
