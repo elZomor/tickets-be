@@ -86,10 +86,15 @@ def fill_initial_data():
     from hita.models import TheaterRolesChoices, TheaterRole
     from django.contrib.auth.models import User, Group, Permission
 
-    if TheaterRole.objects.count() == 0:
-        TheaterRole.objects.bulk_create(
-            [TheaterRole(name=name) for name in TheaterRolesChoices.values]
-        )
+    existing_roles = set(TheaterRole.objects.values_list('name', flat=True))
+    missing_roles = [
+        TheaterRole(name=name)
+        for name in TheaterRolesChoices.values
+        if name not in existing_roles
+    ]
+
+    if missing_roles:
+        TheaterRole.objects.bulk_create(missing_roles)
 
     group, _ = Group.objects.get_or_create(name='HITA_ADMIN')
 
