@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from hita.models import Gallery
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import GalleryCreateSerializer, GalleryViewSerializer
+from utils.Response import get_successful_creation_response, get_successful_response
 from utils.code_utils import get_hita_member_from_request, authorize_performer_data
 
 
@@ -22,26 +23,13 @@ class GalleryViewSet(viewsets.ModelViewSet):
             instance.performer.get_gallery(request.user).exclude(id=instance.id).update(
                 is_profile_picture=False
             )
-        return Response(
-            status=status.HTTP_201_CREATED,
-            data={
-                'status': 'SUCCESS',
-                'message': 'Image uploaded successfully!',
-            },
-        )
+        return get_successful_creation_response(message='Image uploaded successfully!')
 
     @get_hita_member_from_request
     def list(self, request, performer, *args, **kwargs):
         gallery = performer.get_gallery(request.user).all()
         serializer = GalleryViewSerializer(gallery, many=True)
-        return Response(
-            status=status.HTTP_200_OK,
-            data={
-                'status': 'SUCCESS',
-                'message': 'Gallery retrieved successfully!',
-                'data': serializer.data,
-            },
-        )
+        return get_successful_response(data=serializer.data)
 
     @authorize_performer_data
     def update(self, request, *args, **kwargs):
@@ -51,13 +39,7 @@ class GalleryViewSet(viewsets.ModelViewSet):
             instance.performer.get_gallery(request.user).exclude(id=instance.id).update(
                 is_profile_picture=False
             )
-        return Response(
-            status=status.HTTP_200_OK,
-            data={
-                'status': 'SUCCESS',
-                'message': 'Gallery updated successfully!',
-            },
-        )
+        return get_successful_response(message='Gallery updated successfully!')
 
     @authorize_performer_data
     def destroy(self, request, *args, **kwargs):

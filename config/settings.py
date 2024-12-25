@@ -39,17 +39,11 @@ DJANGO_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
 ]
-PROJECT_APPS = ['clerk', 'show', 'hita', 'social_login']
+PROJECT_APPS = ['show', 'hita', 'social_login']
 THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'django_extensions',
-    'django_json_widget',
-    'django.contrib.sites',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
     'storages',
     'django_celery_results'
 ]
@@ -65,7 +59,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -73,10 +66,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            os.path.join(BASE_DIR, 'templates'),
-            os.path.join(BASE_DIR, 'ticket', 'templates'),
-        ],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -144,21 +134,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SITE_ID = 1
-
-# Redirect URLs
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
-
-# Optional: Disable email verification during development
-ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
-ACCOUNT_EMAIL_REQUIRED = True
-
-# AUTHENTICATION_BACKENDS = (
-#     'django.contrib.auth.backends.ModelBackend',
-#     'allauth.account.auth_backends.AuthenticationBackend',
-# )
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -204,9 +179,9 @@ DEFAULT_FILE_STORAGE = (
 )
 
 # Celery configuration
-CELERY_BROKER_URL = 'redis://redis:6379/0'  # Redis broker URL
-CELERY_RESULT_BACKEND = 'django-db'          # Store results in the Django database
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_EXTENDED = True                # Store additional task info
+CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = 'UTC'

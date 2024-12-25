@@ -10,7 +10,6 @@ env = environ.Env()
 
 @shared_task(bind=True)
 def send_approve_email(self, to_email: str):
-    print('hello')
     body = f'''
         <html>
           <body>

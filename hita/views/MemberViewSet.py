@@ -9,6 +9,9 @@ from hita.permissions import IsHITAMemberPermission
 from hita.serializers import HITAMemberViewSerializer, HITAMemberCreateSerializer
 from rest_framework.decorators import action
 
+from utils.Response import get_successful_response, get_not_found_response, get_bad_request_response, \
+    get_successful_creation_response
+
 
 class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     model = HITAMember
@@ -37,19 +40,9 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance)
-            return Response(
-                {
-                    'status': 'SUCCESS',
-                    'data': serializer.data,
-                }
-            )
+            return get_successful_response(data=serializer.data)
         except ResourceNotFound:
-            return Response(
-                {
-                    'status': 'FAILED',
-                    'message': 'No Member Found',
-                }
-            )
+            return get_not_found_response(message='No Member Found')
 
     def create(self, request, *args, **kwargs):
 
@@ -57,32 +50,18 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             data=request.data, context={'request': request}
         )
         if not serializer.is_valid():
-            return Response(
-                {'status': 'FAILED', 'data': serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return get_bad_request_response(data=serializer.errors)
+
         member = serializer.save()
-        return Response(
-            {'status': 'SUCCESS', 'data': HITAMemberViewSerializer(member).data},
-            status=status.HTTP_201_CREATED,
-        )
+        return get_successful_creation_response(data=HITAMemberViewSerializer(member).data)
 
     @action(methods=['GET'], detail=False, url_path='status')
     def member_status(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=request.user).last()
         if not hita_member:
-            return Response(
-                data={'status': 'SUCCESS', 'data': {'status': 'NOT_REGISTERED'}},
-                status=status.HTTP_200_OK,
-            )
-        return Response(
-            data={
-                'status': 'SUCCESS',
-                'data': {
-                    'status': hita_member.request_status,
-                    'performer': hita_member.has_performer,
-                    'username': hita_member.user.username,
-                },
-            },
-            status=status.HTTP_200_OK,
-        )
+            return get_successful_response(data={'status': 'NOT_REGISTERED'})
+        return get_successful_response(data={
+            'status': hita_member.request_status,
+            'performer': hita_member.has_performer,
+            'username': hita_member.user.username,
+        })

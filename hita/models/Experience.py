@@ -2,20 +2,38 @@ from django.db import models
 
 
 class TheaterRolesChoices(models.TextChoices):
-    ACTOR = 'ACTOR', 'Actor/Actress'
-    AUTHOR = 'AUTHOR', 'Author'
+    # ACTING = 'ACTING', 'Acting'
+    ACTOR = 'ACTOR', 'Actor/Actress' # To be removed
+    # WRITING = 'WRITING', 'Writing'
+    AUTHOR = 'AUTHOR', 'Author' # To be removed
     TREATMENT = 'TREATMENT', 'Treatment'
-    DIRECTOR = 'DIRECTOR', 'Director'
+    # DIRECTING = 'DIRECTING', 'Directing'
+    DIRECTOR = 'DIRECTOR', 'Director' # To be removed
     DIRECTING_CAST = 'DIRECTING_CAST', 'Directing Cast'
-    DECOR = 'DECOR', 'Decor'
+    # DECOR_DESIGN = 'DECOR_DESIGN', 'Decor Design'
+    # DECOR_IMPLEMENTATION = 'DECOR_IMPLEMENTATION', 'Decor Implementation'
+    DECOR = 'DECOR', 'Decor' # To be removed
     STYLING = 'STYLING', 'Styling'
     MAKEUP = 'MAKEUP', 'Makeup'
-    LIGHTING = 'LIGHTING', 'Lighting'
-    COMPOSING = 'COMPOSING', 'Composing'
+    # LIGHTING_DESIGN = 'LIGHTING_DESIGN', 'Lighting Design'
+    # LIGHTING_IMPLEMENTATION = 'LIGHTING_IMPLEMENTATION', 'Lighting Implementation'
+    LIGHTING = 'LIGHTING', 'Lighting' # To be removed
+    # COMPOSING_MUSIC = 'COMPOSING_MUSIC', 'Composing Music'
+    # COMPOSING_SONGS = 'COMPOSING_SONGS', 'Composing Songs'
+    COMPOSING = 'COMPOSING', 'Composing' # To be removed
     MUSIC_ARRANGEMENT = 'MUSIC_ARRANGEMENT', 'Music Arrangement'
+    # MUSIC_PREPARATION = 'MUSIC_PREPARATION', 'Music Preparation'
+    # MUSIC_IMPLEMENTATION = 'MUSIC_IMPLEMENTATION', 'Music Implementation'
     MUSICIAN = 'MUSICIAN', 'Musician'
     CHOREOGRAPHY = 'CHOREOGRAPHY', 'Choreography'
-    DANCER = 'DANCER', 'Dancer'
+    # DANCING = 'DANCING', 'Dancing'
+    DANCER = 'DANCER', 'Dancer' # To be removed
+    SINGING = 'SINGING', 'Singing'
+    VIDEOGRAPHY = 'VIDEOGRAPHY', 'Videography'
+    PHOTOGRAPHY = 'PHOTOGRAPHY', 'Photography'
+    VIDEO_MAPPING = 'VIDEO_MAPPING', 'Video Mapping'
+    GRAPHICS_DESIGNER = 'GRAPHICS_DESIGNER', 'Graphics Designer'
+    HAIR_DRESSER = 'HAIR_DRESSER', 'Hair Dresser'
 
 
 class ShowTypeChoices(models.TextChoices):

@@ -1,21 +1,6 @@
 from django.db import models
 
-
-class ContactType(models.TextChoices):
-    MOBILE = 'MOBILE', 'Mobile'
-    WHATSAPP = 'WHATSAPP', 'WhatsApp'
-    FACEBOOK = 'FACEBOOK', 'Facebook'
-    INSTAGRAM = 'INSTAGRAM', 'Instagram'
-    TIK_TOK = 'TIK_TOK', 'TikTok'
-    YOUTUBE = 'YOUTUBE', 'YouTube'
-    TWITTER = 'TWITTER', 'Twitter'
-    SHOWREEL = 'SHOWREEL', 'ShowReel'
-    VIMEO = 'VIMEO', 'Vimeo'
-    BEHANCE = 'BEHANCE', 'Behance'
-    GOOGLE_DRIVE = 'GOOGLE_DRIVE', 'Google Drive'
-    TELEGRAM = 'TELEGRAM', 'Telegram'
-    SOUND_CLOUD = 'SOUND_CLOUD', 'SoundCloud'
-    OTHER = 'OTHER', 'Other'
+from hita.models.Lookups import ContactTypes, ContactSpecificType
 
 
 class ContactDetail(models.Model):
@@ -24,8 +9,8 @@ class ContactDetail(models.Model):
     )
     contact_type = models.CharField(
         max_length=20,
-        choices=ContactType.choices,
-        default=ContactType.MOBILE.value,
+        choices=ContactTypes,
+        default=ContactSpecificType.MOBILE.value,
     )
     contact_info = models.CharField(max_length=100)
 

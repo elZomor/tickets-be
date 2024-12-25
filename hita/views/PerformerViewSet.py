@@ -23,6 +23,8 @@ from hita.serializers import (
     PublicChannelCreateSerializer,
     GalleryCreateSerializer,
 )
+from utils.Response import get_successful_response, get_bad_request_response, get_already_exists_response, \
+    get_successful_creation_response, get_unauthorized_response, get_not_found_response
 
 
 class PerformerViewSet(viewsets.ModelViewSet):
@@ -55,14 +57,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         permissions = self.build_permissions(instance)
-        return Response(
-            data={
-                'status': 'SUCCESS',
-                'data': serializer.data,
-                'permissions': permissions,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return get_successful_response(data=serializer.data, permissions=permissions)
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_data(request.query_params.copy())
@@ -82,61 +77,35 @@ class PerformerViewSet(viewsets.ModelViewSet):
             hita_member.performer, data=performer_data, partial=True
         )
         if not serializer.is_valid():
-            return Response(
-                status=status.HTTP_400_BAD_REQUEST,
-                data={'status': 'FAILED', 'message': 'Data not updated successfully!'},
-            )
+            return get_bad_request_response(data=serializer.errors, message='Data not updated successfully!')
         serializer.save()
         if skills_tags := performer_data.get('skills_tags'):
             skills = TheaterRole.objects.filter(name__in=skills_tags)
             hita_member.performer.skills_tags.set(skills)
-        return Response(
-            status=status.HTTP_200_OK,
-            data={'status': 'SUCCESS', 'message': 'Data updated successfully!'},
-        )
+        return get_successful_response(message='Data updated successfully!')
 
     def create(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=request.user).last()
         if Performer.objects.filter(hita_member=hita_member).exists():
-            return Response(
-                data={'status': 'FAILED', 'message': 'Performer profile already exist'},
-                status=status.HTTP_409_CONFLICT,
-            )
+            return get_already_exists_response(message='Performer profile already exist')
         try:
             performer = self.create_performer_with_data(request.data, hita_member)
-            return Response(
-                data={'status': 'SUCCESS', 'message': 'Created Successfully!', 'data': {
-                    'username': performer.hita_member.user.username
-                }},
-                status=status.HTTP_201_CREATED,
-            )
+            return get_successful_creation_response(message='Performer created successfully!', data={
+                'username': performer.hita_member.user.username
+            })
+
         except ValidationError as e:
-            return Response(
-                {'status': 'FAILED', 'data': e.detail},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return get_bad_request_response(data=e.detail)
         except Exception as e:
-            return Response(
-                {'status': 'FAILED', 'data': str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return get_bad_request_response(data=str(e))
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         permissions = self.build_permissions(instance)
         if 'CAN_EDIT' not in permissions:
-            return Response(
-                data={'status': 'FAILED', 'message': 'Not Allowed'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            return get_unauthorized_response(message='You do not have permission to perform this action')
         instance.delete()
-        return Response(
-            data={
-                'status': 'SUCCESS',
-                'message': 'Performer account has been deleted successfully!',
-            },
-            status=status.HTTP_200_OK,
-        )
+        return get_successful_response(message='Performer account has been deleted successfully!')
 
     @action(detail=False, methods=['POST'], url_path='gallery')
     def add_gallery(self, request, *args, **kwargs):
@@ -145,10 +114,8 @@ class PerformerViewSet(viewsets.ModelViewSet):
         hita_member = HITAMember.objects.filter(user=request.user).last()
         performer = Performer.objects.filter(hita_member=hita_member).last()
         if not performer:
-            return Response(
-                data={'status': 'FAILED', 'message': 'No performer found'},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return get_not_found_response(message='No performer found')
+
         image_list = []
         for key, value in files.items():
             image_list.append(
@@ -161,15 +128,10 @@ class PerformerViewSet(viewsets.ModelViewSet):
             )
         serializer = GalleryCreateSerializer(data=image_list, many=True)
         if not serializer.is_valid():
-            return Response(
-                {'status': 'FAILED', 'data': serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return get_bad_request_response(data=serializer.errors)
         serializer.save()
-        return Response(
-            data={'status': 'SUCCESS', 'data': {'user': hita_member.user.username}},
-            status=status.HTTP_200_OK,
-        )
+        return get_successful_response(data={'user': hita_member.user.username})
+
 
     def build_permissions(self, instance):
         permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
@@ -191,7 +153,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
             return queryset
         filter_query = Q()
         if query_params.get('name'):
-            name:str = query_params.pop('name')[0]
+            name: str = query_params.pop('name')[0]
             if name.__contains__(' ') and len(name) > 1:
                 splitted_name = name.split(' ')
                 filter_query |= Q(hita_member__first_name__icontains=splitted_name[0])

@@ -8,6 +8,7 @@ from hita.serializers import (
     ContactDetailsViewSerializer,
     ContactDetailsCreateSerializer,
 )
+from utils.Response import get_successful_creation_response, get_successful_response
 from utils.code_utils import get_hita_member_from_request, authorize_performer_data
 
 
@@ -19,37 +20,18 @@ class ContactDetailsViewSet(viewsets.ModelViewSet):
     @get_hita_member_from_request
     def create(self, request, *args, **kwargs):
         super().create(request, *args, **kwargs)
-        return Response(
-            status=status.HTTP_201_CREATED,
-            data={
-                'status': 'SUCCESS',
-                'message': 'Contact Detail created successfully!',
-            },
-        )
+        return get_successful_creation_response(message='Contact Detail created successfully!')
 
     @get_hita_member_from_request
     def list(self, request, performer, *args, **kwargs):
         contact_details = performer.get_contact_details(request.user).all()
         serializer = ContactDetailsViewSerializer(contact_details, many=True)
-        return Response(
-            status=status.HTTP_200_OK,
-            data={
-                'status': 'SUCCESS',
-                'message': 'Contact Detail created successfully!',
-                'data': serializer.data,
-            },
-        )
+        return get_successful_response(data=serializer.data)
 
     @authorize_performer_data
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
-        return Response(
-            status=status.HTTP_200_OK,
-            data={
-                'status': 'SUCCESS',
-                'message': 'Contact Detail updated successfully!',
-            },
-        )
+        return get_successful_response(message='Contact Detail updated successfully!')
 
     @authorize_performer_data
     def destroy(self, request, *args, **kwargs):

@@ -11,10 +11,13 @@ from hita.Exceptions import ResourceNotFound
 from hita.models import ShowReel
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import ShowReelCreateSerializer, ShowReelViewSerializer
+from utils.Response import get_successful_creation_response, get_successful_response
 from utils.code_utils import get_hita_member_from_request
 
 
-class ShowReelViewSet(viewsets.ModelViewSet):
+class ShowReelViewSet(viewsets.mixins.CreateModelMixin,
+                      viewsets.mixins.ListModelMixin,
+                      viewsets.GenericViewSet):
     queryset = ShowReel.objects.all()
     permission_classes = [IsHITAMemberPermission]
     serializer_class = ShowReelCreateSerializer
@@ -22,47 +25,19 @@ class ShowReelViewSet(viewsets.ModelViewSet):
     @get_hita_member_from_request
     def create(self, request, *args, **kwargs):
         super().create(request, *args, **kwargs)
-        return Response(
-            status=status.HTTP_201_CREATED,
-            data={
-                'status': 'SUCCESS',
-                'message': 'ShowReel uploaded successfully!',
-            },
-        )
+        return get_successful_creation_response(message='ShowReel uploaded successfully!')
 
     @get_hita_member_from_request
     def list(self, request, performer, *args, **kwargs):
         show_reel = performer.show_reel.all()
         serializer = ShowReelViewSerializer(show_reel, many=True)
-        return Response(
-            status=status.HTTP_200_OK,
-            data={
-                'status': 'SUCCESS',
-                'message': 'ShowReel retrieved successfully!',
-                'data': serializer.data,
-            },
-        )
-
-    def update(self, request, *args, **kwargs):
-        return Response(
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-            data={
-                'status': 'FAILED',
-                'message': 'Not Allowed!',
-            },
-        )
+        return get_successful_response(data=serializer.data)
 
     @action(detail=False, methods=['delete'], url_path='delete')
     @get_hita_member_from_request
     def delete_show_reel(self, request, performer, *args, **kwargs):
         performer.show_reel.delete()
-        return Response(
-            status=status.HTTP_200_OK,
-            data={
-                'status': 'SUCCESS',
-                'message': 'ShowReel deleted successfully!',
-            },
-        )
+        return get_successful_response(message='ShowReel deleted successfully!')
 
     @action(detail=True, methods=['get'], url_path='stream')
     def stream_video(self, request, *args, **kwargs):

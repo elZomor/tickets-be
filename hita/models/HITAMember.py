@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 
 
 class Department(models.TextChoices):
-    ACTING = 'ACTING', 'Acting And Directing'
-    DRAMA = 'DRAMA', 'Drama And Criticism'
-    DECOR = 'DECOR', 'Decor'
+    ACTING = 'ACTING_DEP', 'Acting And Directing'
+    DRAMA = 'DRAMA_DEP', 'Drama And Criticism'
+    DECOR = 'DECOR_DEP', 'Decor'
+    TECH = 'TECH_DEP', 'Theatrical Techniques'
 
 
 class StudyType(models.TextChoices):

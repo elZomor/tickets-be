@@ -1,6 +1,6 @@
 from django.db import models
 
-from hita.models import ContactType
+from hita.models.Lookups import PublicChannelTypes
 
 
 class PublicChannel(models.Model):
@@ -9,8 +9,8 @@ class PublicChannel(models.Model):
     )
     channel_type = models.CharField(
         max_length=20,
-        choices=ContactType.choices,
-        default=ContactType.YOUTUBE.value,
+        choices=PublicChannelTypes.choices,
+        default=PublicChannelTypes.YOUTUBE.value,
     )
     channel_info = models.CharField(max_length=100)
 
