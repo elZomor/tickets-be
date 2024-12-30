@@ -4,8 +4,8 @@ from django.db import models
 class Policy(models.Model):
     title = models.CharField(
         max_length=255, default="Privacy Policy"
-    )  # Stores the title of the policy
-    content = models.TextField()  # Stores the actual content of the privacy policy
+    )
+    content = models.TextField()  
     type = models.CharField(max_length=20)
     version = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)

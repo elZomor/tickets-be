@@ -1,6 +1,7 @@
 import requests
 from django.contrib.auth.models import User
 from rest_framework.exceptions import AuthenticationFailed
+import jwt
 
 
 class GoogleJWTAuthentication:
@@ -15,6 +16,10 @@ class GoogleJWTAuthentication:
         ):
             raise AuthenticationFailed('No token supplied')
         try:
+            decoded_token = jwt.decode(auth_header.split(' ')[1], options={"verify_signature": False})
+            user = User.objects.filter(email=decoded_token['email']).first()
+            return user, decoded_token
+        except jwt.DecodeError:
             token_url = "https://www.googleapis.com/oauth2/v3/userinfo"
             response = requests.get(token_url, headers={'Authorization': auth_header})
             token_info = response.json()
@@ -31,7 +36,6 @@ class GoogleJWTAuthentication:
 
 
 class FacebookJWTAuthentication:
-
     @staticmethod
     def authenticate(request):
         auth_header = request.headers.get('Authorization')

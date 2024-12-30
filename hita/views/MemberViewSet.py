@@ -17,6 +17,7 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     model = HITAMember
     queryset = HITAMember.objects.all().order_by('first_name', 'last_name')
     serializer_class = HITAMemberViewSerializer
+    permission_classes = IsAuthenticated
 
     def get_permissions(self):
         if self.action in ['create', 'member_status', 'retrieve_member']:
@@ -57,6 +58,8 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
     @action(methods=['GET'], detail=False, url_path='status')
     def member_status(self, request, *args, **kwargs):
+        if not request.user.is_active:
+            return get_successful_response(data={'status': 'NOT_CONFIRMED'})
         hita_member = HITAMember.objects.filter(user=request.user).last()
         if not hita_member:
             return get_successful_response(data={'status': 'NOT_REGISTERED'})

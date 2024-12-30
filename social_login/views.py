@@ -11,6 +11,7 @@ from social_login.authentication import (
     FacebookJWTAuthentication,
 )
 from social_login.models import Policy
+from utils.Response import get_bad_request_response, get_successful_creation_response
 
 
 class GoogleLogin(viewsets.GenericViewSet):
@@ -120,6 +121,27 @@ class FacebookLogin(viewsets.GenericViewSet):
                     "tokens": 'token_info',
                 }
             )
+
+
+class EmailSignup(viewsets.GenericViewSet):
+    @action(detail=False, methods=['POST'], url_path='signup')
+    def signup(self, request, *args, **kwargs):
+        if User.objects.filter(email=request.data['email']).exists():
+            return get_bad_request_response(data='Email already registered')
+        user = User.objects.create_user(
+            **{
+                'username': uuid.uuid4().hex[:30],
+                'email': request.data['email'],
+                'is_active': False,
+            }
+        )
+        user.set_password(request.data['password'])
+        user.save()
+        refresh = RefreshToken.for_user(user)
+        return get_successful_creation_response(data={
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        })
 
 
 class PolicyViewSet(viewsets.GenericViewSet):
