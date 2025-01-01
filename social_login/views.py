@@ -92,14 +92,14 @@ class FacebookLogin(viewsets.GenericViewSet):
         try:
             user, account_info = FacebookJWTAuthentication.authenticate(request)
             if not user:
+                user_object = {
+                    'username': uuid.uuid4().hex[:30],
+                    'email': account_info.get('email'),
+                    'is_active': True, }
+                if account_info.get('given_name') is not None: user_object['first_name'] = account_info.get('given_name')
+                if account_info.get('family_name') is not None: user_object['last_name'] = account_info.get('family_name')
                 user = User.objects.create_user(
-                    **{
-                        'username': uuid.uuid4().hex[:30],
-                        'first_name': account_info.get('given_name'),
-                        'last_name': account_info.get('family_name'),
-                        'email': account_info.get('email'),
-                        'is_active': True,
-                    }
+                    **user_object
                 )
             refresh = RefreshToken.for_user(user)
             return Response(
