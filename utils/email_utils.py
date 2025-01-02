@@ -34,9 +34,9 @@ def send_approve_email(self, to_email: str):
         '''
     try:
         send_email(to_email=to_email, body=body, subject='Request to join Actogram has been approved')
-        return {'status': 'ok'}
+        return {'status': 'ok', 'email': to_email}
     except Exception as e:
-        return {'status': 'error', 'message': str(e)}
+        return {'status': 'error', 'message': str(e), 'email': to_email}
 
 
 def send_email(to_email: str, subject: str, body: str):

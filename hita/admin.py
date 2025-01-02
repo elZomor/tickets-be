@@ -92,7 +92,8 @@ class HITAMemberAdmin(admin.ModelAdmin):
             reviewed_by=hita_member,
             reviewed_at=datetime.now(),
         )
-        send_approve_email.delay(to_email=queryset.last().user.email)
+        for member in queryset:
+            send_approve_email.delay(to_email=member.user.email)
         modeladmin.message_user(request, f'{updated_count} items marked as approved.')
 
     @staticmethod
