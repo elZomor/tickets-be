@@ -9,6 +9,15 @@ services:
       - ./database/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
       - "5533:5432"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+          cpus: '0.25'
+        reservations:
+          memory: 200M
+          cpus: '0.2'
   admin:
     container_name: admin
     build: .
@@ -23,12 +32,28 @@ services:
       - .:/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+          cpus: '0.5'
+        reservations:
+          memory: 300M
+          cpus: '0.25'
   redis:
     image: redis:6
     container_name: redis
+    restart: always
     ports:
       - "6379:6379"
-
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+          cpus: '0.25'
+        reservations:
+          memory: 50M
+          cpus: '0.1'
   celery_worker:
     build: .
     container_name: celery_worker
@@ -41,5 +66,14 @@ services:
     env_file:
       - .env
     entrypoint: []
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+          cpus: '0.25'
+        reservations:
+          memory: 150M
+          cpus: '0.1'
 volumes:
   data:
