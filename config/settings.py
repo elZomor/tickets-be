@@ -45,7 +45,8 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'django_extensions',
     'storages',
-    'django_celery_results'
+    'django_celery_results',
+    'utils_app'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
