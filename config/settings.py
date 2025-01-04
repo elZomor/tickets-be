@@ -5,14 +5,14 @@ from .constants import (
     AWS_STORAGE_BUCKET_NAME,
     AWS_S3_SIGNATURE_NAME,
     AWS_S3_REGION_NAME,
-ACCESS_TOKEN_LIFETIME,
-REFRESH_TOKEN_LIFETIME
+    ACCESS_TOKEN_LIFETIME,
+    REFRESH_TOKEN_LIFETIME,
 )
 from datetime import timedelta
 
 import environ
 
-from config.storages import local_storage
+from config.storages import local_storage  # noqa:F401, F403
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -46,7 +46,7 @@ THIRD_PARTY_APPS = [
     'django_extensions',
     'storages',
     'django_celery_results',
-    'utils_app'
+    'utils_app',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -54,7 +54,7 @@ INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -184,4 +184,3 @@ CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = 'UTC'
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-

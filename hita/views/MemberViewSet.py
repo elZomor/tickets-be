@@ -1,7 +1,5 @@
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework import viewsets, mixins
-from rest_framework import status
 
 from hita.Exceptions import ResourceNotFound
 from hita.models import HITAMember
@@ -9,8 +7,12 @@ from hita.permissions import IsHITAMemberPermission
 from hita.serializers import HITAMemberViewSerializer, HITAMemberCreateSerializer
 from rest_framework.decorators import action
 
-from utils.Response import get_successful_response, get_not_found_response, get_bad_request_response, \
-    get_successful_creation_response
+from utils.Response import (
+    get_successful_response,
+    get_not_found_response,
+    get_bad_request_response,
+    get_successful_creation_response,
+)
 
 
 class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -54,7 +56,9 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             return get_bad_request_response(data=serializer.errors)
 
         member = serializer.save()
-        return get_successful_creation_response(data=HITAMemberViewSerializer(member).data)
+        return get_successful_creation_response(
+            data=HITAMemberViewSerializer(member).data
+        )
 
     @action(methods=['GET'], detail=False, url_path='status')
     def member_status(self, request, *args, **kwargs):
@@ -63,8 +67,10 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         hita_member = HITAMember.objects.filter(user=request.user).last()
         if not hita_member:
             return get_successful_response(data={'status': 'NOT_REGISTERED'})
-        return get_successful_response(data={
-            'status': hita_member.request_status,
-            'performer': hita_member.has_performer,
-            'username': hita_member.user.username,
-        })
+        return get_successful_response(
+            data={
+                'status': hita_member.request_status,
+                'performer': hita_member.has_performer,
+                'username': hita_member.user.username,
+            }
+        )

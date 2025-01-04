@@ -16,7 +16,9 @@ class GoogleJWTAuthentication:
         ):
             raise AuthenticationFailed('No token supplied')
         try:
-            decoded_token = jwt.decode(auth_header.split(' ')[1], options={"verify_signature": False})
+            decoded_token = jwt.decode(
+                auth_header.split(' ')[1], options={"verify_signature": False}
+            )
             user = User.objects.filter(email=decoded_token['email']).first()
             return user, decoded_token
         except jwt.DecodeError:

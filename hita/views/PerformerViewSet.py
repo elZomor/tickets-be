@@ -22,8 +22,14 @@ from hita.serializers import (
     PublicChannelCreateSerializer,
     GalleryCreateSerializer,
 )
-from utils.Response import get_successful_response, get_bad_request_response, get_already_exists_response, \
-    get_successful_creation_response, get_unauthorized_response, get_not_found_response
+from utils.Response import (
+    get_successful_response,
+    get_bad_request_response,
+    get_already_exists_response,
+    get_successful_creation_response,
+    get_unauthorized_response,
+    get_not_found_response,
+)
 
 
 class PerformerViewSet(viewsets.ModelViewSet):
@@ -76,7 +82,9 @@ class PerformerViewSet(viewsets.ModelViewSet):
             hita_member.performer, data=performer_data, partial=True
         )
         if not serializer.is_valid():
-            return get_bad_request_response(data=serializer.errors, message='Data not updated successfully!')
+            return get_bad_request_response(
+                data=serializer.errors, message='Data not updated successfully!'
+            )
         serializer.save()
         if skills_tags := performer_data.get('skills_tags'):
             skills = TheaterRole.objects.filter(name__in=skills_tags)
@@ -86,12 +94,15 @@ class PerformerViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=request.user).last()
         if Performer.objects.filter(hita_member=hita_member).exists():
-            return get_already_exists_response(message='Performer profile already exist')
+            return get_already_exists_response(
+                message='Performer profile already exist'
+            )
         try:
             performer = self.create_performer_with_data(request.data, hita_member)
-            return get_successful_creation_response(message='Performer created successfully!', data={
-                'username': performer.hita_member.user.username
-            })
+            return get_successful_creation_response(
+                message='Performer created successfully!',
+                data={'username': performer.hita_member.user.username},
+            )
 
         except ValidationError as e:
             return get_bad_request_response(data=e.detail)
@@ -102,9 +113,13 @@ class PerformerViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         permissions = self.build_permissions(instance)
         if 'CAN_EDIT' not in permissions:
-            return get_unauthorized_response(message='You do not have permission to perform this action')
+            return get_unauthorized_response(
+                message='You do not have permission to perform this action'
+            )
         instance.delete()
-        return get_successful_response(message='Performer account has been deleted successfully!')
+        return get_successful_response(
+            message='Performer account has been deleted successfully!'
+        )
 
     @action(detail=False, methods=['POST'], url_path='gallery')
     def add_gallery(self, request, *args, **kwargs):
@@ -130,7 +145,6 @@ class PerformerViewSet(viewsets.ModelViewSet):
             return get_bad_request_response(data=serializer.errors)
         serializer.save()
         return get_successful_response(data={'user': hita_member.user.username})
-
 
     def build_permissions(self, instance):
         permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
@@ -213,10 +227,18 @@ class PerformerViewSet(viewsets.ModelViewSet):
         user.username = data.get('performer_data').pop('username')
         user.save()
         performer = self.create_performer(data.get('performer_data'), hita_member.id)
-        data.get('experiences') and self.save_experiences(data.get('experiences'), performer.id)
-        data.get('achievements') and self.save_achievements(data.get('achievements'), performer.id)
-        data.get('contact_section') and self.save_contact_details(data.get('contact_section'), performer.id)
-        data.get('public_links_section') and self.save_public_channels(data.get('public_links_section'), performer.id)
+        data.get('experiences') and self.save_experiences(
+            data.get('experiences'), performer.id
+        )
+        data.get('achievements') and self.save_achievements(
+            data.get('achievements'), performer.id
+        )
+        data.get('contact_section') and self.save_contact_details(
+            data.get('contact_section'), performer.id
+        )
+        data.get('public_links_section') and self.save_public_channels(
+            data.get('public_links_section'), performer.id
+        )
         return performer
 
     @staticmethod

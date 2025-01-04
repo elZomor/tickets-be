@@ -14,7 +14,7 @@ from hita.models import (
     ShowReel,
 )
 from hita.models.Achievement import Achievement
-from utils.email_utils import send_email, send_approve_email
+from utils.email_utils import send_approve_email
 
 
 @admin.register(HITAMember)

@@ -1,6 +1,4 @@
-from rest_framework import status
 from rest_framework import viewsets
-from rest_framework.response import Response
 
 from hita.models import ContactDetail
 from hita.permissions import IsHITAMemberPermission
@@ -20,7 +18,9 @@ class ContactDetailsViewSet(viewsets.ModelViewSet):
     @get_hita_member_from_request
     def create(self, request, *args, **kwargs):
         super().create(request, *args, **kwargs)
-        return get_successful_creation_response(message='Contact Detail created successfully!')
+        return get_successful_creation_response(
+            message='Contact Detail created successfully!'
+        )
 
     @get_hita_member_from_request
     def list(self, request, performer, *args, **kwargs):

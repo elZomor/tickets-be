@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class PublicChannelTypes(models.TextChoices):
     FACEBOOK = 'FACEBOOK', 'Facebook'
     INSTAGRAM = 'INSTAGRAM', 'Instagram'
@@ -13,9 +14,11 @@ class PublicChannelTypes(models.TextChoices):
     SOUND_CLOUD = 'SOUND_CLOUD', 'SoundCloud'
     OTHER = 'OTHER', 'Other'
 
+
 class ContactSpecificType(models.TextChoices):
     MOBILE = 'MOBILE', 'Mobile'
     WHATSAPP = 'WHATSAPP', 'WhatsApp'
     TELEGRAM = 'TELEGRAM', 'Telegram'
+
 
 ContactTypes = ContactSpecificType.choices + PublicChannelTypes.choices
