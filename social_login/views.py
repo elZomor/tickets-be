@@ -26,14 +26,13 @@ class GoogleLogin(viewsets.GenericViewSet):
                 user_object = {
                     'username': uuid.uuid4().hex[:30],
                     'email': account_info.get('email'),
-                    'is_active': True, }
-                if account_info.get('given_name') is not None: user_object['first_name'] = account_info.get(
-                    'given_name')
-                if account_info.get('family_name') is not None: user_object['last_name'] = account_info.get(
-                    'family_name')
-                user = User.objects.create_user(
-                    **user_object
-                )
+                    'is_active': True,
+                }
+                if account_info.get('given_name') is not None:
+                    user_object['first_name'] = account_info.get('given_name')
+                if account_info.get('family_name') is not None:
+                    user_object['last_name'] = account_info.get('family_name')
+                user = User.objects.create_user(**user_object)
             refresh = RefreshToken.for_user(user)
             return Response(
                 {
@@ -97,12 +96,13 @@ class FacebookLogin(viewsets.GenericViewSet):
                 user_object = {
                     'username': uuid.uuid4().hex[:30],
                     'email': account_info.get('email'),
-                    'is_active': True, }
-                if account_info.get('given_name') is not None: user_object['first_name'] = account_info.get('given_name')
-                if account_info.get('family_name') is not None: user_object['last_name'] = account_info.get('family_name')
-                user = User.objects.create_user(
-                    **user_object
-                )
+                    'is_active': True,
+                }
+                if account_info.get('given_name') is not None:
+                    user_object['first_name'] = account_info.get('given_name')
+                if account_info.get('family_name') is not None:
+                    user_object['last_name'] = account_info.get('family_name')
+                user = User.objects.create_user(**user_object)
             refresh = RefreshToken.for_user(user)
             return Response(
                 {
@@ -140,10 +140,12 @@ class EmailSignup(viewsets.GenericViewSet):
         user.set_password(request.data['password'])
         user.save()
         refresh = RefreshToken.for_user(user)
-        return get_successful_creation_response(data={
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-        })
+        return get_successful_creation_response(
+            data={
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            }
+        )
 
 
 class PolicyViewSet(viewsets.GenericViewSet):

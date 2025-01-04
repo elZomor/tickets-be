@@ -14,7 +14,7 @@ from hita.models import (
     ShowReel,
 )
 from hita.models.Achievement import Achievement
-from utils.email_utils import send_email, send_approve_email
+from utils.email_utils import send_approve_email
 
 
 @admin.register(HITAMember)
@@ -87,12 +87,13 @@ class HITAMemberAdmin(admin.ModelAdmin):
     @admin.action(description='Approve request')
     @prevent_update_approved_members
     def approve_request(modeladmin, request, queryset, hita_member):
+        approved_members = list(queryset)
         updated_count = queryset.update(
             request_status=Status.APPROVED.value,
             reviewed_by=hita_member,
             reviewed_at=datetime.now(),
         )
-        for member in queryset:
+        for member in approved_members:
             send_approve_email.delay(to_email=member.user.email)
         modeladmin.message_user(request, f'{updated_count} items marked as approved.')
 

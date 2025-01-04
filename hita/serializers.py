@@ -7,7 +7,8 @@ from hita.models import (
     TheaterRole,
     ContactDetail,
     Gallery,
-    PublicChannel, ShowReel,
+    PublicChannel,
+    ShowReel,
 )
 from hita.models.Achievement import Achievement
 
@@ -221,7 +222,7 @@ class PerformerDataViewOneSerializer(PerformerViewAllSerializer):
             'height',
             'weight',
             'date_of_birth',
-            'is_post_grad'
+            'is_post_grad',
         ]
 
     @staticmethod

@@ -9,5 +9,7 @@ class ShowReel(models.Model):
     performer = models.OneToOneField(
         'hita.Performer', on_delete=models.CASCADE, related_name='show_reel'
     )
-    file = models.FileField(storage=S3Boto3Storage() if not DEBUG else None, validators=[validate_file_size])
+    file = models.FileField(
+        storage=S3Boto3Storage() if not DEBUG else None, validators=[validate_file_size]
+    )
     thumbnail = models.FileField(upload_to=get_upload_path, null=True, blank=True)
