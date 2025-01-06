@@ -72,5 +72,6 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 'status': hita_member.request_status,
                 'performer': hita_member.has_performer,
                 'username': hita_member.user.username,
+                'name': hita_member.full_name,
             }
         )
