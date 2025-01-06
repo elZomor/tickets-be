@@ -1,10 +1,8 @@
 import os
 
 from django.http import StreamingHttpResponse
-from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 
 from config.storages import get_s3_object
 from hita.Exceptions import ResourceNotFound
@@ -15,9 +13,11 @@ from utils.Response import get_successful_creation_response, get_successful_resp
 from utils.code_utils import get_hita_member_from_request
 
 
-class ShowReelViewSet(viewsets.mixins.CreateModelMixin,
-                      viewsets.mixins.ListModelMixin,
-                      viewsets.GenericViewSet):
+class ShowReelViewSet(
+    viewsets.mixins.CreateModelMixin,
+    viewsets.mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     queryset = ShowReel.objects.all()
     permission_classes = [IsHITAMemberPermission]
     serializer_class = ShowReelCreateSerializer
@@ -25,7 +25,9 @@ class ShowReelViewSet(viewsets.mixins.CreateModelMixin,
     @get_hita_member_from_request
     def create(self, request, *args, **kwargs):
         super().create(request, *args, **kwargs)
-        return get_successful_creation_response(message='ShowReel uploaded successfully!')
+        return get_successful_creation_response(
+            message='ShowReel uploaded successfully!'
+        )
 
     @get_hita_member_from_request
     def list(self, request, performer, *args, **kwargs):

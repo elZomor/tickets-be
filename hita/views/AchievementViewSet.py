@@ -25,7 +25,9 @@ class AchievementViewSet(viewsets.ModelViewSet):
                 data={'status': 'FAILED', 'message': 'Data not create successfully!'},
             )
         instance = serializer.save()
-        return get_successful_creation_response(data={'id': instance.id}, message='Achievement created successfully!')
+        return get_successful_creation_response(
+            data={'id': instance.id}, message='Achievement created successfully!'
+        )
 
     def list(self, request, *args, **kwargs):
         hita_member = HITAMember.objects.filter(user=self.request.user).last()

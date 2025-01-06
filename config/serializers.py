@@ -1,8 +1,8 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import serializers
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -13,7 +13,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             if not user or not user.check_password(password):
                 raise serializers.ValidationError("Invalid credentials")
         else:
-            user = authenticate(request=self.context['request'], username=identifier, password=password)
+            user = authenticate(
+                request=self.context['request'], username=identifier, password=password
+            )
         if user is None:
             raise serializers.ValidationError("Invalid credentials")
         attrs["username"] = user.username

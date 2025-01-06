@@ -2,10 +2,8 @@ from django.db import models
 
 
 class Policy(models.Model):
-    title = models.CharField(
-        max_length=255, default="Privacy Policy"
-    )
-    content = models.TextField()  
+    title = models.CharField(max_length=255, default="Privacy Policy")
+    content = models.TextField()
     type = models.CharField(max_length=20)
     version = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)

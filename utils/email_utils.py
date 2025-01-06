@@ -1,7 +1,6 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
 import environ
 from celery.app import shared_task
 
@@ -33,7 +32,11 @@ def send_approve_email(self, to_email: str):
         </html>
         '''
     try:
-        send_email(to_email=to_email, body=body, subject='Request to join Actogram has been approved')
+        send_email(
+            to_email=to_email,
+            body=body,
+            subject='Request to join Actogram has been approved',
+        )
         return {'status': 'ok', 'email': to_email}
     except Exception as e:
         return {'status': 'error', 'message': str(e), 'email': to_email}
