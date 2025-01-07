@@ -1,3 +1,7 @@
+import random
+import string
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -61,6 +65,7 @@ class HITAMember(models.Model):
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=(('M', 'Male'), ('F', 'Female')))
+    invitation_code = models.CharField(max_length=20, default=str(uuid.uuid4()).replace('-', '')[:20])
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'

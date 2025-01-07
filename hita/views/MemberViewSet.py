@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, mixins
 
 from hita.Exceptions import ResourceNotFound
-from hita.models import HITAMember
+from hita.models import HITAMember, Status, Invitation
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import HITAMemberViewSerializer, HITAMemberCreateSerializer
 from rest_framework.decorators import action
@@ -56,6 +58,16 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             return get_bad_request_response(data=serializer.errors)
 
         member = serializer.save()
+        invitation_code = request.data.get('invitation_code')
+        if invitation_code:
+            referrer = HITAMember.objects.filter(invitation_code=invitation_code).first()
+            if referrer:
+                member.request_status = Status.APPROVED.value
+                member.reviewed_by = referrer
+                member.reviewed_at = datetime.now()
+                member.save()
+                Invitation.objects.create(**{'from_member': referrer, 'invited_member': member})
+
         return get_successful_creation_response(
             data=HITAMemberViewSerializer(member).data
         )
@@ -73,5 +85,6 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 'performer': hita_member.has_performer,
                 'username': hita_member.user.username,
                 'name': hita_member.full_name,
+                'invitation_code': hita_member.invitation_code,
             }
         )
