@@ -42,7 +42,7 @@ class HITAMemberCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HITAMember
-        fields = '__all__'
+        exclude = ['invitation_code']
 
     def validate(self, attrs):
         if HITAMember.objects.filter(user=attrs['user']).exists():
