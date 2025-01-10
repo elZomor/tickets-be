@@ -11,7 +11,7 @@ from hita.models import (
     Gallery,
     Status,
     PublicChannel,
-    ShowReel,
+    ShowReel, Invitation,
 )
 from hita.models.Achievement import Achievement
 from utils.email_utils import send_approve_email
@@ -162,6 +162,10 @@ class PublicChannelInline(admin.StackedInline):
 
 @admin.register(ContactDetail)
 class ContactDetailsAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(Invitation)
+class InvitationAdmin(admin.ModelAdmin):
     pass
 
 
