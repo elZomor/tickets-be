@@ -1,7 +1,14 @@
 from rest_framework import viewsets
 
-from hita.models import Department, StudyType, TheaterRole, Location, ContactTypes
-
+from hita.models import (
+    StudyType,
+    TheaterRole,
+    Location,
+    ContactTypes,
+    TheaterDepartment,
+    Faculty,
+    CinemaDepartment,
+)
 from utils.Response import get_successful_response
 
 
@@ -11,9 +18,19 @@ class ContactTypeViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet
         return get_successful_response(data=queryset)
 
 
+class FacultyViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
+    def list(self, request, *args, **kwargs):
+        queryset = [label for label, _ in Faculty.choices]
+        return get_successful_response(data=queryset)
+
+
 class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
-        queryset = [label for label, _ in Department.choices]
+        faculty = request.query_params.get('faculty')
+        if faculty == Faculty.CINEMA.value:
+            queryset = [label for label, _ in CinemaDepartment.choices]
+        else:
+            queryset = [label for label, _ in TheaterDepartment.choices]
         return get_successful_response(data=queryset)
 
 

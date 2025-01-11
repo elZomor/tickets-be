@@ -30,6 +30,7 @@ class HITAMemberViewSerializer(serializers.ModelSerializer):
             'gender',
             'request_status',
             'has_performer',
+            'faculty',
         ]
 
     @staticmethod
@@ -145,6 +146,7 @@ class AchievementViewSerializer(serializers.ModelSerializer):
 class PerformerViewAllSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
+    faculty = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
     profile_picture = serializers.SerializerMethodField()
     gender = serializers.SerializerMethodField()
@@ -159,6 +161,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
             'username',
             'full_name',
             'nick_name',
+            'faculty',
             'department',
             'skills_tags',
             'biography',
@@ -187,6 +190,10 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_department(obj):
         return obj.hita_member.department
+
+    @staticmethod
+    def get_faculty(obj):
+        return obj.hita_member.faculty
 
     @staticmethod
     def get_profile_picture(obj):

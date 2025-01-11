@@ -1,16 +1,36 @@
-import random
-import string
 import uuid
 
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 
 
-class Department(models.TextChoices):
+class Faculty(models.TextChoices):
+    THEATER = 'THEATER_INST', 'Theater Institute'
+    CINEMA = 'CINEMA_INST', 'Cinema Institute'
+
+
+class TheaterDepartment(models.TextChoices):
     ACTING = 'ACTING_DEP', 'Acting And Directing'
     DRAMA = 'DRAMA_DEP', 'Drama And Criticism'
     DECOR = 'DECOR_DEP', 'Decor'
     TECH = 'TECH_DEP', 'Theatrical Techniques'
+
+
+class CinemaDepartment(models.TextChoices):
+    SCREENWRITING = 'SCREENWRITING_DEP', 'Screenwriting'
+    CINEMATOGRAPHY = 'CINEMATOGRAPHY_DEP', 'CINEMATOGRAPHY'
+    DIRECTING = 'DIRECTING_DEP', 'Directing'
+    ANIMATION = 'ANIMATION_DEP', 'Animation'
+    EDITING = 'EDITING_DEP', 'Editing'
+    PRODUCTION = 'PRODUCTION_DEP', 'Production'
+    SOUND_ENGINEERING = 'SOUND_ENGINEERING_DEP', 'Sound Engineering'
+    SET_DESIGN = 'SET_DESIGN_DEP', 'Set Design'
+
+
+class Department(models.TextChoices):
+    @staticmethod
+    def combined_choices():
+        return TheaterDepartment.choices + CinemaDepartment.choices
 
 
 class StudyType(models.TextChoices):
@@ -40,8 +60,13 @@ class HITAMember(models.Model):
         null=True,
         blank=True,
     )
+    faculty = models.CharField(
+        max_length=20, choices=Faculty.choices, default=Faculty.THEATER.value
+    )
     department = models.CharField(
-        max_length=10, choices=Department.choices, default=Department.ACTING.value
+        max_length=25,
+        choices=Department.combined_choices(),
+        default=TheaterDepartment.ACTING.value,
     )
     study_type = models.CharField(
         max_length=15, choices=StudyType.choices, default=StudyType.NORMAL.value
@@ -65,7 +90,7 @@ class HITAMember(models.Model):
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=(('M', 'Male'), ('F', 'Female')))
-    invitation_code = models.CharField(max_length=20, default=str(uuid.uuid4()).replace('-', '')[:20])
+    invitation_code = models.CharField(max_length=20)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -89,3 +114,7 @@ class HITAMember(models.Model):
             return self.performer is not None
         except Exception:
             return False
+
+    def save(self, *args, **kwargs):
+        self.invitation_code = str(uuid.uuid4()).replace('-', '')[:20]
+        super().save(*args, **kwargs)
