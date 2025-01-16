@@ -3,7 +3,7 @@ from datetime import datetime
 from django.contrib import admin, messages
 
 from hita.models import (
-    HITAMember,
+    Member,
     Performer,
     Experience,
     TheaterRole,
@@ -12,13 +12,17 @@ from hita.models import (
     Status,
     PublicChannel,
     ShowReel,
-    Invitation,
+    Invitation, AdminMember,
 )
 from hita.models.Achievement import Achievement
 from utils.email_utils import send_approve_email
 
 
-@admin.register(HITAMember)
+@admin.register(AdminMember)
+class AdminMemberAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(Member)
 class HITAMemberAdmin(admin.ModelAdmin):
     list_display = [
         'name',
@@ -67,7 +71,7 @@ class HITAMemberAdmin(admin.ModelAdmin):
     @staticmethod
     def prevent_update_approved_members(func):
         def call(modeladmin, request, queryset, *args, **kwargs):
-            hita_member = HITAMember.objects.filter(user=request.user).last()
+            hita_member = Member.objects.filter(user=request.user).last()
             if hita_member is None:
                 modeladmin.message_user(
                     request,

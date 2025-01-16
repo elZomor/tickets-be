@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from hita.models import (
     Performer,
-    HITAMember,
+    Member,
     Experience,
     TheaterRole,
     ContactDetail,
@@ -15,7 +15,7 @@ from hita.models.Achievement import Achievement
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = HITAMember
+        model = Member
         fields = [
             'username',
             'full_name',
@@ -42,11 +42,11 @@ class HITAMemberCreateSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        model = HITAMember
+        model = Member
         exclude = ['invitation_code']
 
     def validate(self, attrs):
-        if HITAMember.objects.filter(user=attrs['user']).exists():
+        if Member.objects.filter(user=attrs['user']).exists():
             raise serializers.ValidationError(
                 {'user': "A record for this user already exists."}
             )

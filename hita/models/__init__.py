@@ -3,7 +3,7 @@ from .ContactDetail import *  # noqa:F401, F403
 from .Experience import *  # noqa:F401, F403
 from .Gallery import *  # noqa:F401, F403
 from .Invitation import *  # noqa:F401, F403
-from .HITAMember import *  # noqa:F401, F403
+from .Member import *  # noqa:F401, F403
 from .NotificationCenter import *  # noqa:F401, F403
 from .Performer import *  # noqa:F401, F403
 from .PublicChannel import *  # noqa:F401, F403

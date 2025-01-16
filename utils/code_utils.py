@@ -13,9 +13,9 @@ def get_hita_member_from_request(func):
     @wraps(func)
     def wrapper(viewset, request, *args, **kwargs):
         data = request.data
-        from hita.models import HITAMember
+        from hita.models import Member
 
-        hita_member = HITAMember.objects.filter(user=request.user).last()
+        hita_member = Member.objects.filter(user=request.user).last()
         data['performer'] = hita_member.performer.id
         request._full_data = data
         response = func(viewset, request, hita_member.performer, *args, **kwargs)
@@ -27,9 +27,9 @@ def get_hita_member_from_request(func):
 def authorize_performer_data(func):
     @wraps(func)
     def wrapper(viewset, request, *args, **kwargs):
-        from hita.models import HITAMember
+        from hita.models import Member
 
-        hita_member = HITAMember.objects.filter(user=request.user).last()
+        hita_member = Member.objects.filter(user=request.user).last()
         queryset = viewset.get_queryset()
         instance = get_object_or_404(queryset, pk=kwargs.get('pk'))
         if instance.performer.id != hita_member.performer.id:
@@ -49,7 +49,7 @@ def upload_to(instance, filename):
 
 
 def create_super_user() -> None:
-    from hita.models import HITAMember, Status
+    from hita.models import Member, AdminMember, Status
 
     if not User.objects.filter(is_superuser=True).exists():
         user: User = User.objects.filter(username="zomor").last()
@@ -72,7 +72,14 @@ def create_super_user() -> None:
         hita_admin_user.is_staff = True
         hita_admin_user.is_active = True
         hita_admin_user.save()
-        HITAMember.objects.create(
+        AdminMember.objects.create(
+            **{
+                'user': hita_admin_user,
+                'first_name': 'hita',
+                'last_name': 'admin',
+            }
+        )
+        Member.objects.create(
             **{
                 'user': hita_admin_user,
                 'first_name': 'hita',
@@ -96,12 +103,13 @@ def fill_initial_data():
     if missing_roles:
         TheaterRole.objects.bulk_create(missing_roles)
 
-    group, _ = Group.objects.get_or_create(name='HITA_ADMIN')
+    group, _ = Group.objects.get_or_create(name='MEMBER_ADMIN')
 
     permission = Permission.objects.get(codename='can_approve_member_requests')
     if not group.permissions.filter(id=permission.id).exists():
-        view_permission = Permission.objects.get(codename='view_hitamember')
-        group.permissions.add(*[permission, view_permission])
+        view_permission = Permission.objects.get(codename='view_member')
+        view_business_permission = Permission.objects.get(codename='view_businessmember')
+        group.permissions.add(*[permission, view_permission, view_business_permission])
         User.objects.get(username='hita_admin').groups.add(group)
 
 

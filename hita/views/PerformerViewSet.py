@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from hita.Exceptions import ResourceNotFound
 from hita.models import (
     Performer,
-    HITAMember,
+    Member,
     TheaterRole,
 )
 from hita.permissions import IsHITAMemberPermission
@@ -54,7 +54,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super(PerformerViewSet, self).get_serializer_context()
-        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        hita_member = Member.objects.filter(user=self.request.user).last()
         context.update({'hita_member': hita_member})
         return context
 
@@ -75,7 +75,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        hita_member = Member.objects.filter(user=self.request.user).last()
         performer_data = request.data
         performer_data['hita_member'] = hita_member.id
         serializer = PerformerCreateSerializer(
@@ -92,7 +92,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
         return get_successful_response(message='Data updated successfully!')
 
     def create(self, request, *args, **kwargs):
-        hita_member = HITAMember.objects.filter(user=request.user).last()
+        hita_member = Member.objects.filter(user=request.user).last()
         if Performer.objects.filter(hita_member=hita_member).exists():
             return get_already_exists_response(
                 message='Performer profile already exist'
@@ -125,7 +125,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
     def add_gallery(self, request, *args, **kwargs):
         files = request.FILES
         data = request.data
-        hita_member = HITAMember.objects.filter(user=request.user).last()
+        hita_member = Member.objects.filter(user=request.user).last()
         performer = Performer.objects.filter(hita_member=hita_member).last()
         if not performer:
             return get_not_found_response(message='No performer found')
