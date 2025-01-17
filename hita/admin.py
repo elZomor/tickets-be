@@ -49,7 +49,7 @@ class HITAMemberAdmin(admin.ModelAdmin):
     def get_actions(self, request):
         actions = super().get_actions(request)
         hita_admin_actions = ['approve_request', 'reject_request', 'block_member']
-        if request.user.groups.filter(name='HITA_ADMIN').exists():
+        if request.user.groups.filter(name='MEMBER_ADMIN').exists():
             actions = {
                 key: value
                 for key, value in actions.items()

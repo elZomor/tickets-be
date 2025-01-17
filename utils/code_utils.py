@@ -105,7 +105,7 @@ def fill_initial_data():
 
     group, _ = Group.objects.get_or_create(name='MEMBER_ADMIN')
 
-    permission = Permission.objects.get(codename='can_approve_member_requests')
+    permission = Permission.objects.get(codename='can_approve_all_member_requests')
     if not group.permissions.filter(id=permission.id).exists():
         view_permission = Permission.objects.get(codename='view_member')
         view_business_permission = Permission.objects.get(codename='view_businessmember')
