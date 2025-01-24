@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-from hita.models import Achievement, HITAMember
+from hita.models import Achievement, Member
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import AchievementCreateSerializer, AchievementViewSerializer
 from utils.Response import get_successful_creation_response, get_successful_response
@@ -15,7 +15,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
     serializer_class = AchievementCreateSerializer
 
     def create(self, request, *args, **kwargs):
-        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        hita_member = Member.objects.filter(user=self.request.user).last()
         achievement_data = request.data
         achievement_data['performer'] = hita_member.performer.id
         serializer = self.get_serializer(data=achievement_data)
@@ -30,7 +30,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
         )
 
     def list(self, request, *args, **kwargs):
-        hita_member = HITAMember.objects.filter(user=self.request.user).last()
+        hita_member = Member.objects.filter(user=self.request.user).last()
         achievements = hita_member.performer.achievements.all().order_by('-year')
         serializer = AchievementViewSerializer(achievements, many=True)
         return get_successful_response(data=serializer.data)

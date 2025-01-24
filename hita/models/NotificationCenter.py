@@ -14,10 +14,10 @@ class RequestStatus(models.TextChoices):
 
 class NotificationCenter(models.Model):
     performer = models.ForeignKey(
-        'hita.HITAMember', on_delete=models.CASCADE, related_name='notifications'
+        'hita.Member', on_delete=models.CASCADE, related_name='notifications'
     )
     request_from = models.ForeignKey(
-        'hita.HITAMember', on_delete=models.DO_NOTHING, related_name='requests'
+        'hita.Member', on_delete=models.DO_NOTHING, related_name='requests'
     )
     request_type = models.CharField(
         max_length=20,

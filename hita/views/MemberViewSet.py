@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, mixins
 
 from hita.Exceptions import ResourceNotFound
-from hita.models import HITAMember, Status, Invitation
+from hita.models import Member, Status, Invitation
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import HITAMemberViewSerializer, HITAMemberCreateSerializer
 from rest_framework.decorators import action
@@ -18,8 +18,8 @@ from utils.Response import (
 
 
 class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    model = HITAMember
-    queryset = HITAMember.objects.all().order_by('first_name', 'last_name')
+    model = Member
+    queryset = Member.objects.all().order_by('first_name', 'last_name')
     serializer_class = HITAMemberViewSerializer
     permission_classes = IsAuthenticated
 
@@ -60,13 +60,17 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         member = serializer.save()
         invitation_code = request.data.get('invitation_code')
         if invitation_code:
-            referrer = HITAMember.objects.filter(invitation_code=invitation_code).first()
+            referrer = Member.objects.filter(
+                invitation_code=invitation_code
+            ).first()
             if referrer:
                 member.request_status = Status.APPROVED.value
                 member.reviewed_by = referrer
                 member.reviewed_at = datetime.now()
                 member.save()
-                Invitation.objects.create(**{'from_member': referrer, 'invited_member': member})
+                Invitation.objects.create(
+                    **{'from_member': referrer, 'invited_member': member}
+                )
 
         return get_successful_creation_response(
             data=HITAMemberViewSerializer(member).data
@@ -76,7 +80,7 @@ class HitaMemberViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     def member_status(self, request, *args, **kwargs):
         if not request.user.is_active:
             return get_successful_response(data={'status': 'NOT_CONFIRMED'})
-        hita_member = HITAMember.objects.filter(user=request.user).last()
+        hita_member = Member.objects.filter(user=request.user).last()
         if not hita_member:
             return get_successful_response(data={'status': 'NOT_REGISTERED'})
         return get_successful_response(

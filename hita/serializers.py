@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from hita.models import (
     Performer,
-    HITAMember,
+    Member,
     Experience,
     TheaterRole,
     ContactDetail,
@@ -15,7 +15,7 @@ from hita.models.Achievement import Achievement
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = HITAMember
+        model = Member
         fields = [
             'username',
             'full_name',
@@ -30,6 +30,7 @@ class HITAMemberViewSerializer(serializers.ModelSerializer):
             'gender',
             'request_status',
             'has_performer',
+            'faculty',
         ]
 
     @staticmethod
@@ -41,11 +42,11 @@ class HITAMemberCreateSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        model = HITAMember
+        model = Member
         exclude = ['invitation_code']
 
     def validate(self, attrs):
-        if HITAMember.objects.filter(user=attrs['user']).exists():
+        if Member.objects.filter(user=attrs['user']).exists():
             raise serializers.ValidationError(
                 {'user': "A record for this user already exists."}
             )
@@ -145,6 +146,7 @@ class AchievementViewSerializer(serializers.ModelSerializer):
 class PerformerViewAllSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
+    faculty = serializers.SerializerMethodField()
     department = serializers.SerializerMethodField()
     profile_picture = serializers.SerializerMethodField()
     gender = serializers.SerializerMethodField()
@@ -159,6 +161,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
             'username',
             'full_name',
             'nick_name',
+            'faculty',
             'department',
             'skills_tags',
             'biography',
@@ -187,6 +190,10 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_department(obj):
         return obj.hita_member.department
+
+    @staticmethod
+    def get_faculty(obj):
+        return obj.hita_member.faculty
 
     @staticmethod
     def get_profile_picture(obj):

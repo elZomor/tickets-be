@@ -14,12 +14,14 @@ from hita.views import (
     ContactDetailsViewSet,
     GalleryViewSet,
     ShowReelViewSet,
+    FacultyViewSet,
 )
 
 router = DefaultRouter(trailing_slash=False)
 
 router.register(r"performers", PerformerViewSet, basename="performer")
 router.register(r"departments", DepartmentViewSet, basename="department")
+router.register(r"faculties", FacultyViewSet, basename="faculty")
 router.register(r"contact-types", ContactTypeViewSet, basename="contact_types")
 router.register(r"skills", SkillsViewSet, basename="skills")
 router.register(r"experiences", ExperienceViewSet, basename="experiences")

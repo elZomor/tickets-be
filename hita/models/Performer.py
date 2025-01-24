@@ -16,7 +16,7 @@ class OpenForEnum(models.TextChoices):
 
 class Performer(models.Model):
     hita_member = models.OneToOneField(
-        to='hita.HITAMember', on_delete=models.CASCADE, related_name='performer'
+        to='hita.Member', on_delete=models.CASCADE, related_name='performer'
     )
     date_of_birth = models.DateField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
@@ -32,7 +32,7 @@ class Performer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     white_list_members = models.ManyToManyField(
-        'hita.HITAMember', related_name='white_list_members', blank=True
+        'hita.Member', related_name='white_list_members', blank=True
     )
     biography = models.CharField(max_length=300, null=True, blank=True)
     open_for = models.CharField(

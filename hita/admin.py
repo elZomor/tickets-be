@@ -3,7 +3,7 @@ from datetime import datetime
 from django.contrib import admin, messages
 
 from hita.models import (
-    HITAMember,
+    Member,
     Performer,
     Experience,
     TheaterRole,
@@ -11,19 +11,20 @@ from hita.models import (
     Gallery,
     Status,
     PublicChannel,
-    ShowReel, Invitation,
+    ShowReel,
+    Invitation,
 )
 from hita.models.Achievement import Achievement
 from utils.email_utils import send_approve_email
 
 
-@admin.register(HITAMember)
+@admin.register(Member)
 class HITAMemberAdmin(admin.ModelAdmin):
     list_display = [
         'name',
-        'grade',
+        'faculty',
         'department',
-        'location',
+        'grade',
         'study_type',
         'is_graduated',
         'year_of_graduation',
@@ -31,13 +32,20 @@ class HITAMemberAdmin(admin.ModelAdmin):
         'reviewed_by',
         'reviewed_at',
     ]
-    list_filter = ['grade', 'location', 'study_type', 'is_graduated', 'request_status']
+    list_filter = [
+        'faculty',
+        'grade',
+        'location',
+        'study_type',
+        'is_graduated',
+        'request_status',
+    ]
     actions = ['approve_request', 'reject_request', 'block_member']
 
     def get_actions(self, request):
         actions = super().get_actions(request)
         hita_admin_actions = ['approve_request', 'reject_request', 'block_member']
-        if request.user.groups.filter(name='HITA_ADMIN').exists():
+        if request.user.groups.filter(name='MEMBER_ADMIN').exists():
             actions = {
                 key: value
                 for key, value in actions.items()
@@ -59,7 +67,7 @@ class HITAMemberAdmin(admin.ModelAdmin):
     @staticmethod
     def prevent_update_approved_members(func):
         def call(modeladmin, request, queryset, *args, **kwargs):
-            hita_member = HITAMember.objects.filter(user=request.user).last()
+            hita_member = Member.objects.filter(user=request.user).last()
             if hita_member is None:
                 modeladmin.message_user(
                     request,
@@ -163,6 +171,7 @@ class PublicChannelInline(admin.StackedInline):
 @admin.register(ContactDetail)
 class ContactDetailsAdmin(admin.ModelAdmin):
     pass
+
 
 @admin.register(Invitation)
 class InvitationAdmin(admin.ModelAdmin):
