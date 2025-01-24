@@ -49,7 +49,7 @@ def upload_to(instance, filename):
 
 
 def create_super_user() -> None:
-    from hita.models import Member, AdminMember, Status
+    from hita.models import Member, Status
 
     if not User.objects.filter(is_superuser=True).exists():
         user: User = User.objects.filter(username="zomor").last()
@@ -72,13 +72,6 @@ def create_super_user() -> None:
         hita_admin_user.is_staff = True
         hita_admin_user.is_active = True
         hita_admin_user.save()
-        AdminMember.objects.create(
-            **{
-                'user': hita_admin_user,
-                'first_name': 'hita',
-                'last_name': 'admin',
-            }
-        )
         Member.objects.create(
             **{
                 'user': hita_admin_user,
@@ -105,11 +98,10 @@ def fill_initial_data():
 
     group, _ = Group.objects.get_or_create(name='MEMBER_ADMIN')
 
-    permission = Permission.objects.get(codename='can_approve_all_member_requests')
+    permission = Permission.objects.get(codename='can_approve_member_requests')
     if not group.permissions.filter(id=permission.id).exists():
         view_permission = Permission.objects.get(codename='view_member')
-        view_business_permission = Permission.objects.get(codename='view_businessmember')
-        group.permissions.add(*[permission, view_permission, view_business_permission])
+        group.permissions.add(*[permission, view_permission])
         User.objects.get(username='hita_admin').groups.add(group)
 
 

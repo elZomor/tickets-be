@@ -54,21 +54,6 @@ class MemberType(models.TextChoices):
     BUSINESS_MEMBER = 'BUSINESS_MEMBER', 'Business Member'
 
 
-class AdminMember(models.Model):
-    user = models.OneToOneField(to=User, on_delete=models.CASCADE)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    location = models.CharField(
-        max_length=15, choices=Location.choices, default=Location.CAIRO.value
-    )
-    class Meta:
-        permissions = [
-            ('can_approve_all_member_requests', 'Can approve all member request'),
-        ]
-
-    def __str__(self):
-        return f'{self.first_name} {self.last_name}'
-
 class AbstractMember(models.Model):
     user = models.OneToOneField(to=User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=50)
@@ -77,12 +62,6 @@ class AbstractMember(models.Model):
     favorite_performers = models.ManyToManyField(to='hita.Performer', blank=True)
     request_status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.PENDING.value
-    )
-    reviewed_by = models.ForeignKey(
-        'hita.AdminMember',
-        on_delete=models.DO_NOTHING,
-        null=True,
-        blank=True,
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=(('M', 'Male'), ('F', 'Female')))
@@ -110,13 +89,6 @@ class AbstractMember(models.Model):
         super().save(*args, **kwargs)
 
 
-class BusinessMember(AbstractMember):
-    is_individual = models.BooleanField(default=False)
-    casting_agency_name = models.CharField(max_length=50, null=True, blank=True)
-    mobile_number = models.CharField(max_length=12, unique=True, null=True, blank=True)
-    facebook_page = models.URLField(null=True, blank=True)
-
-
 class Member(AbstractMember):
     grade = models.IntegerField(
         choices=((1, 'First'), (2, 'Second'), (3, 'Third'), (4, 'Forth')),
@@ -137,6 +109,17 @@ class Member(AbstractMember):
     is_graduated = models.BooleanField(default=False)
     is_post_grad = models.BooleanField(default=False)
     year_of_graduation = models.IntegerField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        'hita.Member',
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        permissions = [
+            ('can_approve_member_requests', 'Can approve member request'),
+        ]
 
     @property
     def has_performer(self):

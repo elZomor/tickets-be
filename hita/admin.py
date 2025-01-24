@@ -12,15 +12,11 @@ from hita.models import (
     Status,
     PublicChannel,
     ShowReel,
-    Invitation, AdminMember,
+    Invitation,
 )
 from hita.models.Achievement import Achievement
 from utils.email_utils import send_approve_email
 
-
-@admin.register(AdminMember)
-class AdminMemberAdmin(admin.ModelAdmin):
-    pass
 
 @admin.register(Member)
 class HITAMemberAdmin(admin.ModelAdmin):
