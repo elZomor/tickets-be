@@ -8,3 +8,4 @@ flake8-report
 coverage_report
 clerk/public_key.pem
 database/init-db.sql
+db.sqlite3

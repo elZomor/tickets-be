@@ -17,10 +17,12 @@ sys.exit(0)
 END
 }
 
-until postgres_ready; do
-  echo "Waiting for PostgreSQL to be ready..."
-  sleep 2
-done
+if [ "$ENVIRONMENT" = "production" ]; then
+  until postgres_ready; do
+    echo "Waiting for PostgreSQL to be ready..."
+    sleep 2
+  done
+fi
 
 python manage.py collectstatic --noinput
 python manage.py migrate
