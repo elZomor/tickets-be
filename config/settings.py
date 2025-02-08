@@ -83,7 +83,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-if environment == 'PRODUCTION':
+if environment == 'production':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
