@@ -1,18 +1,29 @@
 from datetime import date
 
-from django.contrib.auth.models import AnonymousUser
-from django.db.models import Q, Count
-from rest_framework.exceptions import ValidationError
+from django.db.models import (
+    Q,
+    Count,
+    OuterRef,
+    Subquery,
+    BooleanField,
+    Case,
+    When,
+    Value,
+    IntegerField,
+)
 from django.db.transaction import atomic
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+
 from hita.Exceptions import ResourceNotFound
 from hita.models import (
     Performer,
     HITAMember,
     TheaterRole,
+    Gallery,
 )
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import (
@@ -37,10 +48,25 @@ from utils.Response import (
 
 class PerformerViewSet(viewsets.ModelViewSet):
     model = Performer
-    queryset = Performer.objects.all().order_by(
-        'hita_member__first_name', 'hita_member__last_name'
-    )
     serializer_class = PerformerViewOneSerializer
+
+    def get_queryset(self):
+        profile_picture_subquery = Gallery.objects.filter(
+            performer=OuterRef('pk'), is_profile_picture=True
+        ).values('is_profile_picture')[:1]
+        return Performer.objects.all().annotate(
+            has_profile_picture=Subquery(
+                profile_picture_subquery, output_field=BooleanField()
+            )
+        ).order_by(
+            Case(
+                When(has_profile_picture=True, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            ),
+            'hita_member__first_name',
+            'hita_member__last_name',
+        )
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -234,7 +260,27 @@ class PerformerViewSet(viewsets.ModelViewSet):
                 & Q(experiences_count__lte=experience_range_before)
             )
 
-        return queryset.filter(filter_query).distinct()
+        profile_picture_subquery = Gallery.objects.filter(
+            performer=OuterRef('pk'), is_profile_picture=True
+        ).values('is_profile_picture')[:1]
+        return (
+            queryset.filter(filter_query)
+            .distinct()
+            .annotate(
+                has_profile_picture=Subquery(
+                    profile_picture_subquery, output_field=BooleanField()
+                )
+            )
+            .order_by(
+                Case(
+                    When(has_profile_picture=True, then=Value(0)),
+                    default=Value(1),
+                    output_field=IntegerField(),
+                ),
+                'hita_member__first_name',
+                'hita_member__last_name',
+            )
+        )
 
     @atomic
     def create_performer_with_data(self, data, hita_member):

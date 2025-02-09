@@ -18,6 +18,7 @@ def get_user_from_context(context):
         return None
     return context.get('hita_member').user
 
+
 class HITAMemberViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = HITAMember
@@ -295,9 +296,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
         user = get_user_from_context(self.context.get('hita_member'))
         if not user:
             return []
-        return GalleryViewSerializer(
-            obj.get_gallery(user), many=True
-        ).data
+        return GalleryViewSerializer(obj.get_gallery(user), many=True).data
 
     @staticmethod
     def get_has_show_reel(obj):
@@ -371,7 +370,4 @@ class PerformerViewSerializer(serializers.ModelSerializer):
         user = get_user_from_context(self.context.get('hita_member'))
         if not user:
             return []
-        return GalleryViewSerializer(
-            obj.get_gallery(user), many=True
-        ).data
-
+        return GalleryViewSerializer(obj.get_gallery(user), many=True).data
