@@ -14,9 +14,9 @@ from hita.models.Achievement import Achievement
 
 
 def get_user_from_context(context):
-    if not context or not context.get('user'):
+    if not context or not context.user:
         return None
-    return context.get('hita_member').user
+    return context.user
 
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
