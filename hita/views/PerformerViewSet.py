@@ -1,9 +1,12 @@
 from datetime import date
+
+from django.contrib.auth.models import AnonymousUser
 from django.db.models import Q, Count
 from rest_framework.exceptions import ValidationError
 from django.db.transaction import atomic
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from hita.Exceptions import ResourceNotFound
 from hita.models import (
@@ -37,8 +40,17 @@ class PerformerViewSet(viewsets.ModelViewSet):
     queryset = Performer.objects.all().order_by(
         'hita_member__first_name', 'hita_member__last_name'
     )
-    permission_classes = [IsHITAMemberPermission]
     serializer_class = PerformerViewOneSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsHITAMemberPermission()]
+
+    def get_authenticators(self):
+        if self.request.method == 'GET':
+            return []
+        return super().get_authenticators()
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
@@ -54,8 +66,11 @@ class PerformerViewSet(viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super(PerformerViewSet, self).get_serializer_context()
-        hita_member = HITAMember.objects.filter(user=self.request.user).last()
-        context.update({'hita_member': hita_member})
+        if not self.request.user.is_authenticated:
+            context.update({'hita_member': None})
+        else:
+            hita_member = HITAMember.objects.filter(user=self.request.user).last()
+            context.update({'hita_member': hita_member})
         return context
 
     def retrieve(self, request, *args, **kwargs):

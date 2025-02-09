@@ -13,6 +13,11 @@ from hita.models import (
 from hita.models.Achievement import Achievement
 
 
+def get_user_from_context(context):
+    if not context or not context.get('user'):
+        return None
+    return context.get('hita_member').user
+
 class HITAMemberViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = HITAMember
@@ -279,13 +284,19 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
         return ExperienceViewSerializer(experiences, many=True).data
 
     def get_contact_details(self, obj):
+        user = get_user_from_context(self.context.get('hita_member'))
+        if not user:
+            return []
         return ContactDetailsViewSerializer(
-            obj.get_contact_details(self.context.get('hita_member').user), many=True
+            obj.get_contact_details(user), many=True
         ).data
 
     def get_gallery(self, obj):
+        user = get_user_from_context(self.context.get('hita_member'))
+        if not user:
+            return []
         return GalleryViewSerializer(
-            obj.get_gallery(self.context.get('hita_member').user), many=True
+            obj.get_gallery(user), many=True
         ).data
 
     @staticmethod
@@ -349,11 +360,18 @@ class PerformerViewSerializer(serializers.ModelSerializer):
     gallery = serializers.SerializerMethodField()
 
     def get_contact_details(self, obj):
+        user = get_user_from_context(self.context.get('hita_member'))
+        if not user:
+            return []
         return ContactDetailsViewSerializer(
-            obj.get_contact_details(self.context.get('hita_member').user), many=True
+            obj.get_contact_details(user), many=True
         ).data
 
     def get_gallery(self, obj):
+        user = get_user_from_context(self.context.get('hita_member'))
+        if not user:
+            return []
         return GalleryViewSerializer(
-            obj.get_gallery(self.context.get('hita_member').user), many=True
+            obj.get_gallery(user), many=True
         ).data
+
