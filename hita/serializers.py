@@ -8,7 +8,7 @@ from hita.models import (
     ContactDetail,
     Gallery,
     PublicChannel,
-    ShowReel,
+    ShowReel, Status,
 )
 from hita.models.Achievement import Achievement
 
@@ -286,7 +286,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
 
     def get_contact_details(self, obj):
         user = get_user_from_context(self.context.get('hita_member'))
-        if not user:
+        if not user or obj.hita_member.request_status != Status.APPROVED.value:
             return []
         return ContactDetailsViewSerializer(
             obj.get_contact_details(user), many=True
@@ -358,7 +358,7 @@ class PerformerViewSerializer(serializers.ModelSerializer):
 
     def get_contact_details(self, obj):
         user = get_user_from_context(self.context.get('hita_member'))
-        if not user:
+        if not user or obj.hita_member.request_status != Status.APPROVED.value:
             return []
         return ContactDetailsViewSerializer(
             obj.get_contact_details(user), many=True
