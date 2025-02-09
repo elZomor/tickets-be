@@ -3,6 +3,7 @@ import os
 from django.http import StreamingHttpResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 
 from config.storages import get_s3_object
 from hita.Exceptions import ResourceNotFound
@@ -19,8 +20,12 @@ class ShowReelViewSet(
     viewsets.GenericViewSet,
 ):
     queryset = ShowReel.objects.all()
-    permission_classes = [IsHITAMemberPermission]
     serializer_class = ShowReelCreateSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsHITAMemberPermission()]
 
     @get_hita_member_from_request
     def create(self, request, *args, **kwargs):
