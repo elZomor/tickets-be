@@ -73,11 +73,6 @@ class PerformerViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         return [IsHITAMemberPermission()]
 
-    def get_authenticators(self):
-        if self.request.method == 'GET':
-            return []
-        return super().get_authenticators()
-
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field

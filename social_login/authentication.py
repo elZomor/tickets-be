@@ -1,5 +1,5 @@
 import requests
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from rest_framework.exceptions import AuthenticationFailed
 import jwt
 
@@ -30,7 +30,7 @@ class GoogleJWTAuthentication:
         except Exception as e:
             print('Auth Error', flush=True)
             print(str(e), flush=True)
-            raise AuthenticationFailed('Invalid token')
+            return AnonymousUser(), 'NoData'
 
     def get_extra_actions(self):
         # If you don't need extra actions, just return an empty list

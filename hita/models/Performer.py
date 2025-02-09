@@ -76,14 +76,8 @@ class Performer(models.Model):
             return self.contact_detail_list.all()
         return None
 
-    def get_gallery(self, user):
-        if (
-            not self.gallery_protected
-            or self.white_list_members.filter(id=user.id).exists()
-            or self.hita_member.user == user
-        ):
-            return self.galleries.all()
-        return None
+    def get_gallery(self):
+        return self.galleries.all()
 
     @property
     def full_name(self):

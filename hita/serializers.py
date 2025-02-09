@@ -292,11 +292,9 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
             obj.get_contact_details(user), many=True
         ).data
 
-    def get_gallery(self, obj):
-        user = get_user_from_context(self.context.get('hita_member'))
-        if not user:
-            return []
-        return GalleryViewSerializer(obj.get_gallery(user), many=True).data
+    @staticmethod
+    def get_gallery(obj):
+        return GalleryViewSerializer(obj.get_gallery(), many=True).data
 
     @staticmethod
     def get_has_show_reel(obj):
@@ -366,8 +364,6 @@ class PerformerViewSerializer(serializers.ModelSerializer):
             obj.get_contact_details(user), many=True
         ).data
 
-    def get_gallery(self, obj):
-        user = get_user_from_context(self.context.get('hita_member'))
-        if not user:
-            return []
-        return GalleryViewSerializer(obj.get_gallery(user), many=True).data
+    @staticmethod
+    def get_gallery(obj):
+        return GalleryViewSerializer(obj.get_gallery(), many=True).data
