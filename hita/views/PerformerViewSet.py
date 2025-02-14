@@ -358,6 +358,9 @@ class PerformerViewSet(viewsets.ModelViewSet):
         Resizes while maintaining aspect ratio and adds white padding to 1200x630 px.
         Returns a base64-encoded image.
         """
+        image_path = image_url.split("media/", 1)[-1]
+        if os.path.exists(f'resized/{image_path}'):
+            return f"{BE_URL}/media/resized/{image_path}"
         image = None
 
         # Check if image is hosted or local
@@ -369,17 +372,18 @@ class PerformerViewSet(viewsets.ModelViewSet):
             except requests.RequestException:
                 return image_url  # Return original if request fails
         else:  # Local file (Django MEDIA_ROOT)
-            local_path = os.path.join(settings.MEDIA_ROOT, image_url.split("media/", 1)[-1])
+            local_path = os.path.join(settings.MEDIA_ROOT, image_path)
             if os.path.exists(local_path):
                 image = Image.open(local_path)
 
         if image is None:
             return image_url  # Fallback to original image
 
+        # Convert to RGB (fixes transparency issues with PNGs)
         image = image.convert("RGB")
 
         # Resize while maintaining aspect ratio
-        image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)  # ✅ Fixed
+        image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
 
         # Create a white background canvas
         new_image = Image.new("RGB", (target_width, target_height), (255, 255, 255))
@@ -389,12 +393,14 @@ class PerformerViewSet(viewsets.ModelViewSet):
         y_offset = (target_height - image.height) // 2
         new_image.paste(image, (x_offset, y_offset))
 
-        # Save to memory (temporary, no file saving)
-        buffer = BytesIO()
-        new_image.save(buffer, format="JPEG")
-        base64_image = base64.b64encode(buffer.getvalue()).decode()
+        # Save the resized image temporarily
+        resized_filename = f"resized/{image_path}"
+        resized_path = os.path.join(settings.MEDIA_ROOT, resized_filename)
+        os.makedirs(os.path.dirname(resized_path), exist_ok=True)
+        new_image.save(resized_path, format="JPEG")
 
-        return f"data:image/jpeg;base64,{base64_image}"
+        # Return the new public image URL
+        return f"{BE_URL}/media/{resized_filename}"
     @staticmethod
     def create_performer(performer_data, hita_member_id):
         performer_data['hita_member'] = hita_member_id
