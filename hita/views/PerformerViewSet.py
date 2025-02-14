@@ -1,8 +1,9 @@
 import os
 from datetime import date
+from io import BytesIO
 
 import requests
-from PIL import Image, ImageOps
+from PIL import Image
 from django.conf import settings
 from django.db.models import (
     Q,
@@ -51,8 +52,6 @@ from utils.Response import (
     get_unauthorized_response,
     get_not_found_response,
 )
-from io import BytesIO
-import base64
 
 
 class PerformerViewSet(viewsets.ModelViewSet):
@@ -209,7 +208,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <meta property="og:title" content="Profile of {performer.full_name}">
+            <meta property="og:title" content="الملف الفني ل{performer.full_name}">
             <meta property="og:image" content="{padded_image_data}">
             <meta property="og:image:secure_url" content="{padded_image_data}">
             <meta property="og:image:width" content="1200">
@@ -220,9 +219,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
             <meta property="og:url" content="{frontend_url}">
 
             <script>
-                setTimeout(function() {{
                     window.location.href = "{frontend_url}";
-                }}, 3000);
             </script>
 
             <noscript>
@@ -401,6 +398,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
 
         # Return the new public image URL
         return f"{BE_URL}/media/{resized_filename}"
+
     @staticmethod
     def create_performer(performer_data, hita_member_id):
         performer_data['hita_member'] = hita_member_id
