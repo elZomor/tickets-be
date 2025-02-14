@@ -3,6 +3,7 @@ import environ
 env = environ.Env()
 
 FE_URL = env.str("FE_URL", default="http://localhost:8000")
+BE_URL = env.str("BASE_URL", default="http://localhost:8000")
 GOOGLE_CLIENT_ID = env.str('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env.str('GOOGLE_CLIENT_SECRET', default='')
 AWS_ACCESS_KEY_ID = env.str('AWS_ACCESS_KEY_ID', default='')

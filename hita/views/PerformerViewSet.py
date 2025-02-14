@@ -1,5 +1,9 @@
+import os
 from datetime import date
 
+import requests
+from PIL import Image, ImageOps
+from django.conf import settings
 from django.db.models import (
     Q,
     Count,
@@ -12,12 +16,15 @@ from django.db.models import (
     IntegerField,
 )
 from django.db.transaction import atomic
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from config.constants import FE_URL, BE_URL
 from hita.Exceptions import ResourceNotFound
 from hita.models import (
     Performer,
@@ -44,11 +51,14 @@ from utils.Response import (
     get_unauthorized_response,
     get_not_found_response,
 )
+from io import BytesIO
+import base64
 
 
 class PerformerViewSet(viewsets.ModelViewSet):
     model = Performer
     serializer_class = PerformerViewOneSerializer
+    lookup_field = "username"
 
     def get_queryset(self):
         profile_picture_subquery = Gallery.objects.filter(
@@ -182,6 +192,50 @@ class PerformerViewSet(viewsets.ModelViewSet):
         serializer.save()
         return get_successful_response(data={'user': hita_member.user.username})
 
+    @action(detail=True, methods=['GET'], url_path='profile-meta')
+    def profile_meta(self, request, username=None):
+        hita_member = get_object_or_404(HITAMember, user__username=username)
+        performer: Performer = get_object_or_404(Performer, hita_member=hita_member)
+
+        profile_picture_url = (
+            f"{BE_URL}{performer.profile_picture}"
+            if performer.profile_picture.startswith('/media')
+            else performer.profile_picture)
+        frontend_url = f"{FE_URL}/artists/{username}"
+
+        padded_image_data = self.resize_and_pad_image(profile_picture_url, is_local=True)
+
+        html_content = f"""<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta property="og:title" content="Profile of {performer.full_name}">
+            <meta property="og:image" content="{padded_image_data}">
+            <meta property="og:image:secure_url" content="{padded_image_data}">
+            <meta property="og:image:width" content="1200">
+            <meta property="og:image:height" content="630">
+            <meta property="og:image:type" content="image/jpeg">
+            <meta property="og:image:alt" content="Profile picture of {performer.full_name}">
+            <meta property="og:type" content="profile">
+            <meta property="og:url" content="{frontend_url}">
+
+            <script>
+                setTimeout(function() {{
+                    window.location.href = "{frontend_url}";
+                }}, 3000);
+            </script>
+
+            <noscript>
+                <meta http-equiv="refresh" content="3; url={frontend_url}">
+            </noscript>
+        </head>
+        <body>
+            <p>Redirecting to <a href="{frontend_url}">{frontend_url}</a> in a few seconds...</p>
+        </body>
+        </html>"""
+
+        return HttpResponse(html_content, content_type="text/html; charset=utf-8")
+
     def build_permissions(self, instance):
         permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
         if instance.hita_member.user.id == self.request.user.id:
@@ -297,6 +351,50 @@ class PerformerViewSet(viewsets.ModelViewSet):
         )
         return performer
 
+    @staticmethod
+    def resize_and_pad_image(image_url, is_local, target_width=1200, target_height=630):
+        """
+        If the image is local, load it from MEDIA_ROOT instead of fetching via HTTP.
+        Resizes while maintaining aspect ratio and adds white padding to 1200x630 px.
+        Returns a base64-encoded image.
+        """
+        image = None
+
+        # Check if image is hosted or local
+        if not is_local:  # Remote image
+            try:
+                response = requests.get(image_url, timeout=5)
+                response.raise_for_status()
+                image = Image.open(BytesIO(response.content))
+            except requests.RequestException:
+                return image_url  # Return original if request fails
+        else:  # Local file (Django MEDIA_ROOT)
+            local_path = os.path.join(settings.MEDIA_ROOT, image_url.split("media/", 1)[-1])
+            if os.path.exists(local_path):
+                image = Image.open(local_path)
+
+        if image is None:
+            return image_url  # Fallback to original image
+
+        image = image.convert("RGB")
+
+        # Resize while maintaining aspect ratio
+        image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)  # ✅ Fixed
+
+        # Create a white background canvas
+        new_image = Image.new("RGB", (target_width, target_height), (255, 255, 255))
+
+        # Center the resized image on the white background
+        x_offset = (target_width - image.width) // 2
+        y_offset = (target_height - image.height) // 2
+        new_image.paste(image, (x_offset, y_offset))
+
+        # Save to memory (temporary, no file saving)
+        buffer = BytesIO()
+        new_image.save(buffer, format="JPEG")
+        base64_image = base64.b64encode(buffer.getvalue()).decode()
+
+        return f"data:image/jpeg;base64,{base64_image}"
     @staticmethod
     def create_performer(performer_data, hita_member_id):
         performer_data['hita_member'] = hita_member_id
