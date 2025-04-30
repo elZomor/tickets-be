@@ -3,10 +3,9 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db import models
 
-from show.models import Theater
+from show.models import Theater, Festival
 from show.models.ShowTag import ShowTag
-from utils.code_utils import upload_to
-from utils.json_utils import default_localized_model
+from utils.code_utils import upload_to_show
 
 
 class ShowStatus(models.TextChoices):
@@ -18,11 +17,11 @@ class ShowStatus(models.TextChoices):
 
 
 class Show(models.Model):
-    name = models.JSONField(default=default_localized_model)
+    name = models.CharField(max_length=100)
     link = models.URLField()
     time = models.DateTimeField()
     cast_name = models.CharField(max_length=100, null=True, blank=True)
-    poster = models.FileField(upload_to=upload_to, null=True, blank=True)
+    poster = models.FileField(upload_to=upload_to_show, null=True, blank=True)
     author = models.CharField(max_length=50)
     director = models.CharField(max_length=50)
     description = models.TextField(max_length=250, null=True, blank=True)
@@ -41,6 +40,9 @@ class Show(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(to=ShowTag, blank=True)
+    notes = models.JSONField(null=True, blank=True)
+    cast = models.JSONField(null=True, blank=True)
+    festival = models.ForeignKey(to='show.Festival', on_delete=models.DO_NOTHING, related_name='shows', null=True, blank=True)
 
     @property
     def remaining_seats(self):
@@ -54,4 +56,4 @@ class Show(models.Model):
         return timezone.now() < self.time
 
     def __str__(self):
-        return f'{self.name.get('ar')} - {self.cast_name}'
+        return f'{self.name} - {self.cast_name}'

@@ -76,7 +76,7 @@ class Migration(migrations.Migration):
                 (
                     'poster',
                     models.FileField(
-                        blank=True, null=True, upload_to=utils.code_utils.upload_to
+                        blank=True, null=True, upload_to=utils.code_utils.upload_to_show
                     ),
                 ),
                 ('author', models.CharField(max_length=50)),

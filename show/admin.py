@@ -18,6 +18,8 @@ class ShowAdmin(admin.ModelAdmin):
         'poster',
         'tags',
         'cast_name',
+        'cast',
+        'notes'
     ]
 
 

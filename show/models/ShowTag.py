@@ -4,7 +4,7 @@ from utils.json_utils import default_localized_model
 
 
 class ShowTag(models.Model):
-    name = models.JSONField(default=default_localized_model)
+    name = models.CharField(max_length=50)
 
     def __str__(self):
-        return self.name.get('ar')
+        return self.name

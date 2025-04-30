@@ -40,12 +40,18 @@ def authorize_performer_data(func):
     return wrapper
 
 
-def upload_to(instance, filename):
+def upload_to_show(instance, filename):
     name = instance.name.get('en')
     cast_name = instance.cast_name
     created_at = datetime.now().strftime('%Y-%m-%d')
     file_name = f"{name} - {cast_name} - {created_at}{os.path.splitext(filename)[1]}"
     return os.path.join('media', 'shows', 'poster', file_name)
+
+def upload_to_festival(instance, filename):
+    name = instance.name.get('en')
+    created_at = datetime.now().strftime('%Y-%m-%d')
+    file_name = f"{name} - {created_at}{os.path.splitext(filename)[1]}"
+    return os.path.join('media', 'festivals', 'poster', file_name)
 
 
 def create_super_user() -> None:

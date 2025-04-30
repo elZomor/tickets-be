@@ -1,4 +1,5 @@
 from rest_framework import mixins, status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -17,6 +18,7 @@ class ShowViewSet(
     serializer_class = ShowViewSerializer
     queryset = Show.objects.filter(status=ShowStatus.APPROVED.value)
     pagination_class = CustomPagination
+    permission_classes = AllowAny
 
     def get_authenticators(self):
         if self.request.method == 'GET':
