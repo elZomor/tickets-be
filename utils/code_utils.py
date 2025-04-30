@@ -41,7 +41,7 @@ def authorize_performer_data(func):
 
 
 def upload_to_show(instance, filename):
-    name = instance.name.get('en')
+    name = instance.name
     cast_name = instance.cast_name
     created_at = datetime.now().strftime('%Y-%m-%d')
     file_name = f"{name} - {cast_name} - {created_at}{os.path.splitext(filename)[1]}"

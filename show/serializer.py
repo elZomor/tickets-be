@@ -8,7 +8,7 @@ class ShowViewSerializer(serializers.ModelSerializer):
         model = Show
         fields = [
             'id',
-            'theater_id',
+            'theater_link',
             'name',
             'cast_name',
             'show_date',
@@ -20,21 +20,27 @@ class ShowViewSerializer(serializers.ModelSerializer):
             'author',
             'director',
             'tags',
+            'cast',
+            'crew',
+            'notes',
+            'is_open',
+            'festival_name'
         ]
 
     theater_name = serializers.SerializerMethodField()
-    theater_id = serializers.SerializerMethodField()
+    theater_link = serializers.SerializerMethodField()
     show_date = serializers.SerializerMethodField()
     show_time = serializers.SerializerMethodField()
     booking_available = serializers.SerializerMethodField()
+    festival_name = serializers.SerializerMethodField()
 
     @staticmethod
     def get_theater_name(obj):
         return obj.theater.__str__()
 
     @staticmethod
-    def get_theater_id(obj):
-        return obj.theater.pk
+    def get_theater_link(obj):
+        return obj.theater.location
 
     @staticmethod
     def get_booking_available(obj):
@@ -42,8 +48,15 @@ class ShowViewSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_show_date(obj):
-        return obj.time.strftime('%d-%b-%Y')
+        return obj.time.strftime('%Y-%m-%d')
 
     @staticmethod
     def get_show_time(obj):
         return obj.time.strftime('%I:%M %p')
+
+    @staticmethod
+    def get_festival_name(obj):
+        if obj.festival:
+            return obj.festival.name
+        return None
+

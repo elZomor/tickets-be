@@ -42,6 +42,7 @@ class Show(models.Model):
     tags = models.ManyToManyField(to=ShowTag, blank=True)
     notes = models.JSONField(null=True, blank=True)
     cast = models.JSONField(null=True, blank=True)
+    crew = models.JSONField(null=True, blank=True)
     festival = models.ForeignKey(to='show.Festival', on_delete=models.DO_NOTHING, related_name='shows', null=True, blank=True)
 
     @property

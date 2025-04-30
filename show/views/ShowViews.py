@@ -18,7 +18,7 @@ class ShowViewSet(
     serializer_class = ShowViewSerializer
     queryset = Show.objects.filter(status=ShowStatus.APPROVED.value)
     pagination_class = CustomPagination
-    permission_classes = AllowAny
+    permission_classes = [AllowAny]
 
     def get_authenticators(self):
         if self.request.method == 'GET':
@@ -27,6 +27,9 @@ class ShowViewSet(
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset().order_by('created_at')
+        date = request.query_params.get('date')
+        if date:
+            queryset = queryset.filter(time__date=date)
         serializer = ShowViewSerializer(queryset, many=True)
         page = self.paginate_queryset(queryset)
         if page is not None:

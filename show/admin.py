@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from show.models import Show, Theater, ShowTag
+from show.models import Show, Theater, ShowTag, Festival
 
 
 @admin.register(Show)
@@ -19,7 +19,9 @@ class ShowAdmin(admin.ModelAdmin):
         'tags',
         'cast_name',
         'cast',
-        'notes'
+        'crew',
+        'notes',
+        'festival'
     ]
 
 
@@ -31,3 +33,7 @@ class TheaterAdmin(admin.ModelAdmin):
 @admin.register(ShowTag)
 class ShowTagAdmin(admin.ModelAdmin):
     fields = ['name']
+
+@admin.register(Festival)
+class FestivalAdmin(admin.ModelAdmin):
+    pass
