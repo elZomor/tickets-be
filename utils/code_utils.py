@@ -41,16 +41,16 @@ def authorize_performer_data(func):
 
 
 def upload_to_show(instance, filename):
-    name = instance.name
+    instance_id = instance.id
     cast_name = instance.cast_name
     created_at = datetime.now().strftime('%Y-%m-%d')
-    file_name = f"{name} - {cast_name} - {created_at}{os.path.splitext(filename)[1]}"
+    file_name = f"{instance_id} - {cast_name} - {created_at}{os.path.splitext(filename)[1]}"
     return os.path.join('media', 'shows', 'poster', file_name)
 
 def upload_to_festival(instance, filename):
-    name = instance.name.get('en')
+    instance_id = instance.id
     created_at = datetime.now().strftime('%Y-%m-%d')
-    file_name = f"{name} - {created_at}{os.path.splitext(filename)[1]}"
+    file_name = f"{instance_id} - {created_at}{os.path.splitext(filename)[1]}"
     return os.path.join('media', 'festivals', 'poster', file_name)
 
 

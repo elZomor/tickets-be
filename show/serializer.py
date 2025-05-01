@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from show.models import Show
+from show.models import Show, Festival
+from show.models.Show import ShowStatus
+from django.utils.timezone import localtime
 
 
 class ShowViewSerializer(serializers.ModelSerializer):
@@ -48,11 +50,11 @@ class ShowViewSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_show_date(obj):
-        return obj.time.strftime('%Y-%m-%d')
+        return localtime(obj.time).strftime('%Y-%m-%d')
 
     @staticmethod
     def get_show_time(obj):
-        return obj.time.strftime('%I:%M %p')
+        return localtime(obj.time).strftime('%I:%M %p')
 
     @staticmethod
     def get_festival_name(obj):
@@ -60,3 +62,26 @@ class ShowViewSerializer(serializers.ModelSerializer):
             return obj.festival.name
         return None
 
+
+class FestivalViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Festival
+        fields = [
+            'id',
+            'name',
+            'start_date',
+            'end_date',
+            'organizer',
+            'jury_list',
+            'awards',
+            'extra_details',
+            'logo',
+            'festival_status',
+            'shows'
+        ]
+
+    shows = serializers.SerializerMethodField()
+
+    def get_shows(self, obj):
+        shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by('time')
+        return ShowViewSerializer(shows_qs, many=True, context={'request': self.context.get('request')}).data

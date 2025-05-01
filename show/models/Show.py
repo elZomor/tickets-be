@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db import models
 
-from show.models import Theater, Festival
+from show.models import Theater
 from show.models.ShowTag import ShowTag
 from utils.code_utils import upload_to_show
 

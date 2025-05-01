@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from utils.code_utils import upload_to_festival
 
@@ -15,4 +16,11 @@ class Festival(models.Model):
 
     @property
     def festival_status(self):
-        return None
+        if timezone.now().date() < self.start_date:
+            return 'Soon'
+        if timezone.now().date() <= self.end_date:
+            return 'Running'
+        return 'Finished'
+
+    def __str__(self):
+        return self.name
