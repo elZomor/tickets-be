@@ -26,7 +26,9 @@ class ShowViewSerializer(serializers.ModelSerializer):
             'crew',
             'notes',
             'is_open',
-            'festival_name'
+            'festival_name',
+            'cast_note',
+            'show_description'
         ]
 
     theater_name = serializers.SerializerMethodField()
@@ -77,6 +79,7 @@ class FestivalViewSerializer(serializers.ModelSerializer):
             'extra_details',
             'logo',
             'festival_status',
+            'organizing_team',
             'shows'
         ]
 

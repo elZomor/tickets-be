@@ -13,6 +13,7 @@ class Festival(models.Model):
     awards = models.JSONField(null=True, blank=True)
     extra_details = models.JSONField(null=True, blank=True)
     logo = models.FileField(upload_to=upload_to_festival, null=True, blank=True)
+    organizing_team = models.JSONField(null=True, blank=True)
 
     @property
     def festival_status(self):

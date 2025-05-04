@@ -13,24 +13,6 @@ class ShowsInline(admin.StackedInline):
 
 @admin.register(Show)
 class ShowAdmin(admin.ModelAdmin):
-    fields = [
-        'name',
-        'link',
-        'time',
-        'author',
-        'director',
-        'theater',
-        'created_by',
-        'reviewed_by',
-        'status',
-        'poster',
-        'tags',
-        'cast_name',
-        'cast',
-        'crew',
-        'notes',
-        'festival'
-    ]
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
     }
