@@ -37,6 +37,7 @@ class ShowViewSerializer(serializers.ModelSerializer):
     show_time = serializers.SerializerMethodField()
     booking_available = serializers.SerializerMethodField()
     festival_name = serializers.SerializerMethodField()
+    poster = serializers.SerializerMethodField()
 
     @staticmethod
     def get_theater_name(obj):
@@ -62,6 +63,15 @@ class ShowViewSerializer(serializers.ModelSerializer):
     def get_festival_name(obj):
         if obj.festival:
             return obj.festival.name
+        return None
+
+    def get_poster(self, obj):
+        request = self.context.get('request')
+        if obj.poster:
+            url = obj.poster.url
+            if request:
+                url = request.build_absolute_uri(url)
+            return url.replace("http://", "https://")
         return None
 
 
