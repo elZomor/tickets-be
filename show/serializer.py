@@ -100,7 +100,7 @@ class FestivalViewSerializer(serializers.ModelSerializer):
         shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by('time')
         return ShowViewSerializer(shows_qs, many=True, context={'request': self.context.get('request')}).data
 
-    def get_poster(self, obj):
+    def get_logo(self, obj):
         request = self.context.get('request')
         if obj.poster:
             url = obj.logo.url
