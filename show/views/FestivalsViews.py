@@ -53,7 +53,7 @@ class FestivalViewSet(
     @action(detail=True, methods=['GET'], url_path='share')
     def profile_meta(self, request, pk=None):
         festival: Festival = get_object_or_404(Show, id=pk)
-        show_logo_url = f"{BE_URL}{festival.logo}"
+        show_logo_url = f"{BE_URL}/media/{festival.logo}"
         frontend_url = f"{SHOW_NIGHT_FE_URL}/festivals/{pk}"
 
         padded_image_data = self.resize_and_pad_image(show_logo_url, is_local=True)
