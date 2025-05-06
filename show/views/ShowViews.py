@@ -50,7 +50,7 @@ class ShowViewSet(
     def create(self, request, *args, **kwargs):
         return Response('Create Show', status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['GET'], url_path='show-meta')
+    @action(detail=True, methods=['GET'], url_path='share')
     def profile_meta(self, request, pk=None):
         show: Show = get_object_or_404(Show, id=pk)
         show_logo_url = f"{BE_URL}{show.poster}"

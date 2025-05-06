@@ -6,6 +6,7 @@ from functools import wraps
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
+from django.utils.text import slugify
 from rest_framework.exceptions import PermissionDenied
 
 
@@ -41,10 +42,11 @@ def authorize_performer_data(func):
 
 
 def upload_to_show(instance, filename):
-    instance_id = instance.id
-    cast_name = instance.cast_name
+    instance_id = instance.id or "unassigned"
+    cast_name = slugify(instance.cast_name or "unknown")
     created_at = datetime.now().strftime('%Y-%m-%d')
-    file_name = f"{instance_id} - {cast_name} - {created_at}{os.path.splitext(filename)[1]}"
+    ext = os.path.splitext(filename)[1]
+    file_name = f"{instance_id}_{cast_name}_{created_at}{ext}"
     return os.path.join('media', 'shows', 'poster', file_name)
 
 def upload_to_festival(instance, filename):
