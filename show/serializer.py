@@ -102,7 +102,7 @@ class FestivalViewSerializer(serializers.ModelSerializer):
 
     def get_logo(self, obj):
         request = self.context.get('request')
-        if obj.poster:
+        if obj.logo:
             url = obj.logo.url
             if request:
                 url = request.build_absolute_uri(url)
