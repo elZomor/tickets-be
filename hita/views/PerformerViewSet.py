@@ -25,7 +25,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from config.constants import FE_URL, BE_URL
+from config.constants import ACTOGRAM_FE_URL, BE_URL
 from hita.Exceptions import ResourceNotFound
 from hita.models import (
     Performer,
@@ -200,7 +200,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
             f"{BE_URL}{performer.profile_picture}"
             if performer.profile_picture.startswith('/media')
             else performer.profile_picture)
-        frontend_url = f"{FE_URL}/artists/{username}"
+        frontend_url = f"{ACTOGRAM_FE_URL}/artists/{username}"
 
         padded_image_data = self.resize_and_pad_image(profile_picture_url, is_local=True)
 

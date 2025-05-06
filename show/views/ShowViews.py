@@ -12,7 +12,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from config.constants import BE_URL, FE_URL
+from config.constants import BE_URL, ACTOGRAM_FE_URL, SHOW_NIGHT_FE_URL
 from config.pagination import CustomPagination
 from show.models import Show
 from show.models.Show import ShowStatus
@@ -50,11 +50,11 @@ class ShowViewSet(
     def create(self, request, *args, **kwargs):
         return Response('Create Show', status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['GET'], url_path='profile-meta')
+    @action(detail=True, methods=['GET'], url_path='show-meta')
     def profile_meta(self, request, pk=None):
         show: Show = get_object_or_404(Show, id=pk)
         show_logo_url = f"{BE_URL}{show.poster}"
-        frontend_url = f"{FE_URL}/show/{pk}"
+        frontend_url = f"{SHOW_NIGHT_FE_URL}/show/{pk}"
 
         padded_image_data = self.resize_and_pad_image(show_logo_url, is_local=True)
 
