@@ -27,6 +27,7 @@ class ShowViewSerializer(serializers.ModelSerializer):
             'notes',
             'is_open',
             'festival_name',
+            'festival_id',
             'cast_note',
             'show_description'
         ]
@@ -37,6 +38,7 @@ class ShowViewSerializer(serializers.ModelSerializer):
     show_time = serializers.SerializerMethodField()
     booking_available = serializers.SerializerMethodField()
     festival_name = serializers.SerializerMethodField()
+    festival_id = serializers.SerializerMethodField()
     poster = serializers.SerializerMethodField()
 
     @staticmethod
@@ -63,6 +65,12 @@ class ShowViewSerializer(serializers.ModelSerializer):
     def get_festival_name(obj):
         if obj.festival:
             return obj.festival.name
+        return None
+
+    @staticmethod
+    def get_festival_id(obj):
+        if obj.festival:
+            return obj.festival.id
         return None
 
     def get_poster(self, obj):
