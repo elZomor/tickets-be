@@ -53,7 +53,7 @@ class ShowViewSet(
     @action(detail=True, methods=['GET'], url_path='share')
     def profile_meta(self, request, pk=None):
         show: Show = get_object_or_404(Show, id=pk)
-        show_logo_url = f"{BE_URL}{show.poster}"
+        show_logo_url = f"{BE_URL}/media/{show.poster}"
         frontend_url = f"{SHOW_NIGHT_FE_URL}/show/{pk}"
 
         padded_image_data = self.resize_and_pad_image(show_logo_url, is_local=True)
