@@ -24,7 +24,6 @@ class Show(models.Model):
     poster = models.FileField(upload_to=upload_to_show, null=True, blank=True)
     author = models.CharField(max_length=50)
     director = models.CharField(max_length=50)
-    description = models.TextField(max_length=250, null=True, blank=True)
     theater = models.ForeignKey(to=Theater, on_delete=models.DO_NOTHING)
     initial_reserved_seats = models.IntegerField(default=0)
     reserved_seats = models.IntegerField(default=0)

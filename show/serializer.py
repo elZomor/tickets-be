@@ -1,9 +1,23 @@
 from rest_framework import serializers
 
-from show.models import Show, Festival
+from show.models import Show, Festival, Publication
 from show.models.Show import ShowStatus
 from django.utils.timezone import localtime
 
+
+class PublicationPreviewSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Publication
+        fields = ['file', 'publication_number', 'publication_date']
+
+    def get_file(self, obj):
+        request = self.context.get('request')
+        url = obj.file.url
+        if request:
+            url = request.build_absolute_uri(url)
+        return url.replace("http://", "https://")
 
 class ShowViewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -98,11 +112,13 @@ class FestivalViewSerializer(serializers.ModelSerializer):
             'logo',
             'festival_status',
             'organizing_team',
-            'shows'
+            'shows',
+            'publications'
         ]
 
     shows = serializers.SerializerMethodField()
     logo = serializers.SerializerMethodField()
+    publications = serializers.SerializerMethodField()
 
     def get_shows(self, obj):
         shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by('time')
@@ -116,3 +132,7 @@ class FestivalViewSerializer(serializers.ModelSerializer):
                 url = request.build_absolute_uri(url)
             return url.replace("http://", "https://")
         return None
+
+    def get_publications(self, obj):
+        qs = obj.publications.all().order_by('-publication_date')
+        return PublicationPreviewSerializer(qs, many=True, context=self.context).data

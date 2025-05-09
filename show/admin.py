@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from show.models import Show, Theater, ShowTag, Festival
+from show.models import Show, Theater, ShowTag, Festival, Publication
 
 from django.db import models
 from django_json_widget.widgets import JSONEditorWidget
@@ -11,11 +11,15 @@ class ShowsInline(admin.StackedInline):
     verbose_name_plural = 'shows'
     extra = 0
 
+class PublicationsInline(admin.StackedInline):
+    model = Publication
+    can_delete = False
+    verbose_name_plural = 'publications'
+    extra = 0
+
 @admin.register(Show)
 class ShowAdmin(admin.ModelAdmin):
-    formfield_overrides = {
-        models.JSONField: {'widget': JSONEditorWidget},
-    }
+    pass
 
 
 @admin.register(Theater)
@@ -29,7 +33,8 @@ class ShowTagAdmin(admin.ModelAdmin):
 
 @admin.register(Festival)
 class FestivalAdmin(admin.ModelAdmin):
-    formfield_overrides = {
-        models.JSONField: {'widget': JSONEditorWidget},
-    }
-    inlines = [ShowsInline]
+    pass
+
+@admin.register(Publication)
+class PublicationAdmin(admin.ModelAdmin):
+    pass
