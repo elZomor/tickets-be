@@ -1,9 +1,17 @@
 from rest_framework import serializers
 
+from config.constants import ENVIRONMENT
 from show.models import Show, Festival, Publication
 from show.models.Show import ShowStatus
 from django.utils.timezone import localtime
 
+
+def get_url(url, request):
+    if request:
+        url = request.build_absolute_uri(url)
+    if ENVIRONMENT == 'local':
+        return url
+    return url.replace("http://", "https://")
 
 class PublicationPreviewSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
@@ -13,11 +21,7 @@ class PublicationPreviewSerializer(serializers.ModelSerializer):
         fields = ['file', 'publication_number', 'publication_date']
 
     def get_file(self, obj):
-        request = self.context.get('request')
-        url = obj.file.url
-        if request:
-            url = request.build_absolute_uri(url)
-        return url.replace("http://", "https://")
+        return get_url(obj.file.url, self.context.get('request'))
 
 class ShowViewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -88,12 +92,8 @@ class ShowViewSerializer(serializers.ModelSerializer):
         return None
 
     def get_poster(self, obj):
-        request = self.context.get('request')
         if obj.poster:
-            url = obj.poster.url
-            if request:
-                url = request.build_absolute_uri(url)
-            return url.replace("http://", "https://")
+            return get_url(obj.poster.url, self.context.get('request'))
         return None
 
 
@@ -125,12 +125,8 @@ class FestivalViewSerializer(serializers.ModelSerializer):
         return ShowViewSerializer(shows_qs, many=True, context={'request': self.context.get('request')}).data
 
     def get_logo(self, obj):
-        request = self.context.get('request')
         if obj.logo:
-            url = obj.logo.url
-            if request:
-                url = request.build_absolute_uri(url)
-            return url.replace("http://", "https://")
+            return get_url(obj.logo.url, self.context.get('request'))
         return None
 
     def get_publications(self, obj):
