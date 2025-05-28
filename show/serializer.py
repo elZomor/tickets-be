@@ -51,8 +51,6 @@ class ShowViewSerializer(serializers.ModelSerializer):
             'show_dates',
         ]
 
-    theater_name = serializers.SerializerMethodField()
-    theater_link = serializers.SerializerMethodField()
     festival_name = serializers.SerializerMethodField()
     festival_id = serializers.SerializerMethodField()
     poster = serializers.SerializerMethodField()
@@ -81,7 +79,7 @@ class ShowViewSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_show_dates(obj):
-        return ShowDateViewSerializer(obj.dates.all(), many=True).data
+        return ShowDateViewSerializer(obj.dates.all().order_by('date', 'time'), many=True).data
 
     def get_poster(self, obj):
         if obj.poster:
