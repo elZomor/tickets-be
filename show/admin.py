@@ -41,6 +41,10 @@ class ShowTagAdmin(admin.ModelAdmin):
 class FestivalAdmin(admin.ModelAdmin):
     pass
 
+@admin.register(ShowDate)
+class ShowDateAdmin(admin.ModelAdmin):
+    pass
+
 @admin.register(Publication)
 class PublicationAdmin(admin.ModelAdmin):
     pass

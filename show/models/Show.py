@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.utils import timezone
 
 from django.contrib.auth.models import User
@@ -52,8 +54,27 @@ class Show(models.Model):
         return self.dates.count() > 1
 
     @property
+    def nearest_night(self):
+        now = timezone.now()
+        tz = timezone.get_current_timezone()
+
+        valid_dates = [
+            (d, datetime.combine(d.date, d.time).replace(tzinfo=tz))
+            for d in self.dates.all()
+            if datetime.combine(d.date, d.time).replace(tzinfo=tz) >= now
+        ]
+
+        nearest = min(valid_dates, key=lambda x: x[1], default=None)
+
+        return nearest[0] if nearest else None
+
+    @property
     def is_open(self):
-        return timezone.now() < self.time
+        current_datetime = timezone.now()
+        return self.dates.filter(
+            date=current_datetime.date(),
+            time__gte=current_datetime.time(),
+        ).exists()
 
     def __str__(self):
         return f'{self.name} - {self.cast_name}'

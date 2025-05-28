@@ -36,10 +36,10 @@ class ShowViewSet(
         return super().get_authenticators()
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset().order_by('time')
+        queryset = self.get_queryset().order_by('dates__date', 'dates__time')
         date = request.query_params.get('date')
         if date:
-            queryset = queryset.filter(time__date=date)
+            queryset = queryset.filter(dates__date=date).distinct()
         serializer = ShowViewSerializer(queryset, many=True)
         page = self.paginate_queryset(queryset)
         if page is not None:

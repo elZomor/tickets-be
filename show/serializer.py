@@ -1,9 +1,11 @@
+from datetime import datetime
+
 from rest_framework import serializers
 
 from config.constants import ENVIRONMENT
-from show.models import Show, Festival, Publication
+from show.models import Show, Festival, Publication, ShowDate
 from show.models.Show import ShowStatus
-from django.utils.timezone import localtime
+from django.utils.timezone import localtime, make_aware, get_current_timezone
 
 
 def get_url(url, request):
@@ -28,12 +30,8 @@ class ShowViewSerializer(serializers.ModelSerializer):
         model = Show
         fields = [
             'id',
-            'theater_link',
             'name',
             'cast_name',
-            'show_date',
-            'show_time',
-            'theater_name',
             'link',
             'poster',
             'author',
@@ -46,33 +44,18 @@ class ShowViewSerializer(serializers.ModelSerializer):
             'festival_name',
             'festival_id',
             'cast_note',
-            'show_description'
+            'show_description',
+            'nearest_night',
+            'show_dates'
         ]
 
     theater_name = serializers.SerializerMethodField()
     theater_link = serializers.SerializerMethodField()
-    show_date = serializers.SerializerMethodField()
-    show_time = serializers.SerializerMethodField()
-    booking_available = serializers.SerializerMethodField()
     festival_name = serializers.SerializerMethodField()
     festival_id = serializers.SerializerMethodField()
     poster = serializers.SerializerMethodField()
-
-    @staticmethod
-    def get_theater_name(obj):
-        return obj.theater.__str__()
-
-    @staticmethod
-    def get_theater_link(obj):
-        return obj.theater.location
-
-    @staticmethod
-    def get_show_date(obj):
-        return localtime(obj.time).strftime('%Y-%m-%d')
-
-    @staticmethod
-    def get_show_time(obj):
-        return localtime(obj.time).strftime('%I:%M %p')
+    nearest_night = serializers.SerializerMethodField()
+    show_dates = serializers.SerializerMethodField()
 
     @staticmethod
     def get_festival_name(obj):
@@ -86,11 +69,56 @@ class ShowViewSerializer(serializers.ModelSerializer):
             return obj.festival.id
         return None
 
+    @staticmethod
+    def get_nearest_night(obj):
+        return ShowDateViewSerializer(obj.nearest_night).data if obj.nearest_night else None
+
+    @staticmethod
+    def get_show_dates(obj):
+        return ShowDateViewSerializer(obj.dates.all(), many=True).data
+
+
+
     def get_poster(self, obj):
         if obj.poster:
             return get_url(obj.poster.url, self.context.get('request'))
         return None
 
+
+class ShowDateViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShowDate
+        fields = [
+            'id',
+            'show_date',
+            'show_time',
+            'theater_name',
+            'theater_link'
+        ]
+    theater_name = serializers.SerializerMethodField()
+    theater_link = serializers.SerializerMethodField()
+    show_date = serializers.SerializerMethodField()
+    show_time = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_show_date(obj):
+        dt = datetime.combine(obj.date, obj.time)
+        aware_dt = make_aware(dt, timezone=get_current_timezone())
+        return localtime(aware_dt).strftime('%Y-%m-%d')
+
+    @staticmethod
+    def get_show_time(obj):
+        dt = datetime.combine(obj.date, obj.time)
+        aware_dt = make_aware(dt, timezone=get_current_timezone())
+        return localtime(aware_dt).strftime('%I:%M %p')
+
+    @staticmethod
+    def get_theater_name(obj):
+        return obj.theater.__str__()
+
+    @staticmethod
+    def get_theater_link(obj):
+        return obj.theater.location
 
 class FestivalViewSerializer(serializers.ModelSerializer):
     class Meta:
