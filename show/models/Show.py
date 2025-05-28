@@ -21,12 +21,10 @@ class ShowStatus(models.TextChoices):
 class Show(models.Model):
     name = models.CharField(max_length=100)
     link = models.URLField(null=True, blank=True)
-    time = models.DateTimeField()
     cast_name = models.CharField(max_length=100, null=True, blank=True)
     poster = models.FileField(upload_to=upload_to_show, null=True, blank=True)
     author = models.CharField(max_length=50)
     director = models.CharField(max_length=50)
-    theater = models.ForeignKey(to=Theater, on_delete=models.DO_NOTHING)
     initial_reserved_seats = models.IntegerField(default=0)
     reserved_seats = models.IntegerField(default=0)
     status = models.CharField(

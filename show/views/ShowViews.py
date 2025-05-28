@@ -4,6 +4,7 @@ from io import BytesIO
 import requests
 from PIL import Image
 from django.conf import settings
+from django.db.models import Max, Min
 from django.http import HttpResponse
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -36,7 +37,11 @@ class ShowViewSet(
         return super().get_authenticators()
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset().order_by('dates__date', 'dates__time')
+        queryset = (
+            self.get_queryset()
+            .annotate(latest_date=Max('dates__date'), earliest_time=Min('dates__time'))
+            .order_by('-latest_date', 'earliest_time')
+        )
         date = request.query_params.get('date')
         if date:
             queryset = queryset.filter(dates__date=date).distinct()
