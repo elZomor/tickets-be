@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from show.models import Show, Theater, ShowTag, Festival, Publication
+from show.models import Show, Theater, ShowTag, Festival, Publication, ShowDate
 
 from django.db import models
 from django_json_widget.widgets import JSONEditorWidget
@@ -11,6 +11,12 @@ class ShowsInline(admin.StackedInline):
     verbose_name_plural = 'shows'
     extra = 0
 
+class ShowDatesInline(admin.StackedInline):
+    model = ShowDate
+    can_delete = False
+    verbose_name_plural = 'show_dates'
+    extra = 1
+
 class PublicationsInline(admin.StackedInline):
     model = Publication
     can_delete = False
@@ -19,7 +25,7 @@ class PublicationsInline(admin.StackedInline):
 
 @admin.register(Show)
 class ShowAdmin(admin.ModelAdmin):
-    pass
+    inlines = [ShowDatesInline]
 
 
 @admin.register(Theater)

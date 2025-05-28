@@ -18,7 +18,7 @@ class ShowStatus(models.TextChoices):
 
 class Show(models.Model):
     name = models.CharField(max_length=100)
-    link = models.URLField()
+    link = models.URLField(null=True, blank=True)
     time = models.DateTimeField()
     cast_name = models.CharField(max_length=100, null=True, blank=True)
     poster = models.FileField(upload_to=upload_to_show, null=True, blank=True)
@@ -42,16 +42,14 @@ class Show(models.Model):
     notes = models.JSONField(null=True, blank=True)
     cast = models.JSONField(null=True, blank=True)
     crew = models.JSONField(null=True, blank=True)
-    festival = models.ForeignKey(to='show.Festival', on_delete=models.DO_NOTHING, related_name='shows', null=True, blank=True)
+    festival = models.ForeignKey(to='show.Festival', on_delete=models.DO_NOTHING, related_name='shows', null=True,
+                                 blank=True)
     cast_note = models.TextField(null=True, blank=True)
     show_description = models.TextField(null=True, blank=True)
 
     @property
-    def remaining_seats(self):
-        return (
-            self.theater.capacity - self.initial_reserved_seats - self.reserved_seats
-            or 0
-        )
+    def has_multiple_nights(self):
+        return self.dates.count() > 1
 
     @property
     def is_open(self):

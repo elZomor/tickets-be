@@ -61,7 +61,8 @@ def upload_to_publication(instance, filename):
     file_name = f"{instance_id} - {created_at}{os.path.splitext(filename)[1]}"
     return os.path.join('media', 'publications', file_name)
 
-
+def generate_invitation_code():
+    return str(uuid.uuid4()).replace('-', '')[:20]
 
 
 def create_super_user() -> None:

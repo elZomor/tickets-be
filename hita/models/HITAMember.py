@@ -5,6 +5,8 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 
+from utils.code_utils import generate_invitation_code
+
 
 class Department(models.TextChoices):
     ACTING = 'ACTING_DEP', 'Acting And Directing'
@@ -66,7 +68,7 @@ class HITAMember(models.Model):
     reviewed_at = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=(('M', 'Male'), ('F', 'Female')))
     invitation_code = models.CharField(
-        max_length=20, default=str(uuid.uuid4()).replace('-', '')[:20]
+        max_length=20, default=generate_invitation_code
     )
 
     def __str__(self):

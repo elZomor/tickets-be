@@ -3,3 +3,4 @@ from .ShowTag import ShowTag  # noqa:F401
 from .Show import Show  # noqa:F401
 from .Festival import Festival  # noqa:F401
 from .Publication import Publication  # noqa:F401
+from .ShowDate import ShowDate  # noqa:F401

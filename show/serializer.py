@@ -33,7 +33,6 @@ class ShowViewSerializer(serializers.ModelSerializer):
             'cast_name',
             'show_date',
             'show_time',
-            'booking_available',
             'theater_name',
             'link',
             'poster',
@@ -66,10 +65,6 @@ class ShowViewSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_theater_link(obj):
         return obj.theater.location
-
-    @staticmethod
-    def get_booking_available(obj):
-        return obj.remaining_seats > 0 and obj.is_open
 
     @staticmethod
     def get_show_date(obj):
