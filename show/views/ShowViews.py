@@ -12,7 +12,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from config.constants import BE_URL, ACTOGRAM_FE_URL, SHOW_NIGHT_FE_URL
+from config.constants import BE_URL, SHOW_NIGHT_FE_URL
 from config.pagination import CustomPagination
 from show.models import Show
 from show.models.Show import ShowStatus
@@ -87,7 +87,6 @@ class ShowViewSet(
 
         return HttpResponse(html_content, content_type="text/html; charset=utf-8")
 
-
     @staticmethod
     def resize_and_pad_image(image_url, is_local, target_width=1200, target_height=630):
         """
@@ -138,4 +137,3 @@ class ShowViewSet(
 
         # Return the new public image URL
         return f"{BE_URL}/media/{resized_filename}"
-

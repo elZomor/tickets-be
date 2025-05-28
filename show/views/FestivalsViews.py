@@ -14,8 +14,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from config.constants import BE_URL, SHOW_NIGHT_FE_URL
 from config.pagination import CustomPagination
-from show.models import Show, Festival
-from show.models.Show import ShowStatus
+from show.models import Festival
 from show.serializer import ShowViewSerializer, FestivalViewSerializer
 
 

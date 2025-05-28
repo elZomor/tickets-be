@@ -44,8 +44,13 @@ class Show(models.Model):
     notes = models.JSONField(null=True, blank=True)
     cast = models.JSONField(null=True, blank=True)
     crew = models.JSONField(null=True, blank=True)
-    festival = models.ForeignKey(to='show.Festival', on_delete=models.DO_NOTHING, related_name='shows', null=True,
-                                 blank=True)
+    festival = models.ForeignKey(
+        to='show.Festival',
+        on_delete=models.DO_NOTHING,
+        related_name='shows',
+        null=True,
+        blank=True,
+    )
     cast_note = models.TextField(null=True, blank=True)
     show_description = models.TextField(null=True, blank=True)
 

@@ -63,18 +63,22 @@ class PerformerViewSet(viewsets.ModelViewSet):
         profile_picture_subquery = Gallery.objects.filter(
             performer=OuterRef('pk'), is_profile_picture=True
         ).values('is_profile_picture')[:1]
-        return Performer.objects.all().annotate(
-            has_profile_picture=Subquery(
-                profile_picture_subquery, output_field=BooleanField()
+        return (
+            Performer.objects.all()
+            .annotate(
+                has_profile_picture=Subquery(
+                    profile_picture_subquery, output_field=BooleanField()
+                )
             )
-        ).order_by(
-            Case(
-                When(has_profile_picture=True, then=Value(0)),
-                default=Value(1),
-                output_field=IntegerField(),
-            ),
-            'hita_member__first_name',
-            'hita_member__last_name',
+            .order_by(
+                Case(
+                    When(has_profile_picture=True, then=Value(0)),
+                    default=Value(1),
+                    output_field=IntegerField(),
+                ),
+                'hita_member__first_name',
+                'hita_member__last_name',
+            )
         )
 
     def get_permissions(self):
@@ -199,10 +203,13 @@ class PerformerViewSet(viewsets.ModelViewSet):
         profile_picture_url = (
             f"{BE_URL}{performer.profile_picture}"
             if performer.profile_picture.startswith('/media')
-            else performer.profile_picture)
+            else performer.profile_picture
+        )
         frontend_url = f"{ACTOGRAM_FE_URL}/artists/{username}"
 
-        padded_image_data = self.resize_and_pad_image(profile_picture_url, is_local=True)
+        padded_image_data = self.resize_and_pad_image(
+            profile_picture_url, is_local=True
+        )
 
         html_content = f"""<!DOCTYPE html>
         <html lang="en">

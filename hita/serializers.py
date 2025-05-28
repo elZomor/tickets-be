@@ -8,7 +8,8 @@ from hita.models import (
     ContactDetail,
     Gallery,
     PublicChannel,
-    ShowReel, Status,
+    ShowReel,
+    Status,
 )
 from hita.models.Achievement import Achievement
 

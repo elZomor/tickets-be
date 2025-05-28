@@ -49,17 +49,20 @@ def upload_to_show(instance, filename):
     file_name = f"{instance_id}_{cast_name}_{created_at}{ext}"
     return os.path.join('media', 'shows', 'poster', file_name)
 
+
 def upload_to_festival(instance, filename):
     instance_id = instance.id or "unassigned"
     created_at = datetime.now().strftime('%Y-%m-%d')
     file_name = f"{instance_id} - {created_at}{os.path.splitext(filename)[1]}"
     return os.path.join('media', 'festivals', 'poster', file_name)
 
+
 def upload_to_publication(instance, filename):
     instance_id = instance.id or "unassigned"
     created_at = datetime.now().strftime('%Y-%m-%d')
     file_name = f"{instance_id} - {created_at}{os.path.splitext(filename)[1]}"
     return os.path.join('media', 'publications', file_name)
+
 
 def generate_invitation_code():
     return str(uuid.uuid4()).replace('-', '')[:20]

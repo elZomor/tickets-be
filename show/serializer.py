@@ -15,6 +15,7 @@ def get_url(url, request):
         return url
     return url.replace("http://", "https://")
 
+
 class PublicationPreviewSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
 
@@ -24,6 +25,7 @@ class PublicationPreviewSerializer(serializers.ModelSerializer):
 
     def get_file(self, obj):
         return get_url(obj.file.url, self.context.get('request'))
+
 
 class ShowViewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,7 +48,7 @@ class ShowViewSerializer(serializers.ModelSerializer):
             'cast_note',
             'show_description',
             'nearest_night',
-            'show_dates'
+            'show_dates',
         ]
 
     theater_name = serializers.SerializerMethodField()
@@ -71,13 +73,15 @@ class ShowViewSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_nearest_night(obj):
-        return ShowDateViewSerializer(obj.nearest_night).data if obj.nearest_night else None
+        return (
+            ShowDateViewSerializer(obj.nearest_night).data
+            if obj.nearest_night
+            else None
+        )
 
     @staticmethod
     def get_show_dates(obj):
         return ShowDateViewSerializer(obj.dates.all(), many=True).data
-
-
 
     def get_poster(self, obj):
         if obj.poster:
@@ -88,13 +92,8 @@ class ShowViewSerializer(serializers.ModelSerializer):
 class ShowDateViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShowDate
-        fields = [
-            'id',
-            'show_date',
-            'show_time',
-            'theater_name',
-            'theater_link'
-        ]
+        fields = ['id', 'show_date', 'show_time', 'theater_name', 'theater_link']
+
     theater_name = serializers.SerializerMethodField()
     theater_link = serializers.SerializerMethodField()
     show_date = serializers.SerializerMethodField()
@@ -120,6 +119,7 @@ class ShowDateViewSerializer(serializers.ModelSerializer):
     def get_theater_link(obj):
         return obj.theater.location
 
+
 class FestivalViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Festival
@@ -136,7 +136,7 @@ class FestivalViewSerializer(serializers.ModelSerializer):
             'festival_status',
             'organizing_team',
             'shows',
-            'publications'
+            'publications',
         ]
 
     shows = serializers.SerializerMethodField()
@@ -145,7 +145,9 @@ class FestivalViewSerializer(serializers.ModelSerializer):
 
     def get_shows(self, obj):
         shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by('time')
-        return ShowViewSerializer(shows_qs, many=True, context={'request': self.context.get('request')}).data
+        return ShowViewSerializer(
+            shows_qs, many=True, context={'request': self.context.get('request')}
+        ).data
 
     def get_logo(self, obj):
         if obj.logo:

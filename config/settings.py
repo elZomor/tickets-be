@@ -47,7 +47,7 @@ THIRD_PARTY_APPS = [
     'storages',
     'django_celery_results',
     'utils_app',
-    'django_json_widget'
+    'django_json_widget',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
