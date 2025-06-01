@@ -4,7 +4,7 @@ from io import BytesIO
 import requests
 from PIL import Image
 from django.conf import settings
-from django.db.models import Max, Min
+from django.db.models import Max, Min, OuterRef, Subquery
 from django.http import HttpResponse
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -15,7 +15,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from config.constants import BE_URL, SHOW_NIGHT_FE_URL
 from config.pagination import CustomPagination
-from show.models import Show
+from show.models import Show, ShowDate
 from show.models.Show import ShowStatus
 from show.serializer import ShowViewSerializer
 
@@ -37,14 +37,31 @@ class ShowViewSet(
         return super().get_authenticators()
 
     def list(self, request, *args, **kwargs):
+        date = request.query_params.get('date')
+
+        # Subqueries لأقرب تاريخ ووقت مرتبطين بكل عرض
+        base_show_dates = ShowDate.objects.filter(show=OuterRef('pk'))
+        if date:
+            base_show_dates = base_show_dates.filter(date=date)
+
+        earliest_date_subquery = Subquery(
+            base_show_dates.order_by('date', 'time').values('date')[:1]
+        )
+        earliest_time_subquery = Subquery(
+            base_show_dates.order_by('date', 'time').values('time')[:1]
+        )
+
         queryset = (
             self.get_queryset()
-            .annotate(latest_date=Max('dates__date'), earliest_time=Min('dates__time'))
-            .order_by('-latest_date', 'earliest_time')
+            .annotate(
+                earliest_date=earliest_date_subquery,
+                earliest_time=earliest_time_subquery,
+            )
+            .order_by('-earliest_date', 'earliest_time')
         )
-        date = request.query_params.get('date')
         if date:
-            queryset = queryset.filter(dates__date=date).distinct()
+            queryset = queryset.filter(dates__date=date)
+
         serializer = ShowViewSerializer(queryset, many=True)
         page = self.paginate_queryset(queryset)
         if page is not None:
