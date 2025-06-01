@@ -142,7 +142,7 @@ class FestivalViewSerializer(serializers.ModelSerializer):
     publications = serializers.SerializerMethodField()
 
     def get_shows(self, obj):
-        shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by('time')
+        shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by('-dates__date')
         return ShowViewSerializer(
             shows_qs, many=True, context={'request': self.context.get('request')}
         ).data
