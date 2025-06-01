@@ -39,33 +39,23 @@ class ShowViewSet(
     def list(self, request, *args, **kwargs):
         date = request.query_params.get('date')
 
-        # Subqueries لأقرب تاريخ ووقت مرتبطين بكل عرض
-        base_show_dates = ShowDate.objects.filter(show=OuterRef('pk'))
+        showdates_qs = ShowDate.objects.select_related('show')
+
         if date:
-            base_show_dates = base_show_dates.filter(date=date)
+            showdates_qs = showdates_qs.filter(date=date)
 
-        earliest_date_subquery = Subquery(
-            base_show_dates.order_by('date', 'time').values('date')[:1]
-        )
-        earliest_time_subquery = Subquery(
-            base_show_dates.order_by('date', 'time').values('time')[:1]
-        )
+        showdates_qs = showdates_qs.order_by('date', 'time')
 
-        queryset = (
-            self.get_queryset()
-            .annotate(
-                earliest_date=earliest_date_subquery,
-                earliest_time=earliest_time_subquery,
-            )
-            .order_by('-earliest_date', 'earliest_time')
-        )
-        if date:
-            queryset = queryset.filter(dates__date=date)
+        seen_show_ids = set()
+        unique_shows = []
+        for sd in showdates_qs:
+            if sd.show_id not in seen_show_ids:
+                seen_show_ids.add(sd.show_id)
+                unique_shows.append(sd.show)
 
-        serializer = ShowViewSerializer(queryset, many=True)
-        page = self.paginate_queryset(queryset)
+        page = self.paginate_queryset(unique_shows)
+        serializer = ShowViewSerializer(page if page is not None else unique_shows, many=True)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)
 
