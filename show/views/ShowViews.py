@@ -4,7 +4,7 @@ from io import BytesIO
 import requests
 from PIL import Image
 from django.conf import settings
-from django.db.models import Max, Min, OuterRef, Subquery
+from django.db.models import Max, Min
 from django.http import HttpResponse
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -15,7 +15,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from config.constants import BE_URL, SHOW_NIGHT_FE_URL
 from config.pagination import CustomPagination
-from show.models import Show, ShowDate
+from show.models import Show
 from show.models.Show import ShowStatus
 from show.serializer import ShowViewSerializer
 
@@ -37,25 +37,18 @@ class ShowViewSet(
         return super().get_authenticators()
 
     def list(self, request, *args, **kwargs):
+        queryset = (
+            self.get_queryset()
+            .annotate(latest_date=Max('dates__date'), earliest_time=Min('dates__time'))
+            .order_by('-latest_date', 'earliest_time')
+        )
         date = request.query_params.get('date')
-
-        showdates_qs = ShowDate.objects.select_related('show')
-
         if date:
-            showdates_qs = showdates_qs.filter(date=date)
-
-        showdates_qs = showdates_qs.order_by('date', 'time')
-
-        seen_show_ids = set()
-        unique_shows = []
-        for sd in showdates_qs:
-            if sd.show_id not in seen_show_ids:
-                seen_show_ids.add(sd.show_id)
-                unique_shows.append(sd.show)
-
-        page = self.paginate_queryset(unique_shows)
-        serializer = ShowViewSerializer(page if page is not None else unique_shows, many=True)
+            queryset = self.get_queryset().filter(dates__date=date).order_by('dates__time').distinct()
+        serializer = ShowViewSerializer(queryset, many=True)
+        page = self.paginate_queryset(queryset)
         if page is not None:
+            serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)
 
