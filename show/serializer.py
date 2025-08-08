@@ -13,7 +13,6 @@ def get_url(url, request):
     if request:
         if ENVIRONMENT == 'local':
             return request.build_absolute_uri(url)
-        url = s3_storage.url(url)
     return url.replace("http://", "https://")
 
 

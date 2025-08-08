@@ -24,7 +24,6 @@ def get_user_from_context(context):
 def get_url(url):
     if ENVIRONMENT == 'local':
         return f'http://localhost:8005{url}'
-    url = s3_storage.url(url)
     return url.replace("http://", "https://")
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
