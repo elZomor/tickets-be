@@ -193,8 +193,10 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = 'UTC'
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 s3_storage = S3Boto3Storage()
-if environment == 'production':
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage" if environment == 'production' else "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+}
