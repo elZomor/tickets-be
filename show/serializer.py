@@ -3,6 +3,7 @@ from datetime import datetime
 from rest_framework import serializers
 
 from config.constants import ENVIRONMENT
+from config.settings import s3_storage
 from show.models import Show, Festival, Publication, ShowDate
 from show.models.Show import ShowStatus
 from django.utils.timezone import localtime, make_aware, get_current_timezone
@@ -10,9 +11,9 @@ from django.utils.timezone import localtime, make_aware, get_current_timezone
 
 def get_url(url, request):
     if request:
-        url = request.build_absolute_uri(url)
-    if ENVIRONMENT == 'local':
-        return url
+        if ENVIRONMENT == 'local':
+            return request.build_absolute_uri(url)
+        url = s3_storage.url(url)
     return url.replace("http://", "https://")
 
 

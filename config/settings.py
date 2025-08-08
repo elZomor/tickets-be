@@ -13,6 +13,7 @@ from datetime import timedelta
 import environ
 
 from config.storages import local_storage  # noqa:F401, F403
+from storages.backends.s3boto3 import S3Boto3Storage
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -140,7 +141,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-MEDIA_URL = 'media/'
+MEDIA_URL = 'media/' if DEBUG else '/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -194,5 +195,6 @@ CELERY_TIMEZONE = 'UTC'
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+s3_storage = S3Boto3Storage()
 if environment == 'production':
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
