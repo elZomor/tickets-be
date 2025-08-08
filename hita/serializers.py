@@ -21,17 +21,10 @@ def get_user_from_context(context):
         return None
     return context.user
 
-def get_url(url, request):
-    if request:
-        if ENVIRONMENT == 'local':
-            return request.build_absolute_uri(url)
-        print('*' * 20, flush=True)
-        print(f'url: ${url}', flush=True)
-        print('*' * 20, flush=True)
-        url = s3_storage.url(url)
-        print('*' * 20, flush=True)
-        print(f'url: ${url}', flush=True)
-        print('*' * 20, flush=True)
+def get_url(url):
+    if ENVIRONMENT == 'local':
+        return f'http://localhost:8005{url}'
+    url = s3_storage.url(url)
     return url.replace("http://", "https://")
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
@@ -81,18 +74,11 @@ class ContactDetailsViewSerializer(serializers.ModelSerializer):
 
 class GalleryViewSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
-    new_file = serializers.SerializerMethodField()
     class Meta:
         model = Gallery
         exclude = ['performer']
     def get_file(self, obj):
-        return get_url(obj.file.url, self.context.get('request'))
-    def get_new_file(self, obj):
-        if obj.file:
-            return get_url(obj.file.url, self.context.get('request'))
-        return None
-
-
+        return get_url(obj.file.url)
 
 
 class GalleryCreateSerializer(serializers.ModelSerializer):
@@ -220,7 +206,7 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
         return obj.hita_member.department
 
     def get_profile_picture(self, obj):
-        return get_url(obj.profile_picture, self.context.get('request'))
+        return get_url(obj.profile_picture)
 
     @staticmethod
     def get_gender(obj):
