@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from config.constants import ENVIRONMENT
+from config.settings import s3_storage
 from hita.models import (
     Performer,
     HITAMember,
@@ -19,6 +21,12 @@ def get_user_from_context(context):
         return None
     return context.user
 
+def get_url(url, request):
+    if request:
+        if ENVIRONMENT == 'local':
+            return request.build_absolute_uri(url)
+        url = s3_storage.url(url)
+    return url.replace("http://", "https://")
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -66,9 +74,12 @@ class ContactDetailsViewSerializer(serializers.ModelSerializer):
 
 
 class GalleryViewSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
     class Meta:
         model = Gallery
         exclude = ['performer']
+    def get_file(self, obj):
+        return get_url(obj.file.url, self.context.get('request'))
 
 
 class GalleryCreateSerializer(serializers.ModelSerializer):
@@ -195,9 +206,8 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
     def get_department(obj):
         return obj.hita_member.department
 
-    @staticmethod
-    def get_profile_picture(obj):
-        return obj.profile_picture
+    def get_profile_picture(self, obj):
+        return get_url(obj.profile_picture, self.context.get('request'))
 
     @staticmethod
     def get_gender(obj):
