@@ -81,11 +81,18 @@ class ContactDetailsViewSerializer(serializers.ModelSerializer):
 
 class GalleryViewSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
+    new_file = serializers.SerializerMethodField()
     class Meta:
         model = Gallery
         exclude = ['performer']
     def get_file(self, obj):
         return get_url(obj.file.url, self.context.get('request'))
+    def get_new_file(self, obj):
+        if obj.file:
+            return get_url(obj.file.url, self.context.get('request'))
+        return None
+
+
 
 
 class GalleryCreateSerializer(serializers.ModelSerializer):
