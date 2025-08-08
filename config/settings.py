@@ -146,7 +146,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
@@ -198,5 +197,6 @@ STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage" if environment == 'production' else "django.core.files.storage.FileSystemStorage",
     },
-    "staticfiles": 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    "staticfiles": {
+        "BACKEND": 'whitenoise.storage.CompressedManifestStaticFilesStorage'}
 }
