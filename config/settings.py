@@ -193,3 +193,6 @@ CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = 'UTC'
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+if environment == 'production':
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

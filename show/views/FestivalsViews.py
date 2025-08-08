@@ -52,10 +52,11 @@ class FestivalViewSet(
     @action(detail=True, methods=['GET'], url_path='share')
     def profile_meta(self, request, pk=None):
         festival: Festival = get_object_or_404(Festival, id=pk)
-        show_logo_url = f"{BE_URL}/media/{festival.logo}"
+        # Use S3 URL if available, fallback to old method if not
+        show_logo_url = festival.logo.url if festival.logo else None
         frontend_url = f"{SHOW_NIGHT_FE_URL}/festivals/{pk}"
 
-        padded_image_data = self.resize_and_pad_image(show_logo_url, is_local=True)
+        padded_image_data = self.resize_and_pad_image(show_logo_url, is_local=False)
 
         html_content = f"""<!DOCTYPE html>
                 <html lang="en">
