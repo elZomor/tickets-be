@@ -25,6 +25,9 @@ def get_url(url, request):
     if request:
         if ENVIRONMENT == 'local':
             return request.build_absolute_uri(url)
+        print('*' * 20, flush=True)
+        print(f'url: ${url}', flush=True)
+        print('*' * 20, flush=True)
         url = s3_storage.url(url)
         print('*' * 20, flush=True)
         print(f'url: ${url}', flush=True)
