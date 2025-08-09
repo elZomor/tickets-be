@@ -64,6 +64,21 @@ def upload_to_publication(instance, filename):
     return os.path.join('media', 'publications', file_name)
 
 
+def upload_to_script(instance, filename):
+    author = slugify(instance.author or "unknown", allow_unicode=True)
+    title = slugify(instance.title or "untitled", allow_unicode=True)
+    ext = os.path.splitext(filename)[1]
+    file_name = f"{author}_{title}{ext}"
+    return os.path.join('media', 'scripts', author, file_name)
+
+
+def validate_file_extension(value):
+    ext = os.path.splitext(value.name)[1].lower()
+    valid_extensions = ['.doc', '.docx', '.pdf']
+    if ext not in valid_extensions:
+        raise ValidationError('Unsupported file extension. Allowed: .doc, .docx, .pdf')
+
+
 def generate_invitation_code():
     return str(uuid.uuid4()).replace('-', '')[:20]
 

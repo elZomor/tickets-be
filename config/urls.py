@@ -13,6 +13,7 @@ urlpatterns = [
     path('shows/', include('show.urls')),
     path('auth/', include('social_login.urls')),
     path('hita/', include('hita.urls')),
+    path('eldorg/', include('eldorg.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
