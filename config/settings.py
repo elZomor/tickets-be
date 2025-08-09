@@ -195,8 +195,13 @@ CELERY_TIMEZONE = 'UTC'
 s3_storage = S3Boto3Storage()
 STORAGES = {
     "default": {
-        "BACKEND": "storages.backends.s3.S3Storage" if environment == 'production' else "django.core.files.storage.FileSystemStorage",
+        "BACKEND": (
+            "storages.backends.s3.S3Storage"
+            if environment == 'production'
+            else "django.core.files.storage.FileSystemStorage"
+        ),
     },
     "staticfiles": {
-        "BACKEND": 'whitenoise.storage.CompressedManifestStaticFilesStorage'}
+        "BACKEND": 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    },
 }

@@ -3,7 +3,6 @@ from datetime import datetime
 from rest_framework import serializers
 
 from config.constants import ENVIRONMENT
-from config.settings import s3_storage
 from show.models import Show, Festival, Publication, ShowDate
 from show.models.Show import ShowStatus
 from django.utils.timezone import localtime, make_aware, get_current_timezone
@@ -79,7 +78,9 @@ class ShowViewSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_show_dates(obj):
-        return ShowDateViewSerializer(obj.dates.all().order_by('date', 'time'), many=True).data
+        return ShowDateViewSerializer(
+            obj.dates.all().order_by('date', 'time'), many=True
+        ).data
 
     def get_poster(self, obj):
         if obj.poster:
@@ -142,7 +143,9 @@ class FestivalViewSerializer(serializers.ModelSerializer):
     publications = serializers.SerializerMethodField()
 
     def get_shows(self, obj):
-        shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by('-dates__date')
+        shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by(
+            '-dates__date'
+        )
         return ShowViewSerializer(
             shows_qs, many=True, context={'request': self.context.get('request')}
         ).data

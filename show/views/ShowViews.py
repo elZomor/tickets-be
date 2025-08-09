@@ -44,7 +44,12 @@ class ShowViewSet(
         )
         date = request.query_params.get('date')
         if date:
-            queryset = self.get_queryset().filter(dates__date=date).order_by('dates__time').distinct()
+            queryset = (
+                self.get_queryset()
+                .filter(dates__date=date)
+                .order_by('dates__time')
+                .distinct()
+            )
         serializer = ShowViewSerializer(queryset, many=True)
         page = self.paginate_queryset(queryset)
         if page is not None:
