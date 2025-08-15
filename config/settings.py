@@ -40,7 +40,7 @@ DJANGO_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
 ]
-PROJECT_APPS = ['show', 'hita', 'social_login', 'eldorg']
+PROJECT_APPS = ['show', 'hita', 'social_login', 'eldorg', 'ai']
 THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',

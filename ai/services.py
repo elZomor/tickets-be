@@ -1,0 +1,111 @@
+import json
+
+from django.db import transaction, connection
+from django.utils.timezone import now
+from .models import PerformerInsights
+from hita.models import Performer
+from .extractors import extract_features_from_text, embed_text
+
+
+def _compute_role_stats(experiences: list[dict]) -> dict:
+    years = [e.get("year") for e in experiences or [] if e.get("year")]
+    counts = {"THEATER": 0, "TV": 0, "MOVIE": 0, "RADIO": 0}
+    dirs = {}
+    fest = 0
+    first_year = min(years) if years else None
+    last_year = max(years) if years else None
+    for e in experiences or []:
+        m = (e.get("show_type") or "").upper()
+        if m in counts:
+            counts[m] += 1
+        if e.get("director"):
+            dirs[e["director"]] = dirs.get(e["director"], 0) + 1
+        if e.get("festival_name"):
+            fest += 1
+    top_directors = sorted(dirs.items(), key=lambda x: x[1], reverse=True)[:5]
+    return {
+        "counts_by_medium": counts,
+        "years_active": (last_year - first_year + 1) if first_year and last_year else 0,
+        "first_year": first_year,
+        "last_year": last_year,
+        "top_directors": [{"name": d, "count": c} for d, c in top_directors],
+        "festival_count": fest,
+        "generated_at": now().isoformat(),
+    }
+
+
+@transaction.atomic
+def enrich_performer_from_raw(username: str, raw: dict) -> dict:
+    performer = Performer.objects.get(username=username)
+
+    bio = (raw.get("performer") or {}).get("biography") or ""
+    experiences = raw.get("experiences") or []
+    achievements = raw.get("achievements") or []
+    skills_tags = (raw.get("performer") or {}).get("skills_tags", [])
+    features = extract_features_from_text(
+        bio=bio, experiences=experiences, achievements=achievements
+    )
+    role_stats = _compute_role_stats(experiences)
+    profile_text = "\n".join(
+        [
+            bio,
+            *(
+                f"{e.get('year')} {(e.get('show_type') or '').upper()} {e.get('show_name')} {e.get('role_name') or ''}"
+                for e in experiences
+            ),
+            *(
+                f'{a.get("year")} {a.get("festival_name") or ""} {a.get("field") or ""} {a.get("position") or ""}'
+                for a in achievements
+            ),
+        ]
+    )
+    skills_text = json.dumps(
+        {
+            "skills_tags": skills_tags,
+            "features": {
+                "languages": features["languages"],
+                "accents": features["accents"],
+                "genres": features["genres"],
+                "techniques": features["techniques"],
+                "instruments": features["instruments"],
+                "sports": features["sports"],
+            },
+        },
+        ensure_ascii=False,
+    )
+
+    vec_profile = embed_text(profile_text)
+    vec_skills = embed_text(skills_text)
+
+    insights, is_created = PerformerInsights.objects.get_or_create(performer=performer)
+    insights.features = features
+    insights.role_stats = role_stats
+    if vec_profile:
+        insights.vec_profile = vec_profile
+    if vec_skills:
+        insights.vec_skills = vec_skills
+    insights.source_version = (
+        "v1" if is_created else f'v${(int(insights.source_version or 0) + 1)}'
+    )
+    insights.save()
+
+    return {"ok": True, "features": features, "role_stats": role_stats}
+
+
+def semantic_search_performers(
+    query_vec: list[float], scope: str = "skills", limit: int = 10
+):
+    col = "vec_skills" if scope == "skills" else "vec_profile"
+    with connection.cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT p.id, p.username, 1 - ({col} <=> %s) AS score
+            FROM ai_performerinsights i
+            JOIN performers_performer p ON p.id = i.performer_id
+            WHERE i.{col} IS NOT NULL
+            ORDER BY i.{col} <=> %s
+            LIMIT %s
+            """,
+            [query_vec, query_vec, limit],
+        )
+        return cur.fetchall()
