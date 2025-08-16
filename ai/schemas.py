@@ -65,14 +65,12 @@ chat_schema = {
     },
 }
 
+# ---- replace your QUERY_SCHEMA with this ----
 QUERY_SCHEMA = {
     "type": "object",
     "properties": {
-        "gender": {"type": ["string", "null"], "enum": ["M", "F", None]},
-        "focus_terms": {
-            "type": "array",
-            "items": {"type": "string"},
-        },  # كلمات مفاتيح إنجليزي (e.g., "comedy", "singing")
+        "gender": {"type": ["string", "null"], "enum": ["M", "F", None]},  # allow null
+        "focus_terms": {"type": "array", "items": {"type": "string"}},
         "mediums": {
             "type": "array",
             "items": {
@@ -82,8 +80,17 @@ QUERY_SCHEMA = {
         },
         "w_skills": {"type": "number", "minimum": 0.0, "maximum": 1.0},
         "w_profile": {"type": "number", "minimum": 0.0, "maximum": 1.0},
-        "min_year": {"type": ["integer", "null"]},
+        "min_year": {
+            "type": ["integer", "null"]
+        },  # optional value but still present (can be null)
     },
-    "required": ["focus_terms", "w_skills", "w_profile"],
+    "required": [
+        "gender",
+        "focus_terms",
+        "mediums",
+        "w_skills",
+        "w_profile",
+        "min_year",
+    ],
     "additionalProperties": False,
 }
