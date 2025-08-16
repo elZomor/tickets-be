@@ -135,43 +135,42 @@ def semantic_search_performers(query: str, limit: int = 10):
     gender_clause = ""
     if gender in ("F", "M"):
         gender_clause = "AND p.gender = %s"
-        params.insert(2, gender)
+        params.append(gender)
     medium_bonus_sql = ""
     if mediums:
-        bonuses = []
-        for m in mediums:
-            bonuses.append(
-                f"LEAST(COALESCE((i.role_stats->'counts_by_medium'->>'{m}')::int,0) * 0.02, 0.10)"
-            )
+        bonuses = [
+            f"LEAST(COALESCE((i.role_stats->'counts_by_medium'->>'{m}')::int,0) * 0.02, 0.10)"
+            for m in mediums
+        ]
         medium_bonus_sql = " - (" + " + ".join(bonuses) + ")"
 
     params.append(limit)
     sql = f"""
-           SELECT
-               p.id,
-               hm.first_name || ' ' || hm.last_name AS full_name,
-               (
-                 ((i.vec_skills  <=> %s::vector) * %s) +
-                 ((i.vec_profile <=> %s::vector) * %s)
-               ){medium_bonus_sql} AS combo_dist,
-               1 - (
-                 ((i.vec_skills  <=> %s::vector) * %s) +
-                 ((i.vec_profile <=> %s::vector) * %s)
-               ) AS combo_score
-           FROM ai_performerinsights i
-           JOIN hita_performer p ON p.id = i.performer_id
-           JOIN hita_hitamember hm ON hm.id = p.hita_member_id
-           WHERE i.vec_skills IS NOT NULL
-             AND i.vec_profile IS NOT NULL
-             {gender_clause}
-           ORDER BY combo_dist ASC
-           LIMIT %s
-       """
+            SELECT
+                p.id,
+                hm.first_name || ' ' || hm.last_name AS full_name,
+                (
+                  ((i.vec_skills  <=> %s::vector) * %s) +
+                  ((i.vec_profile <=> %s::vector) * %s)
+                ){medium_bonus_sql} AS combo_dist,
+                1 - (
+                  ((i.vec_skills  <=> %s::vector) * %s) +
+                  ((i.vec_profile <=> %s::vector) * %s)
+                ) AS combo_score
+            FROM ai_performerinsights i
+            JOIN hita_performer p ON p.id = i.performer_id
+            JOIN hita_hitamember hm ON hm.id = p.hita_member_id
+            WHERE i.vec_skills IS NOT NULL
+              AND i.vec_profile IS NOT NULL
+              {gender_clause}
+            ORDER BY combo_dist ASC
+            LIMIT %s
+        """
     with connection.cursor() as cur:
         cur.execute(sql, params)
         rows = cur.fetchall()
     out = []
-    for pid, full_name, score in rows:
+    for pid, full_name, _dist, score in rows:
         perf = Performer.objects.get(id=pid)
         ins = PerformerInsights.objects.get(performer_id=pid)
         reasons = _llm_justify(query, perf, ins)

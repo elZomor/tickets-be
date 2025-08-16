@@ -10,6 +10,9 @@ class AIViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"])
     def ask(self, request):
-        query = request.data.get("q")
-        results = semantic_search_performers(query)
-        return get_successful_response(data=results)
+        try:
+            query = request.data.get("q")
+            results = semantic_search_performers(query)
+            return get_successful_response(data=results)
+        except Exception as e:
+            return get_successful_response(data={"error": str(e)})
