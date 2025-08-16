@@ -106,7 +106,7 @@ def _vector_literal(vec: list[float]) -> str:
     return "[" + ",".join(f"{x:.8f}" for x in vec) + "]"
 
 
-def semantic_search_performers(query: str, limit: int = 10):
+def semantic_search_performers(query: str, limit: int = 3):
     configurations = parse_ar_query_to_schema(query) or {}
     gender = configurations.get("gender")
     terms = configurations.get("focus_terms") or []
