@@ -14,6 +14,7 @@ urlpatterns = [
     path('auth/', include('social_login.urls')),
     path('hita/', include('hita.urls')),
     path('eldorg/', include('eldorg.urls')),
+    path('ai/', include('ai.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
