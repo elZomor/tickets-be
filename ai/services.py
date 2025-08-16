@@ -178,7 +178,7 @@ def semantic_search_performers(query: str, limit: int = 3):
         reasons = _llm_justify(query, perf, ins)
         out.append(
             {
-                "url": BE_URL + '/artists/' + perf.hita_member.user.username,
+                "url": ACTOGRAM_FE_URL + '/artists/' + perf.hita_member.user.username,
                 "id": pid,
                 "full_name": full_name,
                 "score": float(score),
