@@ -9,7 +9,7 @@ from .extractors import extract_features_from_text, embed_text, _llm_justify
 
 def _compute_role_stats(experiences: list[dict]) -> dict:
     years = [e.get("year") for e in experiences or [] if e.get("year")]
-    counts = {"THEATER": 0, "TV": 0, "MOVIE": 0, "RADIO": 0}
+    counts = {"THEATER": 0, "TV": 0, "MOVIE": 0, "RADIO": 0, "DUBBING": 0}
     dirs = {}
     fest = 0
     first_year = min(years) if years else None

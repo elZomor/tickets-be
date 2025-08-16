@@ -80,7 +80,7 @@ def _llm_justify(
     }
     msg = [
         ChatCompletionSystemMessageParam(
-            content='Explain briefly why this performer matches the query. Use 2-3 short bullet reasons. No inventions.',
+            content='اشرح بإيجاز وبالعربية لماذا هذا المؤدي مناسب للاستعلام. قدم 2-3 نقاط قصيرة، دون اختلاق. استخدم العامية المصرية بلهجة ودودة قليلا دون اختراق حدود',
             role="system",
         ),
         ChatCompletionUserMessageParam(
