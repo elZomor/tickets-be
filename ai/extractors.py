@@ -41,7 +41,7 @@ Return ONLY JSON."""
             type="json_schema", json_schema=chat_schema
         ),
         temperature=0,
-        messages=ChatCompletionUserMessageParam(role="user", content=user_msg),
+        messages=[ChatCompletionUserMessageParam(role="user", content=user_msg)],
     )
     return json.loads(res.choices[0].message.content)
 
