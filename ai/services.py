@@ -96,23 +96,29 @@ def enrich_performer_from_raw(performer: Performer) -> dict:
     return {"ok": True, "features": features, "role_stats": role_stats}
 
 
+def _vector_literal(vec: list[float]) -> str:
+    # pgvector text format: "[v1, v2, v3, ...]"
+    return "[" + ",".join(f"{x:.8f}" for x in vec) + "]"
+
+
 def semantic_search_performers(
     query_vec: list[float], scope: str = "skills", limit: int = 10
 ):
     col = "vec_skills" if scope == "skills" else "vec_profile"
-    with connection.cursor() as cur:
-        cur.execute(
-            f"""
+    vector_literal = _vector_literal(query_vec)
+
+    sql = f"""
             SELECT
-            p.id,
-            hm.first_name || ' ' || hm.last_name AS full_name, 1 - ({col} <=> %s) AS score
+                p.id,
+                hm.first_name || ' ' || hm.last_name AS full_name,
+                1 - (i.{col} <=> %s::vector) AS score
             FROM ai_performerinsights i
             JOIN hita_performer p ON p.id = i.performer_id
             JOIN hita_hitamember hm ON hm.id = p.hita_member_id
             WHERE i.{col} IS NOT NULL
-            ORDER BY i.{col} <=> %s
+            ORDER BY i.{col} <=> %s::vector
             LIMIT %s
-            """,
-            [query_vec, query_vec, limit],
-        )
+        """
+    with connection.cursor() as cur:
+        cur.execute(sql, [vector_literal, vector_literal, limit])
         return cur.fetchall()
