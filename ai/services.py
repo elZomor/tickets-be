@@ -105,7 +105,7 @@ def semantic_search_performers(
             f"""
             SELECT
             p.id,
-            hm.first_name || ' ' || hm.last_name AS full_name,, 1 - ({col} <=> %s) AS score
+            hm.first_name || ' ' || hm.last_name AS full_name, 1 - ({col} <=> %s) AS score
             FROM ai_performerinsights i
             JOIN hita_performer p ON p.id = i.performer_id
             JOIN hita_hitamember hm ON hm.id = p.hita_member_id
