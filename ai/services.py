@@ -36,7 +36,7 @@ def _compute_role_stats(experiences: list[dict]) -> dict:
 
 @transaction.atomic
 def enrich_performer_from_raw(performer: Performer) -> dict:
-    bio = performer.biography
+    bio = performer.biography or ""
     experiences = list(
         performer.experiences.values(
             "year", "show_type", "show_name", "role_name", "director", "festival_name"
@@ -103,9 +103,12 @@ def semantic_search_performers(
     with connection.cursor() as cur:
         cur.execute(
             f"""
-            SELECT p.id, p.username, 1 - ({col} <=> %s) AS score
+            SELECT
+            p.id,
+            hm.first_name || ' ' || hm.last_name AS full_name,, 1 - ({col} <=> %s) AS score
             FROM ai_performerinsights i
-            JOIN performers_performer p ON p.id = i.performer_id
+            JOIN hita_performer p ON p.id = i.performer_id
+            JOIN hita_hitamember hm ON hm.id = p.hita_member_id
             WHERE i.{col} IS NOT NULL
             ORDER BY i.{col} <=> %s
             LIMIT %s
