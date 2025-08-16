@@ -134,7 +134,7 @@ def semantic_search_performers(query: str, limit: int = 10):
     ]
     gender_clause = ""
     if gender in ("F", "M"):
-        gender_clause = "AND p.gender = %s"
+        gender_clause = "AND hm.gender = %s"
         params.append(gender)
     medium_bonus_sql = ""
     if mediums:
