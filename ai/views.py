@@ -1,3 +1,15 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-# Create your views here.
+from ai.services import semantic_search_performers
+from utils.Response import get_successful_response
+
+
+class AIViewSet(viewsets.GenericViewSet):
+
+    @action(detail=False, methods=["post"])
+    def ask(self, request):
+        query = request.data.get("q")
+        results = semantic_search_performers(query)
+        return get_successful_response(data=results)

@@ -107,7 +107,6 @@ def _vector_literal(vec: list[float]) -> str:
 
 
 def semantic_search_performers(query: str, limit: int = 10):
-
     configurations = parse_ar_query_to_schema(query) or {}
     gender = configurations.get("gender")
     terms = configurations.get("focus_terms") or []
