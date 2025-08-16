@@ -2,6 +2,8 @@ import json
 
 from django.db import transaction, connection
 from django.utils.timezone import now
+
+from config.constants import BE_URL
 from .models import PerformerInsights
 from hita.models import Performer
 from .extractors import (
@@ -176,6 +178,7 @@ def semantic_search_performers(query: str, limit: int = 3):
         reasons = _llm_justify(query, perf, ins)
         out.append(
             {
+                "url": BE_URL + '/artists/' + perf.hita_member.user.username,
                 "id": pid,
                 "full_name": full_name,
                 "score": float(score),
