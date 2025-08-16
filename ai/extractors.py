@@ -9,7 +9,7 @@ from openai.types.shared_params import ResponseFormatJSONSchema
 from config.constants import OPENAI_API_KEY, OPENAI_TEXT_MODEL, OPENAI_EMBED_MODEL
 from hita.models import Performer
 from .models import PerformerInsights
-from .schemas import FEATURES_SCHEMA, chat_schema
+from .schemas import FEATURES_SCHEMA, chat_schema, QUERY_SCHEMA
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -29,7 +29,7 @@ def extract_features_from_text(
 Schema:\n{json.dumps(FEATURES_SCHEMA, ensure_ascii=False)}
 Rules:
 - Do NOT invent facts.
-- Normalize medium to THEATER/TV/MOVIE/RADIO.
+- Normalize medium to THEATER/TV/MOVIE/RADIO/DUBBING.
 Input:
 BIO:
 {bio or ""}
@@ -91,6 +91,33 @@ def _llm_justify(
         model=OPENAI_TEXT_MODEL, temperature=0, messages=msg
     )
     text = r.choices[0].message.content or ""
-    # simple split; or ask model to return JSON bullets if you prefer
     reasons = [line.strip("-• ").strip() for line in text.split("\n") if line.strip()]
     return [x for x in reasons if x][:3]
+
+
+def parse_ar_query_to_schema(ar_prompt: str) -> dict:
+    sys = ChatCompletionSystemMessageParam(
+        role="system",
+        content=(
+            "You convert Arabic casting queries into an English JSON config for search. "
+            "Infer gender if explicitly stated (e.g., ممثلة -> F, ممثل -> M), otherwise null. "
+            "Map Arabic intents to English tokens in focus_terms (e.g., كوميدي -> comedy, غناء -> singing). "
+            "Choose reasonable weights: w_skills high when the query names skills/genres. "
+            "Only return JSON matching the given schema. No extra keys. No explanations."
+        ),
+    )
+    user = ChatCompletionUserMessageParam(role="user", content=ar_prompt)
+    res = client.chat.completions.create(
+        model=OPENAI_TEXT_MODEL,
+        temperature=0,
+        response_format=ResponseFormatJSONSchema(
+            type="json_schema",
+            json_schema={
+                "name": "search_query",
+                "schema": QUERY_SCHEMA,
+                "strict": True,
+            },
+        ),
+        messages=[sys, user],
+    )
+    return json.loads(res.choices[0].message.content or "{}")

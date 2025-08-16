@@ -64,3 +64,26 @@ chat_schema = {
         ],
     },
 }
+
+QUERY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "gender": {"type": ["string", "null"], "enum": ["M", "F", None]},
+        "focus_terms": {
+            "type": "array",
+            "items": {"type": "string"},
+        },  # كلمات مفاتيح إنجليزي (e.g., "comedy", "singing")
+        "mediums": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": ["THEATER", "TV", "MOVIE", "RADIO", "DUBBING"],
+            },
+        },
+        "w_skills": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+        "w_profile": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+        "min_year": {"type": ["integer", "null"]},
+    },
+    "required": ["focus_terms", "w_skills", "w_profile"],
+    "additionalProperties": False,
+}

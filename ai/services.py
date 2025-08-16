@@ -4,7 +4,12 @@ from django.db import transaction, connection
 from django.utils.timezone import now
 from .models import PerformerInsights
 from hita.models import Performer
-from .extractors import extract_features_from_text, embed_text, _llm_justify
+from .extractors import (
+    extract_features_from_text,
+    embed_text,
+    _llm_justify,
+    parse_ar_query_to_schema,
+)
 
 
 def _compute_role_stats(experiences: list[dict]) -> dict:
@@ -101,25 +106,70 @@ def _vector_literal(vec: list[float]) -> str:
     return "[" + ",".join(f"{x:.8f}" for x in vec) + "]"
 
 
-def semantic_search_performers(query: str, scope: str = "skills", limit: int = 10):
-    col = "vec_skills" if scope == "skills" else "vec_profile"
-    vector_literal = _vector_literal(embed_text(query))
+def semantic_search_performers(query: str, limit: int = 10):
 
+    configurations = parse_ar_query_to_schema(query) or {}
+    gender = configurations.get("gender")
+    terms = configurations.get("focus_terms") or []
+    mediums = configurations.get("mediums") or []
+    w_skills = float(configurations.get("w_skills", 0.8))
+    w_profile = float(configurations.get("w_profile", 0.2))
+    skill_query = " ".join(terms) if terms else query
+    q_vec_skills = embed_text(skill_query)
+    q_vec_profile = embed_text(query)
+    if not q_vec_skills or not q_vec_profile:
+        return []
+
+    query_literal_skills = _vector_literal(q_vec_skills)
+    query_literal_profile = _vector_literal(q_vec_profile)
+
+    params = [
+        query_literal_skills,
+        w_skills,
+        query_literal_profile,
+        w_profile,
+        query_literal_skills,
+        w_skills,
+        query_literal_profile,
+        w_profile,
+    ]
+    gender_clause = ""
+    if gender in ("F", "M"):
+        gender_clause = "AND p.gender = %s"
+        params.insert(2, gender)
+    medium_bonus_sql = ""
+    if mediums:
+        bonuses = []
+        for m in mediums:
+            bonuses.append(
+                f"LEAST(COALESCE((i.role_stats->'counts_by_medium'->>'{m}')::int,0) * 0.02, 0.10)"
+            )
+        medium_bonus_sql = " - (" + " + ".join(bonuses) + ")"
+
+    params.append(limit)
     sql = f"""
-            SELECT
-                p.id,
-                hm.first_name || ' ' || hm.last_name AS full_name,
-                1 - (i.{col} <=> %s::vector) AS score
-            FROM ai_performerinsights i
-            JOIN hita_performer p ON p.id = i.performer_id
-            JOIN hita_hitamember hm ON hm.id = p.hita_member_id
-            WHERE i.{col} IS NOT NULL
-            ORDER BY i.{col} <=> %s::vector
-            LIMIT %s
-        """
-    rows = []
+           SELECT
+               p.id,
+               hm.first_name || ' ' || hm.last_name AS full_name,
+               (
+                 ((i.vec_skills  <=> %s::vector) * %s) +
+                 ((i.vec_profile <=> %s::vector) * %s)
+               ){medium_bonus_sql} AS combo_dist,
+               1 - (
+                 ((i.vec_skills  <=> %s::vector) * %s) +
+                 ((i.vec_profile <=> %s::vector) * %s)
+               ) AS combo_score
+           FROM ai_performerinsights i
+           JOIN hita_performer p ON p.id = i.performer_id
+           JOIN hita_hitamember hm ON hm.id = p.hita_member_id
+           WHERE i.vec_skills IS NOT NULL
+             AND i.vec_profile IS NOT NULL
+             {gender_clause}
+           ORDER BY combo_dist ASC
+           LIMIT %s
+       """
     with connection.cursor() as cur:
-        cur.execute(sql, [vector_literal, vector_literal, limit])
+        cur.execute(sql, params)
         rows = cur.fetchall()
     out = []
     for pid, full_name, score in rows:
