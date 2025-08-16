@@ -4,7 +4,7 @@ from django.db import transaction, connection
 from django.utils.timezone import now
 from .models import PerformerInsights
 from hita.models import Performer
-from .extractors import extract_features_from_text, embed_text
+from .extractors import extract_features_from_text, embed_text, _llm_justify
 
 
 def _compute_role_stats(experiences: list[dict]) -> dict:
@@ -101,11 +101,9 @@ def _vector_literal(vec: list[float]) -> str:
     return "[" + ",".join(f"{x:.8f}" for x in vec) + "]"
 
 
-def semantic_search_performers(
-    query_vec: list[float], scope: str = "skills", limit: int = 10
-):
+def semantic_search_performers(query: str, scope: str = "skills", limit: int = 10):
     col = "vec_skills" if scope == "skills" else "vec_profile"
-    vector_literal = _vector_literal(query_vec)
+    vector_literal = _vector_literal(embed_text(query))
 
     sql = f"""
             SELECT
@@ -119,6 +117,21 @@ def semantic_search_performers(
             ORDER BY i.{col} <=> %s::vector
             LIMIT %s
         """
+    rows = []
     with connection.cursor() as cur:
         cur.execute(sql, [vector_literal, vector_literal, limit])
-        return cur.fetchall()
+        rows = cur.fetchall()
+    out = []
+    for pid, full_name, score in rows:
+        perf = Performer.objects.get(id=pid)
+        ins = PerformerInsights.objects.get(performer_id=pid)
+        reasons = _llm_justify(query, perf, ins)
+        out.append(
+            {
+                "id": pid,
+                "full_name": full_name,
+                "score": float(score),
+                "why": reasons,
+            }
+        )
+    return out

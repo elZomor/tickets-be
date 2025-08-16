@@ -1,9 +1,11 @@
 import json
 from openai import OpenAI
-from openai.types.chat import ChatCompletionUserMessageParam
+from openai.types.chat import ChatCompletionUserMessageParam, ChatCompletionSystemMessageParam
 from openai.types.shared_params import ResponseFormatJSONSchema
 
 from config.constants import OPENAI_API_KEY, OPENAI_TEXT_MODEL, OPENAI_EMBED_MODEL
+from hita.models import Performer
+from .models import PerformerInsights
 from .schemas import FEATURES_SCHEMA, chat_schema
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -54,3 +56,29 @@ def embed_text(text: str) -> list[float] | None:
         input=text,
     )
     return emb.data[0].embedding
+
+
+def _llm_justify(query_text: str, performer: Performer, performer_insights: PerformerInsights) -> list[str]:
+    # compact context
+    skills = list(performer.skills_tags.values_list("name", flat=True))
+    experiences = list(performer.experiences.order_by("-year").values("year", "show_name", "role_name", "show_type")[:5])
+    ctx = {
+        "query": query_text,
+        "skills": skills,
+        "features": performer_insights.features or {},
+        "role_stats": performer_insights.role_stats or {},
+        "recent_experiences": experiences,
+    }
+    msg = [
+        ChatCompletionSystemMessageParam(content='Explain briefly why this performer matches the query. Use 2-3 short bullet reasons. No inventions.', role="system"),
+        ChatCompletionUserMessageParam(content=json.dumps(ctx, ensure_ascii=False), role="user"),
+    ]
+    r = client.chat.completions.create(
+        model=OPENAI_TEXT_MODEL,
+        temperature=0,
+        messages=msg
+    )
+    text = r.choices[0].message.content or ""
+    # simple split; or ask model to return JSON bullets if you prefer
+    reasons = [line.strip("-• ").strip() for line in text.split("\n") if line.strip()]
+    return [x for x in reasons if x][:3]
