@@ -35,13 +35,11 @@ def _compute_role_stats(experiences: list[dict]) -> dict:
 
 
 @transaction.atomic
-def enrich_performer_from_raw(username: str, raw: dict) -> dict:
-    performer = Performer.objects.get(username=username)
-
-    bio = (raw.get("performer") or {}).get("biography") or ""
-    experiences = raw.get("experiences") or []
-    achievements = raw.get("achievements") or []
-    skills_tags = (raw.get("performer") or {}).get("skills_tags", [])
+def enrich_performer_from_raw(performer: Performer) -> dict:
+    bio = performer.biography
+    experiences = list(performer.experiences.values())
+    achievements = list(performer.achievements.values())
+    skills_tags = performer.skills_tags
     features = extract_features_from_text(
         bio=bio, experiences=experiences, achievements=achievements
     )
