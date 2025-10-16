@@ -109,6 +109,21 @@ class HITAMemberAdmin(admin.ModelAdmin):
             logger.error(f"error happened: {e}")
 
     @staticmethod
+    @admin.action(description='Resend welcome email')
+    def resend_approval_mails(modeladmin, request, queryset):
+        try:
+            approved_members = list(queryset)
+            for member in approved_members:
+                send_approve_email.delay(
+                    to_email=member.user.email, name=member.full_name
+                )
+            modeladmin.message_user(
+                request, f'{len(approved_members)} emails have been sent.'
+            )
+        except Exception as e:
+            logger.error(f"error happened: {e}")
+
+    @staticmethod
     @admin.action(description='Reject request')
     @prevent_update_approved_members
     def reject_request(modeladmin, request, queryset, hita_member):
