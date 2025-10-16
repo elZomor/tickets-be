@@ -99,7 +99,9 @@ class HITAMemberAdmin(admin.ModelAdmin):
                 reviewed_at=datetime.now(),
             )
             for member in approved_members:
-                send_approve_email.delay(to_email=member.user.email)
+                send_approve_email.delay(
+                    to_email=member.user.email, name=member.full_name
+                )
             modeladmin.message_user(
                 request, f'{updated_count} items marked as approved.'
             )

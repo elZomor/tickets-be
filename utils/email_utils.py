@@ -1,19 +1,21 @@
+import json
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import environ
+import requests
 from celery.app import shared_task
 
 env = environ.Env()
 
 
 @shared_task(bind=True)
-def send_approve_email(self, to_email: str):
+def send_approve_email(self, to_email: str, name: str):
     body = f'''
         <html>
           <body>
             <div dir="ltr">
-                <p>Hello,</p>
+                <p>Hello, {name}</p>
                 <p>Thank you for registering with us in "Actogram"!</p>
                 <p>Kindly note that your profile has been approved, you can continue your registration through this link</p>
                 <a href="{env.str('FE_URL')}">{env.str('FE_URL')}</a>
@@ -21,7 +23,7 @@ def send_approve_email(self, to_email: str):
                 <p>Actogram Team</p>
             </div>
             <div dir="rtl">
-                <p>إزيك</p>
+                <p> إزيك يا {name}</p>
                 <p>شكراً لطلبك الانضمام لينا في Actogram</p>
                 <p>لقد تم الموافقة على طلبك، تقدر دلوقتي تعمل صفحتك الشخصية من الرابط ده</p>
                 <a href="{env.str('FE_URL')}">{env.str('FE_URL')}</a>
@@ -32,7 +34,7 @@ def send_approve_email(self, to_email: str):
         </html>
         '''
     try:
-        send_email(
+        send_email_https(
             to_email=to_email,
             body=body,
             subject='Request to join Actogram has been approved',
@@ -40,6 +42,35 @@ def send_approve_email(self, to_email: str):
         return {'status': 'ok', 'email': to_email}
     except Exception as e:
         return {'status': 'error', 'message': str(e), 'email': to_email}
+
+
+def send_email_https(to_email: str, subject: str, body: str, name: str):
+    url = env.str('ZEPTO_URL')
+
+    payload = {
+        "from": {"address": env.str('PLAY_CAST_EMAIL')},
+        "to": [
+            {
+                "email_address": {
+                    "address": to_email,
+                    "name": name,
+                }
+            }
+        ],
+        "subject": subject,
+        "htmlbody": body,
+    }
+    headers = {
+        'accept': "application/json",
+        'content-type': "application/json",
+        'authorization': f'Zoho-enczapikey {env.str("ZEPTO_API_KEY")}',
+    }
+
+    response = requests.request(
+        "POST", url, data=json.dumps(payload, ensure_ascii=False), headers=headers
+    )
+
+    print(response.text)
 
 
 def send_email(to_email: str, subject: str, body: str):
