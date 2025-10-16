@@ -22,7 +22,7 @@ class TheaterRolesChoices(models.TextChoices):
     # COMPOSING_SONGS = 'COMPOSING_SONGS', 'Composing Songs'
     COMPOSING = 'COMPOSING', 'Composing'  # To be removed
     MUSIC_ARRANGEMENT = 'MUSIC_ARRANGEMENT', 'Music Arrangement'
-    # MUSIC_PREPARATION = 'MUSIC_PREPARATION', 'Music Preparation'
+    MUSIC_PREPARATION = 'MUSIC_PREPARATION', 'Music Preparation'
     # MUSIC_IMPLEMENTATION = 'MUSIC_IMPLEMENTATION', 'Music Implementation'
     MUSICIAN = 'MUSICIAN', 'Musician'
     CHOREOGRAPHY = 'CHOREOGRAPHY', 'Choreography'
