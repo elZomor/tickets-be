@@ -28,6 +28,8 @@ DEBUG = env.bool('DEBUG')
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
+REDIS_URL = env.str('REDIS_URL', 'redis://redis:6379/0')
+
 DJANGO_APPS = [
     'admin_interface',
     'colorfield',
