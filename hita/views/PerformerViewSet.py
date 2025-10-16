@@ -247,7 +247,7 @@ class PerformerViewSet(viewsets.ModelViewSet):
         permissions.discard('CAN_EDIT')
         if instance.get_contact_details(user=self.request.user) is None:
             permissions.discard('VIEW_CONTACT_DETAILS')
-        if instance.get_gallery() is None:
+        if instance.get_gallery(user=self.request.user) is None:
             permissions.discard('VIEW_GALLERY')
         return permissions
 
