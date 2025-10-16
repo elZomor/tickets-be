@@ -3,7 +3,11 @@ from rest_framework import viewsets
 from hita.models import Gallery
 from hita.permissions import IsHITAMemberPermission
 from hita.serializers import GalleryCreateSerializer, GalleryViewSerializer
-from utils.Response import get_successful_creation_response, get_successful_response
+from utils.Response import (
+    get_successful_creation_response,
+    get_successful_response,
+    get_bad_request_response,
+)
 from utils.code_utils import get_hita_member_from_request, authorize_performer_data
 
 
@@ -14,14 +18,19 @@ class GalleryViewSet(viewsets.ModelViewSet):
 
     @get_hita_member_from_request
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance: Gallery = serializer.save()
-        if instance.is_profile_picture:
-            instance.performer.get_gallery(request.user).exclude(id=instance.id).update(
-                is_profile_picture=False
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            instance: Gallery = serializer.save()
+            if instance.is_profile_picture:
+                instance.performer.get_gallery(request.user).exclude(
+                    id=instance.id
+                ).update(is_profile_picture=False)
+            return get_successful_creation_response(
+                message='Image uploaded successfully!'
             )
-        return get_successful_creation_response(message='Image uploaded successfully!')
+        except Exception as e:
+            return get_bad_request_response(message=str(e))
 
     @get_hita_member_from_request
     def list(self, request, performer, *args, **kwargs):
