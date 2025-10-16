@@ -36,11 +36,11 @@ class HITAMemberAdmin(admin.ModelAdmin):
         'reviewed_at',
     ]
     list_filter = ['grade', 'location', 'study_type', 'is_graduated', 'request_status']
-    actions = ['approve_request', 'reject_request', 'block_member']
+    actions = ['approve_request', 'reject_request', 'block_member', 'resend_approval_mails']
 
     def get_actions(self, request):
         actions = super().get_actions(request)
-        hita_admin_actions = ['approve_request', 'reject_request', 'block_member']
+        hita_admin_actions = ['approve_request', 'reject_request', 'block_member', 'resend_approval_mails']
         if request.user.groups.filter(name='HITA_ADMIN').exists():
             actions = {
                 key: value
