@@ -45,6 +45,84 @@ def send_approve_email(self, to_email: str, name: str):
         return {'status': 'error', 'message': str(e), 'email': to_email}
 
 
+@shared_task(bind=True)
+def send_create_performer_reminder_email(self, to_email: str, name: str):
+    body = f'''
+        <html>
+          <body>
+          <div dir="rtl">
+                <p> إزيك يا {name}</p>
+                <p>بنفكرك إنك لسه معانا في Actogram</p>
+                <p>تقدر دلوقتي تعمل صفحتك الشخصية من الرابط ده وتشاركها مع الناس</p>
+                <a href="{env.str('FE_URL')}">{env.str('FE_URL')}</a>
+                <p>شكرا!</p>
+                <p>Actogram فريق عمل</p>
+            </div>
+            <div dir="ltr">
+                <p>Hello, {name}</p>
+                <p>This is a reminder that you're still with us in Actogram</p>
+                <p>Now, you can create your profile and share it with others via this link</p>
+                <a href="{env.str('FE_URL')}">{env.str('FE_URL')}</a>
+                <p>Thank you!</p>
+                <p>Actogram Team</p>
+            </div>
+            
+          </body>
+        </html>
+        '''
+    try:
+        send_email_https(
+            to_email=to_email,
+            body=body,
+            subject='Actogram is calling for your artistic profile',
+            name=name,
+        )
+        return {'status': 'ok', 'email': to_email}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e), 'email': to_email}
+
+
+@shared_task(bind=True)
+def send_update_performer_reminder_email(self, to_email: str, name: str):
+    body = f'''
+        <html>
+          <body>
+          <div dir="rtl">
+                <p> إزيك يا {name}</p>
+                <p>بنفكرك إنك لسه معانا في Actogram</p>
+                <p>بس للأسف الملف بتاعك نزل للآخر علشان مفيش صورة شخصية ليك على الملف</p>
+                <p>مستنيينك ترفع صورتك وتشاركنا بيها علشان تسهل على الناس التواصل وتنتشر أكتر</p>
+                <p>ارفع صورك دلوقتي</p>
+                <a href="{env.str('FE_URL')}">{env.str('FE_URL')}</a>
+                <p>شكرا!</p>
+                <p>Actogram فريق عمل</p>
+            </div>
+            <div dir="ltr">
+                <p>Hello, {name}</p>
+                <p>This is a reminder that you're still with us in Actogram</p>
+                <p>However, your profile has been pushed to the back, because you don't have a profile picture</p>
+                <p>We are waiting for you to upload your picture and share with us, to encourage communication.</p>
+                <p>Upload your pictures now</p>
+                <a href="{env.str('FE_URL')}">{env.str('FE_URL')}</a>
+                <p>Thank you!</p>
+                <p>Actogram Team</p>
+            </div>
+
+          </body>
+        </html>
+        '''
+    try:
+        send_email_https(
+            to_email=to_email,
+            body=body,
+            subject='Actogram is calling for your artistic profile',
+            name=name,
+        )
+        return {'status': 'ok', 'email': to_email}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e), 'email': to_email}
+
+
 def send_email_https(to_email: str, subject: str, body: str, name: str):
     url = env.str('ZEPTO_URL')
 

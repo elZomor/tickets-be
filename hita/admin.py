@@ -15,7 +15,8 @@ from hita.models import (
     Invitation,
 )
 from hita.models.Achievement import Achievement
-from utils.email_utils import send_approve_email
+from utils.email_utils import send_approve_email, send_create_performer_reminder_email, \
+    send_update_performer_reminder_email
 import logging
 
 logger = logging.getLogger("gunicorn.error")
@@ -41,6 +42,8 @@ class HITAMemberAdmin(admin.ModelAdmin):
         'reject_request',
         'block_member',
         'resend_approval_mails',
+        'send_create_performer_reminder',
+        'send_update_performer_reminder',
     ]
 
     def get_actions(self, request):
@@ -50,6 +53,8 @@ class HITAMemberAdmin(admin.ModelAdmin):
             'reject_request',
             'block_member',
             'resend_approval_mails',
+            'send_create_performer_reminder',
+            'send_update_performer_reminder',
         ]
         if request.user.groups.filter(name='HITA_ADMIN').exists():
             actions = {
@@ -115,6 +120,34 @@ class HITAMemberAdmin(admin.ModelAdmin):
             modeladmin.message_user(
                 request, f'{updated_count} items marked as approved.'
             )
+        except Exception as e:
+            logger.error(f"error happened: {e}")
+
+    @staticmethod
+    @admin.action(description='Send create performer reminder')
+    def send_create_performer_reminder(modeladmin, request, queryset, hita_member):
+        try:
+            members = HITAMember.objects.filter(performer__isnull=True)
+            for member in members:
+                send_create_performer_reminder_email.delay(
+                    to_email=member.user.email, name=member.full_name
+                )
+            modeladmin.message_user(request, f'{len(members)} emails have been sent.')
+        except Exception as e:
+            logger.error(f"error happened: {e}")
+
+    @staticmethod
+    @admin.action(description='Send update performer gallery reminder')
+    def send_update_performer_reminder(modeladmin, request, queryset, hita_member):
+        try:
+            members = HITAMember.objects.filter(performer__isnull=False).exclude(
+                performer__galleries__is_profile_picture=True
+            )
+            for member in members:
+                send_update_performer_reminder_email.delay(
+                    to_email=member.user.email, name=member.full_name
+                )
+            modeladmin.message_user(request, f'{len(members)} emails have been sent.')
         except Exception as e:
             logger.error(f"error happened: {e}")
 
