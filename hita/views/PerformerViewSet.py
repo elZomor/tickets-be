@@ -5,6 +5,7 @@ from io import BytesIO
 import requests
 from PIL import Image
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import (
     Q,
     Count,
@@ -52,6 +53,10 @@ from utils.Response import (
     get_unauthorized_response,
     get_not_found_response,
 )
+
+import logging
+
+logger = logging.getLogger("gunicorn.error")
 
 
 class PerformerViewSet(viewsets.ModelViewSet):
@@ -241,15 +246,18 @@ class PerformerViewSet(viewsets.ModelViewSet):
         return HttpResponse(html_content, content_type="text/html; charset=utf-8")
 
     def build_permissions(self, instance):
-        permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
-        if instance.hita_member.user.id == self.request.user.id:
+        try:
+            permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
+            if instance.hita_member.user.id == self.request.user.id:
+                return permissions
+            permissions.discard('CAN_EDIT')
+            if instance.get_contact_details(user=self.request.user) is None:
+                permissions.discard('VIEW_CONTACT_DETAILS')
+            if instance.get_gallery(user=self.request.user) is None:
+                permissions.discard('VIEW_GALLERY')
             return permissions
-        permissions.discard('CAN_EDIT')
-        if instance.get_contact_details(user=self.request.user) is None:
-            permissions.discard('VIEW_CONTACT_DETAILS')
-        if instance.get_gallery(user=self.request.user) is None:
-            permissions.discard('VIEW_GALLERY')
-        return permissions
+        except Exception as e:
+            logger.error('Permission error: ' + str(e))
 
     def filter_data(self, query_params):
         query_params.pop('page', None)
