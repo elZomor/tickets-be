@@ -113,10 +113,15 @@ class PerformerViewSet(viewsets.ModelViewSet):
         return context
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        permissions = self.build_permissions(instance)
-        return get_successful_response(data=serializer.data, permissions=permissions)
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            permissions = self.build_permissions(instance)
+            return get_successful_response(
+                data=serializer.data, permissions=permissions
+            )
+        except Exception as e:
+            return get_bad_request_response(message=str(e))
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_data(request.query_params.copy())
@@ -246,18 +251,15 @@ class PerformerViewSet(viewsets.ModelViewSet):
         return HttpResponse(html_content, content_type="text/html; charset=utf-8")
 
     def build_permissions(self, instance):
-        try:
-            permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
-            if instance.hita_member.user.id == self.request.user.id:
-                return permissions
-            permissions.discard('CAN_EDIT')
-            if instance.get_contact_details(user=self.request.user) is None:
-                permissions.discard('VIEW_CONTACT_DETAILS')
-            if instance.get_gallery(user=self.request.user) is None:
-                permissions.discard('VIEW_GALLERY')
+        permissions = {'VIEW_GALLERY', 'VIEW_CONTACT_DETAILS', 'CAN_EDIT'}
+        if instance.hita_member.user.id == self.request.user.id:
             return permissions
-        except Exception as e:
-            logger.error('Permission error: ' + str(e))
+        permissions.discard('CAN_EDIT')
+        if instance.get_contact_details(user=self.request.user) is None:
+            permissions.discard('VIEW_CONTACT_DETAILS')
+        if instance.get_gallery(user=self.request.user) is None:
+            permissions.discard('VIEW_GALLERY')
+        return permissions
 
     def filter_data(self, query_params):
         query_params.pop('page', None)
