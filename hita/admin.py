@@ -15,8 +15,11 @@ from hita.models import (
     Invitation,
 )
 from hita.models.Achievement import Achievement
-from utils.email_utils import send_approve_email, send_create_performer_reminder_email, \
-    send_update_performer_reminder_email
+from utils.email_utils import (
+    send_approve_email,
+    send_create_performer_reminder_email,
+    send_update_performer_reminder_email,
+)
 import logging
 
 logger = logging.getLogger("gunicorn.error")
