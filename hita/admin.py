@@ -126,22 +126,20 @@ class HITAMemberAdmin(admin.ModelAdmin):
         except Exception as e:
             logger.error(f"error happened: {e}")
 
-    @staticmethod
     @admin.action(description='Send create performer reminder')
-    def send_create_performer_reminder(modeladmin, request, queryset, hita_member):
+    def send_create_performer_reminder(self, request, queryset):
         try:
             members = HITAMember.objects.filter(performer__isnull=True)
             for member in members:
                 send_create_performer_reminder_email.delay(
                     to_email=member.user.email, name=member.full_name
                 )
-            modeladmin.message_user(request, f'{len(members)} emails have been sent.')
+            self.message_user(request, f'{len(members)} emails have been sent.')
         except Exception as e:
             logger.error(f"error happened: {e}")
 
-    @staticmethod
     @admin.action(description='Send update performer gallery reminder')
-    def send_update_performer_reminder(modeladmin, request, queryset, hita_member):
+    def send_update_performer_reminder(self, request, queryset):
         try:
             members = HITAMember.objects.filter(performer__isnull=False).exclude(
                 performer__galleries__is_profile_picture=True
@@ -150,7 +148,7 @@ class HITAMemberAdmin(admin.ModelAdmin):
                 send_update_performer_reminder_email.delay(
                     to_email=member.user.email, name=member.full_name
                 )
-            modeladmin.message_user(request, f'{len(members)} emails have been sent.')
+            self.message_user(request, f'{len(members)} emails have been sent.')
         except Exception as e:
             logger.error(f"error happened: {e}")
 
