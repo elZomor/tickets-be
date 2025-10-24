@@ -6,6 +6,9 @@ from config.constants import ENVIRONMENT
 from show.models import Show, Festival, Publication, ShowDate
 from show.models.Show import ShowStatus
 from django.utils.timezone import localtime, make_aware, get_current_timezone
+import logging
+
+logger = logging.getLogger("gunicorn.error")
 
 
 def get_url(url, request):
@@ -85,8 +88,14 @@ class ShowViewSerializer(serializers.ModelSerializer):
         ordered_dates = sorted(dates, key=lambda d: (d.date, d.time))
         return ShowDateViewSerializer(ordered_dates, many=True).data
 
-    def get_poster(self, obj):
+    def get_poster(self, obj: Show):
         if obj.poster:
+            logger.info('*' * 20)
+            logger.info(obj.poster.url)
+            logger.info(obj.poster.name)
+            logger.info(obj.poster.path)
+            logger.info(obj.poster.field)
+            logger.info('*' * 20)
             return get_url(obj.poster.url, self.context.get('request'))
         return None
 
