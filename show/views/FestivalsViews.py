@@ -27,7 +27,7 @@ class FestivalViewSet(
     GenericViewSet,
 ):
     serializer_class = FestivalViewSerializer
-    queryset = Festival.objects.all().order_by('start_date')
+    queryset = Festival.objects.all().order_by('-start_date', '-end_date')
     pagination_class = CustomPagination
     permission_classes = [AllowAny]
 
@@ -55,7 +55,7 @@ class FestivalViewSet(
         )
         return (
             Festival.objects.all()
-            .order_by('start_date')
+            .order_by('-start_date', '-end_date')
             .prefetch_related(shows_prefetch)
         )
 

@@ -67,10 +67,19 @@ class ShowViewSet(
         date_param = request.query_params.get('date')
 
         if date_param:
+            earliest_time_for_date_sq = ShowDate.objects.filter(
+                show=OuterRef('pk'), date=date_param
+            ).order_by('time').values('time')[:1]
             queryset = (
                 base_queryset.filter(dates__date=date_param)
-                .order_by('dates__time', 'pk')
-                .distinct('pk')
+                .annotate(
+                    earliest_time_for_filter=Coalesce(
+                        Subquery(earliest_time_for_date_sq, output_field=TimeField()),
+                        Value(time_cls.max),
+                    )
+                )
+                .order_by('earliest_time_for_filter', 'pk')
+                .distinct()
             )
         else:
             latest_date_sq = ShowDate.objects.filter(show=OuterRef('pk')).order_by(
