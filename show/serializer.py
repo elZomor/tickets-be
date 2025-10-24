@@ -11,11 +11,11 @@ import logging
 logger = logging.getLogger("gunicorn.error")
 
 
-def get_url(url, request):
+def get_url(file, request):
     if request:
         if ENVIRONMENT == 'local':
-            return request.build_absolute_uri(url)
-    return url.replace("http://", "https://")
+            return request.build_absolute_uri(file.url)
+    return f'https://media.play-cast.com/{file.name}?w=800&q=75&fmt=auto'
 
 
 class PublicationPreviewSerializer(serializers.ModelSerializer):
@@ -26,7 +26,7 @@ class PublicationPreviewSerializer(serializers.ModelSerializer):
         fields = ['file', 'publication_number', 'publication_date']
 
     def get_file(self, obj):
-        return get_url(obj.file.url, self.context.get('request'))
+        return get_url(obj.file, self.context.get('request'))
 
 
 class ShowViewSerializer(serializers.ModelSerializer):
@@ -90,13 +90,7 @@ class ShowViewSerializer(serializers.ModelSerializer):
 
     def get_poster(self, obj: Show):
         if obj.poster:
-            logger.info('*' * 20)
-            logger.info(obj.poster.url)
-            logger.info(obj.poster.name)
-            logger.info(obj.poster.path)
-            logger.info(obj.poster.field)
-            logger.info('*' * 20)
-            return get_url(obj.poster.url, self.context.get('request'))
+            return get_url(obj.poster, self.context.get('request'))
         return None
 
 
@@ -166,7 +160,7 @@ class FestivalViewSerializer(serializers.ModelSerializer):
 
     def get_logo(self, obj):
         if obj.logo:
-            return get_url(obj.logo.url, self.context.get('request'))
+            return get_url(obj.logo, self.context.get('request'))
         return None
 
     def get_publications(self, obj):
