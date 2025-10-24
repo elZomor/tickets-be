@@ -6,7 +6,7 @@ from eldorg.models import Script, ScriptStatus
 from eldorg.serializers import ScriptSerializer
 
 
-class ScriptViewSet(mixins.ListModelMixin, GenericViewSet):
+class ScriptViewSet(mixins.ListModelMixin, GenericViewSet, mixins.RetrieveModelMixin):
     model = Script
     queryset = Script.objects.filter(status=ScriptStatus.APPROVED).order_by(
         '-created_at'

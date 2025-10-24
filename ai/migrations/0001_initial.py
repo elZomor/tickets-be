@@ -4,6 +4,9 @@ import django.db.models.deletion
 import pgvector.django.vector
 from django.contrib.postgres.operations import CreateExtension
 from django.db import migrations, models
+import environ
+
+env = environ.Env()
 
 
 class Migration(migrations.Migration):
@@ -14,56 +17,59 @@ class Migration(migrations.Migration):
         ('hita', '0004_alter_hitamember_invitation_code'),
     ]
 
-    operations = [
-        CreateExtension("vector"),
-        migrations.CreateModel(
-            name='PerformerInsights',
-            fields=[
-                (
-                    'id',
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name='ID',
+    if env.str('ENVIRONMENT', default='local') == 'production':
+        operations = [
+            CreateExtension("vector"),
+            migrations.CreateModel(
+                name='PerformerInsights',
+                fields=[
+                    (
+                        'id',
+                        models.BigAutoField(
+                            auto_created=True,
+                            primary_key=True,
+                            serialize=False,
+                            verbose_name='ID',
+                        ),
                     ),
-                ),
-                ('features', models.JSONField(blank=True, default=dict)),
-                ('role_stats', models.JSONField(blank=True, default=dict)),
-                (
-                    'vec_profile',
-                    pgvector.django.vector.VectorField(
-                        blank=True, dimensions=1536, null=True
+                    ('features', models.JSONField(blank=True, default=dict)),
+                    ('role_stats', models.JSONField(blank=True, default=dict)),
+                    (
+                        'vec_profile',
+                        pgvector.django.vector.VectorField(
+                            blank=True, dimensions=1536, null=True
+                        ),
                     ),
-                ),
-                (
-                    'vec_skills',
-                    pgvector.django.vector.VectorField(
-                        blank=True, dimensions=1536, null=True
+                    (
+                        'vec_skills',
+                        pgvector.django.vector.VectorField(
+                            blank=True, dimensions=1536, null=True
+                        ),
                     ),
-                ),
-                (
-                    'source_version',
-                    models.CharField(blank=True, default='v1', max_length=32),
-                ),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                (
-                    'performer',
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name='insights',
-                        to='hita.performer',
+                    (
+                        'source_version',
+                        models.CharField(blank=True, default='v1', max_length=32),
                     ),
-                ),
-            ],
-        ),
-        migrations.RunSQL(
-            "CREATE INDEX IF NOT EXISTS ai_insights_vec_profile_hnsw ON ai_performerinsights USING hnsw (vec_profile vector_cosine_ops);",
-            "DROP INDEX IF EXISTS ai_insights_vec_profile_hnsw;",
-        ),
-        migrations.RunSQL(
-            "CREATE INDEX IF NOT EXISTS ai_insights_vec_skills_hnsw ON ai_performerinsights USING hnsw (vec_skills vector_cosine_ops);",
-            "DROP INDEX IF EXISTS ai_insights_vec_skills_hnsw;",
-        ),
-    ]
+                    ('created_at', models.DateTimeField(auto_now_add=True)),
+                    ('updated_at', models.DateTimeField(auto_now=True)),
+                    (
+                        'performer',
+                        models.ForeignKey(
+                            on_delete=django.db.models.deletion.CASCADE,
+                            related_name='insights',
+                            to='hita.performer',
+                        ),
+                    ),
+                ],
+            ),
+            migrations.RunSQL(
+                "CREATE INDEX IF NOT EXISTS ai_insights_vec_profile_hnsw ON ai_performerinsights USING hnsw (vec_profile vector_cosine_ops);",
+                "DROP INDEX IF EXISTS ai_insights_vec_profile_hnsw;",
+            ),
+            migrations.RunSQL(
+                "CREATE INDEX IF NOT EXISTS ai_insights_vec_skills_hnsw ON ai_performerinsights USING hnsw (vec_skills vector_cosine_ops);",
+                "DROP INDEX IF EXISTS ai_insights_vec_skills_hnsw;",
+            ),
+        ]
+    else:
+        operations = []
