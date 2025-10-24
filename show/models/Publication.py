@@ -14,4 +14,8 @@ class Publication(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.publication_number + ' - ' + self.festival.name
+        festival_name = self.festival.name if self.festival_id else ''
+        number = self.publication_number or ''
+        if festival_name and number:
+            return f'{festival_name} - {number}'
+        return festival_name or number or str(self.pk)

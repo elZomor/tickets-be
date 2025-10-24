@@ -51,18 +51,27 @@ class Show(models.Model):
     cast_note = models.TextField(null=True, blank=True)
     show_description = models.TextField(null=True, blank=True)
 
+    def _get_cached_dates(self):
+        if hasattr(self, '_cached_dates'):
+            return self._cached_dates
+        dates = list(self.dates.all())
+        self._cached_dates = dates
+        return dates
+
     @property
     def has_multiple_nights(self):
-        return self.dates.count() > 1
+        return len(self._get_cached_dates()) > 1
 
     @property
     def nearest_night(self):
         now = timezone.now()
         tz = timezone.get_current_timezone()
 
+        dates = self._get_cached_dates()
+
         valid_dates = [
             (d, datetime.combine(d.date, d.time).replace(tzinfo=tz))
-            for d in self.dates.all()
+            for d in dates
             if datetime.combine(d.date, d.time).replace(tzinfo=tz) >= now
         ]
 
@@ -72,7 +81,7 @@ class Show(models.Model):
 
         past_dates = [
             (d, datetime.combine(d.date, d.time).replace(tzinfo=tz))
-            for d in self.dates.all()
+            for d in dates
             if datetime.combine(d.date, d.time).replace(tzinfo=tz) <= now
         ]
 
@@ -82,10 +91,11 @@ class Show(models.Model):
     @property
     def is_open(self):
         current_datetime = timezone.now()
-        return self.dates.filter(
-            date=current_datetime.date(),
-            time__gte=current_datetime.time(),
-        ).exists()
+        return any(
+            date_obj.date == current_datetime.date()
+            and date_obj.time >= current_datetime.time()
+            for date_obj in self._get_cached_dates()
+        )
 
     def __str__(self):
         return f'{self.name} - {self.cast_name}'

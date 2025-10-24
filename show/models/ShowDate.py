@@ -17,6 +17,11 @@ class ShowDate(models.Model):
                 fields=['date', 'time', 'theater'], name='unique_show_slot'
             )
         ]
+        indexes = [
+            models.Index(fields=['show', 'date', 'time']),
+            models.Index(fields=['date', 'time']),
+            models.Index(fields=['theater', 'date', 'time']),
+        ]
 
     def __str__(self):
         return f'{self.show.name}: {self.date} - {self.time}'

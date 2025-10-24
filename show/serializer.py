@@ -78,9 +78,12 @@ class ShowViewSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_show_dates(obj):
-        return ShowDateViewSerializer(
-            obj.dates.all().order_by('date', 'time'), many=True
-        ).data
+        if hasattr(obj, '_get_cached_dates'):
+            dates = obj._get_cached_dates()
+        else:
+            dates = list(obj.dates.all())
+        ordered_dates = sorted(dates, key=lambda d: (d.date, d.time))
+        return ShowDateViewSerializer(ordered_dates, many=True).data
 
     def get_poster(self, obj):
         if obj.poster:
@@ -143,11 +146,13 @@ class FestivalViewSerializer(serializers.ModelSerializer):
     publications = serializers.SerializerMethodField()
 
     def get_shows(self, obj):
-        shows_qs = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by(
-            '-dates__date'
-        )
+        shows = getattr(obj, 'prefetched_shows', None)
+        if shows is None:
+            shows = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by(
+                '-dates__date'
+            )
         return ShowViewSerializer(
-            shows_qs, many=True, context={'request': self.context.get('request')}
+            shows, many=True, context={'request': self.context.get('request')}
         ).data
 
     def get_logo(self, obj):

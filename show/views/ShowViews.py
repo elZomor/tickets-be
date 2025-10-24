@@ -1,10 +1,12 @@
 import os
+from datetime import date as date_cls, time as time_cls
 from io import BytesIO
 
 import requests
 from PIL import Image
 from django.conf import settings
-from django.db.models import Max, Min
+from django.db.models import DateField, OuterRef, Prefetch, Subquery, TimeField, Value
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -15,7 +17,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from config.constants import BE_URL, SHOW_NIGHT_FE_URL
 from config.pagination import CustomPagination
-from show.models import Show
+from show.models import Show, ShowDate
 from show.models.Show import ShowStatus
 from show.serializer import ShowViewSerializer
 
@@ -31,30 +33,70 @@ class ShowViewSet(
     pagination_class = CustomPagination
     permission_classes = [AllowAny]
 
+    def base_qs(self):
+        return (
+            Show.objects.filter(status=ShowStatus.APPROVED.value)
+            .select_related('festival')
+            .prefetch_related(
+                'tags',
+                Prefetch(
+                    'dates',
+                    queryset=ShowDate.objects.select_related('theater').only(
+                        'id',
+                        'show_id',
+                        'date',
+                        'time',
+                        'theater_id',
+                        'theater__name',
+                        'theater__location',
+                    ),
+                ),
+            )
+        )
+
+    def get_queryset(self):
+        return self.base_qs()
+
     def get_authenticators(self):
         if self.request.method == 'GET':
             return []
         return super().get_authenticators()
 
     def list(self, request, *args, **kwargs):
-        queryset = (
-            self.get_queryset()
-            .annotate(latest_date=Max('dates__date'), earliest_time=Min('dates__time'))
-            .order_by('-latest_date', 'earliest_time')
-        )
-        date = request.query_params.get('date')
-        if date:
+        base_queryset = self.get_queryset()
+        date_param = request.query_params.get('date')
+
+        if date_param:
             queryset = (
-                self.get_queryset()
-                .filter(dates__date=date)
-                .order_by('dates__time')
-                .distinct()
+                base_queryset.filter(dates__date=date_param)
+                .order_by('dates__time', 'pk')
+                .distinct('pk')
             )
-        serializer = ShowViewSerializer(queryset, many=True)
+        else:
+            latest_date_sq = ShowDate.objects.filter(show=OuterRef('pk')).order_by(
+                '-date', '-time'
+            ).values('date')[:1]
+            earliest_time_on_latest_sq = ShowDate.objects.filter(
+                show=OuterRef('pk'),
+                date=Subquery(latest_date_sq),
+            ).order_by('time').values('time')[:1]
+            queryset = base_queryset.annotate(
+                latest_date=Coalesce(
+                    Subquery(latest_date_sq, output_field=DateField()),
+                    Value(date_cls.min),
+                ),
+                earliest_time=Coalesce(
+                    Subquery(earliest_time_on_latest_sq, output_field=TimeField()),
+                    Value(time_cls.min),
+                ),
+            ).order_by('-latest_date', 'earliest_time')
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):

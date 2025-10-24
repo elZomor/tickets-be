@@ -4,6 +4,7 @@ from io import BytesIO
 import requests
 from PIL import Image
 from django.conf import settings
+from django.db.models import Prefetch
 from django.http import HttpResponse
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -14,8 +15,9 @@ from rest_framework.viewsets import GenericViewSet
 
 from config.constants import BE_URL, SHOW_NIGHT_FE_URL
 from config.pagination import CustomPagination
-from show.models import Festival
-from show.serializer import ShowViewSerializer, FestivalViewSerializer
+from show.models import Festival, Show, ShowDate
+from show.models.Show import ShowStatus
+from show.serializer import FestivalViewSerializer
 
 
 class FestivalViewSet(
@@ -29,6 +31,34 @@ class FestivalViewSet(
     pagination_class = CustomPagination
     permission_classes = [AllowAny]
 
+    def get_queryset(self):
+        shows_prefetch = Prefetch(
+            'shows',
+            queryset=Show.objects.filter(status=ShowStatus.APPROVED.value)
+            .select_related('festival')
+            .prefetch_related(
+                'tags',
+                Prefetch(
+                    'dates',
+                    queryset=ShowDate.objects.select_related('theater').only(
+                        'id',
+                        'show_id',
+                        'date',
+                        'time',
+                        'theater_id',
+                        'theater__name',
+                        'theater__location',
+                    ),
+                ),
+            ),
+            to_attr='prefetched_shows',
+        )
+        return (
+            Festival.objects.all()
+            .order_by('start_date')
+            .prefetch_related(shows_prefetch)
+        )
+
     def get_authenticators(self):
         if self.request.method == 'GET':
             return []
@@ -36,14 +66,16 @@ class FestivalViewSet(
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        date = request.query_params.get('date')
-        if date:
-            queryset = queryset.filter(start_date__lte=date, end_date__gte=date)
-        serializer = ShowViewSerializer(queryset, many=True)
+        date_param = request.query_params.get('date')
+        if date_param:
+            queryset = queryset.filter(
+                start_date__lte=date_param, end_date__gte=date_param
+            )
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
