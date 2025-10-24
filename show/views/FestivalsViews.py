@@ -84,11 +84,8 @@ class FestivalViewSet(
     @action(detail=True, methods=['GET'], url_path='share')
     def profile_meta(self, request, pk=None):
         festival: Festival = get_object_or_404(Festival, id=pk)
-        # Use S3 URL if available, fallback to old method if not
-        show_logo_url = festival.logo.url if festival.logo else None
         frontend_url = f"{SHOW_NIGHT_FE_URL}/festivals/{pk}"
 
-        # padded_image_data = self.resize_and_pad_image(show_logo_url, is_local=False)
         padded_image_data = (
             f"https://media.play-cast.com/{festival.logo.name}?w=1200&h=630&fit=pad&bg=ffffff&q=75&fmt=auto"
             if festival.logo
@@ -123,55 +120,3 @@ class FestivalViewSet(
                 </html>"""
 
         return HttpResponse(html_content, content_type="text/html; charset=utf-8")
-
-    #
-    # @staticmethod
-    # def resize_and_pad_image(image_url, is_local, target_width=1200, target_height=630):
-    #     """
-    #     If the image is local, load it from MEDIA_ROOT instead of fetching via HTTP.
-    #     Resizes while maintaining aspect ratio and adds white padding to 1200x630 px.
-    #     Returns a base64-encoded image.
-    #     """
-    #     image_path = image_url.split("media/", 1)[-1]
-    #     if os.path.exists(f'resized/{image_path}'):
-    #         return f"{BE_URL}/media/resized/{image_path}"
-    #     image = None
-    #
-    #     # Check if image is hosted or local
-    #     if not is_local:  # Remote image
-    #         try:
-    #             response = requests.get(image_url, timeout=5)
-    #             response.raise_for_status()
-    #             image = Image.open(BytesIO(response.content))
-    #         except requests.RequestException:
-    #             return image_url  # Return original if request fails
-    #     else:  # Local file (Django MEDIA_ROOT)
-    #         local_path = os.path.join(settings.MEDIA_ROOT, image_path)
-    #         if os.path.exists(local_path):
-    #             image = Image.open(local_path)
-    #
-    #     if image is None:
-    #         return image_url  # Fallback to original image
-    #
-    #     # Convert to RGB (fixes transparency issues with PNGs)
-    #     image = image.convert("RGB")
-    #
-    #     # Resize while maintaining aspect ratio
-    #     image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
-    #
-    #     # Create a white background canvas
-    #     new_image = Image.new("RGB", (target_width, target_height), (255, 255, 255))
-    #
-    #     # Center the resized image on the white background
-    #     x_offset = (target_width - image.width) // 2
-    #     y_offset = (target_height - image.height) // 2
-    #     new_image.paste(image, (x_offset, y_offset))
-    #
-    #     # Save the resized image temporarily
-    #     resized_filename = f"resized/{image_path}"
-    #     resized_path = os.path.join(settings.MEDIA_ROOT, resized_filename)
-    #     os.makedirs(os.path.dirname(resized_path), exist_ok=True)
-    #     new_image.save(resized_path, format="JPEG")
-    #
-    #     # Return the new public image URL
-    #     return f"{BE_URL}/media/{resized_filename}"

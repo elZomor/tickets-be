@@ -23,8 +23,8 @@ def get_user_from_context(context):
 
 def get_url(url):
     if ENVIRONMENT == 'local':
-        return f'http://localhost:8005{url}'
-    return url.replace("http://", "https://")
+        return f'http://localhost:8005/media/{url}'
+    return f'https://media.play-cast.com/{url}?w=800&q=75&fmt=auto'
 
 
 class HITAMemberViewSerializer(serializers.ModelSerializer):
@@ -80,7 +80,7 @@ class GalleryViewSerializer(serializers.ModelSerializer):
         exclude = ['performer']
 
     def get_file(self, obj):
-        return get_url(obj.file.url)
+        return get_url(obj.file.name)
 
 
 class GalleryCreateSerializer(serializers.ModelSerializer):
@@ -208,6 +208,8 @@ class PerformerViewAllSerializer(serializers.ModelSerializer):
         return obj.hita_member.department
 
     def get_profile_picture(self, obj):
+        if 'https' in obj.profile_picture:
+            return obj.profile_picture
         return get_url(obj.profile_picture)
 
     @staticmethod

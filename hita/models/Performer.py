@@ -64,7 +64,7 @@ class Performer(models.Model):
     def profile_picture(self):
         profile_picture = self.galleries.filter(is_profile_picture=True).last()
         if profile_picture:
-            return profile_picture.file.url
+            return profile_picture.file.name
         return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
 
     def get_contact_details(self, user):
