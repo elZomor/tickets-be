@@ -67,20 +67,20 @@ class ShowViewSet(
         date_param = request.query_params.get('date')
 
         if date_param:
-            earliest_time_for_date_sq = (
+            latest_time_for_date_sq = (
                 ShowDate.objects.filter(show=OuterRef('pk'), date=date_param)
-                .order_by('time')
+                .order_by('-time')
                 .values('time')[:1]
             )
             queryset = (
                 base_queryset.filter(dates__date=date_param)
                 .annotate(
-                    earliest_time_for_filter=Coalesce(
-                        Subquery(earliest_time_for_date_sq, output_field=TimeField()),
+                    latest_time_for_filter=Coalesce(
+                        Subquery(latest_time_for_date_sq, output_field=TimeField()),
                         Value(time_cls.max),
                     )
                 )
-                .order_by('earliest_time_for_filter', 'pk')
+                .order_by('-latest_time_for_filter')
                 .distinct()
             )
         else:
@@ -89,12 +89,12 @@ class ShowViewSet(
                 .order_by('-date', '-time')
                 .values('date')[:1]
             )
-            earliest_time_on_latest_sq = (
+            latest_time_on_latest_sq = (
                 ShowDate.objects.filter(
                     show=OuterRef('pk'),
                     date=Subquery(latest_date_sq),
                 )
-                .order_by('time')
+                .order_by('-time')
                 .values('time')[:1]
             )
             queryset = base_queryset.annotate(
@@ -102,11 +102,11 @@ class ShowViewSet(
                     Subquery(latest_date_sq, output_field=DateField()),
                     Value(date_cls.min),
                 ),
-                earliest_time=Coalesce(
-                    Subquery(earliest_time_on_latest_sq, output_field=TimeField()),
+                latest_time=Coalesce(
+                    Subquery(latest_time_on_latest_sq, output_field=TimeField()),
                     Value(time_cls.min),
                 ),
-            ).order_by('-latest_date', 'earliest_time')
+            ).order_by('-latest_date', '-latest_time')
 
         page = self.paginate_queryset(queryset)
         if page is not None:
