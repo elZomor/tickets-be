@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date as date_cls, time as time_cls
 
 from rest_framework import serializers
 
@@ -6,6 +6,8 @@ from config.constants import ENVIRONMENT
 from show.models import Show, Festival, Publication, ShowDate
 from show.models.Show import ShowStatus
 from django.utils.timezone import localtime, make_aware, get_current_timezone
+from django.db.models import DateField, OuterRef, Prefetch, Subquery, TimeField, Value
+from django.db.models.functions import Coalesce
 import logging
 
 logger = logging.getLogger("gunicorn.error")
@@ -151,9 +153,43 @@ class FestivalViewSerializer(serializers.ModelSerializer):
     def get_shows(self, obj):
         shows = getattr(obj, 'prefetched_shows', None)
         if shows is None:
-            shows = obj.shows.filter(status=ShowStatus.APPROVED.value).order_by(
-                '-dates__date'
+            latest_date_sq = (
+                ShowDate.objects.filter(show=OuterRef('pk'))
+                .order_by('-date', '-time')
+                .values('date')[:1]
             )
+            latest_time_on_latest_sq = (
+                ShowDate.objects.filter(
+                    show=OuterRef('pk'),
+                    date=Subquery(latest_date_sq),
+                )
+                .order_by('-time')
+                .values('time')[:1]
+            )
+            shows = obj.shows.filter(status=ShowStatus.APPROVED.value).annotate(
+                latest_date=Coalesce(
+                    Subquery(latest_date_sq, output_field=DateField()),
+                    Value(date_cls.min, output_field=DateField()),
+                ),
+                latest_time=Coalesce(
+                    Subquery(latest_time_on_latest_sq, output_field=TimeField()),
+                    Value(time_cls.min, output_field=TimeField()),
+                ),
+            ).prefetch_related(
+                'tags',
+                Prefetch(
+                    'dates',
+                    queryset=ShowDate.objects.select_related('theater').only(
+                        'id',
+                        'show_id',
+                        'date',
+                        'time',
+                        'theater_id',
+                        'theater__name',
+                        'theater__location',
+                    ),
+                ),
+            ).order_by('-latest_date', '-latest_time')
         return ShowViewSerializer(
             shows, many=True, context={'request': self.context.get('request')}
         ).data

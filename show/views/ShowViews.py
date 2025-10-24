@@ -76,8 +76,10 @@ class ShowViewSet(
                 base_queryset.filter(dates__date=date_param)
                 .annotate(
                     latest_time_for_filter=Coalesce(
-                        Subquery(latest_time_for_date_sq, output_field=TimeField()),
-                        Value(time_cls.max),
+                        Subquery(
+                            latest_time_for_date_sq, output_field=TimeField()
+                        ),
+                        Value(time_cls.min, output_field=TimeField()),
                     )
                 )
                 .order_by('-latest_time_for_filter')
@@ -100,11 +102,11 @@ class ShowViewSet(
             queryset = base_queryset.annotate(
                 latest_date=Coalesce(
                     Subquery(latest_date_sq, output_field=DateField()),
-                    Value(date_cls.min),
+                    Value(date_cls.min, output_field=DateField()),
                 ),
                 latest_time=Coalesce(
                     Subquery(latest_time_on_latest_sq, output_field=TimeField()),
-                    Value(time_cls.min),
+                    Value(time_cls.min, output_field=TimeField()),
                 ),
             ).order_by('-latest_date', '-latest_time')
 

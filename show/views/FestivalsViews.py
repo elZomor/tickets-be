@@ -1,10 +1,12 @@
 import os
+from datetime import date as date_cls, time as time_cls
 from io import BytesIO
 
 import requests
 from PIL import Image
 from django.conf import settings
-from django.db.models import Prefetch
+from django.db.models import DateField, OuterRef, Prefetch, Subquery, TimeField, Value
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -32,10 +34,33 @@ class FestivalViewSet(
     permission_classes = [AllowAny]
 
     def get_queryset(self):
+        latest_date_sq = (
+            ShowDate.objects.filter(show=OuterRef('pk'))
+            .order_by('-date', '-time')
+            .values('date')[:1]
+        )
+        latest_time_on_latest_sq = (
+            ShowDate.objects.filter(
+                show=OuterRef('pk'),
+                date=Subquery(latest_date_sq),
+            )
+            .order_by('-time')
+            .values('time')[:1]
+        )
         shows_prefetch = Prefetch(
             'shows',
             queryset=Show.objects.filter(status=ShowStatus.APPROVED.value)
             .select_related('festival')
+            .annotate(
+                latest_date=Coalesce(
+                    Subquery(latest_date_sq, output_field=DateField()),
+                    Value(date_cls.min, output_field=DateField()),
+                ),
+                latest_time=Coalesce(
+                    Subquery(latest_time_on_latest_sq, output_field=TimeField()),
+                    Value(time_cls.min, output_field=TimeField()),
+                ),
+            )
             .prefetch_related(
                 'tags',
                 Prefetch(
@@ -50,7 +75,8 @@ class FestivalViewSet(
                         'theater__location',
                     ),
                 ),
-            ),
+            )
+            .order_by('-latest_date', '-latest_time'),
             to_attr='prefetched_shows',
         )
         return (
