@@ -147,6 +147,7 @@ class FestivalViewSerializer(serializers.ModelSerializer):
         ]
 
     shows = serializers.SerializerMethodField()
+    awards = serializers.SerializerMethodField()
     logo = serializers.SerializerMethodField()
     publications = serializers.SerializerMethodField()
 
@@ -166,30 +167,35 @@ class FestivalViewSerializer(serializers.ModelSerializer):
                 .order_by('-time')
                 .values('time')[:1]
             )
-            shows = obj.shows.filter(status=ShowStatus.APPROVED.value).annotate(
-                latest_date=Coalesce(
-                    Subquery(latest_date_sq, output_field=DateField()),
-                    Value(date_cls.min, output_field=DateField()),
-                ),
-                latest_time=Coalesce(
-                    Subquery(latest_time_on_latest_sq, output_field=TimeField()),
-                    Value(time_cls.min, output_field=TimeField()),
-                ),
-            ).prefetch_related(
-                'tags',
-                Prefetch(
-                    'dates',
-                    queryset=ShowDate.objects.select_related('theater').only(
-                        'id',
-                        'show_id',
-                        'date',
-                        'time',
-                        'theater_id',
-                        'theater__name',
-                        'theater__location',
+            shows = (
+                obj.shows.filter(status=ShowStatus.APPROVED.value)
+                .annotate(
+                    latest_date=Coalesce(
+                        Subquery(latest_date_sq, output_field=DateField()),
+                        Value(date_cls.min, output_field=DateField()),
                     ),
-                ),
-            ).order_by('-latest_date', '-latest_time')
+                    latest_time=Coalesce(
+                        Subquery(latest_time_on_latest_sq, output_field=TimeField()),
+                        Value(time_cls.min, output_field=TimeField()),
+                    ),
+                )
+                .prefetch_related(
+                    'tags',
+                    Prefetch(
+                        'dates',
+                        queryset=ShowDate.objects.select_related('theater').only(
+                            'id',
+                            'show_id',
+                            'date',
+                            'time',
+                            'theater_id',
+                            'theater__name',
+                            'theater__location',
+                        ),
+                    ),
+                )
+                .order_by('-latest_date', '-latest_time')
+            )
         return ShowViewSerializer(
             shows, many=True, context={'request': self.context.get('request')}
         ).data
@@ -202,3 +208,23 @@ class FestivalViewSerializer(serializers.ModelSerializer):
     def get_publications(self, obj):
         qs = obj.publications.all().order_by('-publication_date')
         return PublicationPreviewSerializer(qs, many=True, context=self.context).data
+
+    def get_awards(self, obj):
+        awards_list = obj.awards
+        final_awards_list = []
+        for award_category in awards_list:
+            category_list = []
+            for category_list_item in award_category['children']:
+                name = category_list_item.get('name')
+                rank = category_list_item.get('rank')
+                show = category_list_item.get('show')
+                award_value = name
+                if rank:
+                    award_value += f' - {rank}'
+                if show:
+                    award_value += f' ({show})'
+                category_list.append(award_value)
+            final_awards_list.append(
+                {'text': award_category['text'], 'children': category_list}
+            )
+        return final_awards_list
