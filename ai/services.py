@@ -3,7 +3,7 @@ import json
 from django.db import transaction, connection
 from django.utils.timezone import now
 
-from config.constants import BE_URL, ACTOGRAM_FE_URL
+from config.constants import ACTOGRAM_FE_URL
 from .models import PerformerInsights
 from hita.models import Performer
 from .extractors import (

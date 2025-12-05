@@ -27,7 +27,9 @@ class Genre(models.TextChoices):
 
 class Script(models.Model):
     title = models.CharField(max_length=100)
-    file = models.FileField(upload_to=upload_to_script, validators=[validate_file_extension])
+    file = models.FileField(
+        upload_to=upload_to_script, validators=[validate_file_extension]
+    )
     author = models.CharField(max_length=50)
     status = models.CharField(
         choices=ScriptStatus.choices, default=ScriptStatus.PENDING.value, max_length=50
@@ -48,7 +50,11 @@ class Script(models.Model):
         to=User, on_delete=models.DO_NOTHING, related_name='script_updated_by'
     )
     reviewed_by = models.ForeignKey(
-        to=User, on_delete=models.DO_NOTHING, related_name='script_reviewed_by', null=True, blank=True
+        to=User,
+        on_delete=models.DO_NOTHING,
+        related_name='script_reviewed_by',
+        null=True,
+        blank=True,
     )
 
     def __str__(self):

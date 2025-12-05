@@ -1,6 +1,5 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 
 from ai.services import semantic_search_performers
 from utils.Response import get_successful_response

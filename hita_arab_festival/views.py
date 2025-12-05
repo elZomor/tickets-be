@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.db.models import F
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 
@@ -19,7 +18,6 @@ from utils.Response import (
     get_successful_creation_response,
     get_bad_request_response,
 )
-from utils.email_utils import send_hita_arab_ticket_confirmation_email
 
 
 class ArabFestivalViewSet(

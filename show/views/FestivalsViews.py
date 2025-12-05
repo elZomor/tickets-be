@@ -1,10 +1,4 @@
-import os
 from datetime import date as date_cls, time as time_cls
-from io import BytesIO
-
-import requests
-from PIL import Image
-from django.conf import settings
 from django.db.models import DateField, OuterRef, Prefetch, Subquery, TimeField, Value
 from django.db.models.functions import Coalesce
 from django.http import HttpResponse
@@ -15,7 +9,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from config.constants import BE_URL, SHOW_NIGHT_FE_URL
+from config.constants import SHOW_NIGHT_FE_URL
 from config.pagination import CustomPagination
 from show.models import Festival, Show, ShowDate
 from show.models.Show import ShowStatus

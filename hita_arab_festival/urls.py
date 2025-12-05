@@ -1,7 +1,5 @@
 from rest_framework.routers import DefaultRouter
 
-from ai.views import AIViewSet
-from eldorg.views import ScriptViewSet
 from hita_arab_festival.views import (
     ArabFestivalViewSet,
     ShowViewSet,

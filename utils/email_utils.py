@@ -112,8 +112,7 @@ def send_create_performer_reminder_email(self, to_email: str, name: str):
                 <a href="{env.str('FE_URL')}">{env.str('FE_URL')}</a>
                 <p>Thank you!</p>
                 <p>Actogram Team</p>
-            </div>
-            
+            </div>            
           </body>
         </html>
         '''
