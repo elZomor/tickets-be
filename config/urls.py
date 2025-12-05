@@ -15,6 +15,7 @@ urlpatterns = [
     path('hita/', include('hita.urls')),
     path('eldorg/', include('eldorg.urls')),
     path('ai/', include('ai.urls')),
+    path('hita_arab_festival/', include('hita_arab_festival.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
