@@ -87,7 +87,7 @@ class Show(models.Model):
     @property
     def is_comment_allowed(self):
         current_datetime = timezone.now()
-        if self.date < current_datetime.date():
+        if self.date > current_datetime.date():
             return False
         if self.date == current_datetime.date() and self.time < current_datetime.time():
             return False
