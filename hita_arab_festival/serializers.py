@@ -70,6 +70,11 @@ class ShowSerializer(serializers.ModelSerializer):
     def get_festival_slug(self, obj: Show):
         return obj.festival.start_date.year if obj.festival else None
 
+    def get_poster(self, obj: Show):
+        if obj.poster:
+            return build_media_url(obj.poster, self.context.get('request'))
+        return None
+
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
