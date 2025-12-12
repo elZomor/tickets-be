@@ -57,6 +57,7 @@ class ShowSerializer(serializers.ModelSerializer):
     festival_name = serializers.SerializerMethodField()
     festival_slug = serializers.SerializerMethodField()
     is_comment_allowed = serializers.SerializerMethodField()
+    poster = serializers.SerializerMethodField()
 
     def get_is_open_for_reservation(self, obj):
         return obj.is_open_for_reservation
