@@ -32,7 +32,7 @@ class ArabFestivalSerializer(serializers.ModelSerializer):
         return obj.festival_articles.count()
 
     def get_logo(self, obj):
-        if obj.poster:
+        if obj.logo:
             return build_media_url(obj.logo, self.context.get('request'))
         return None
 

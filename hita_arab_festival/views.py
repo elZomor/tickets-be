@@ -161,7 +161,7 @@ class ShowViewSet(
     def profile_meta(self, request, pk=None):
         show = get_object_or_404(Show, id=pk)
         html_content = get_html_for_og(
-            'festivals', pk, show.poster, f"العرض المسرحي: {show.name}", show.name
+            'shows', pk, show.poster, f"العرض المسرحي: {show.name}", show.name
         )
         return HttpResponse(html_content, content_type="text/html; charset=utf-8")
 
