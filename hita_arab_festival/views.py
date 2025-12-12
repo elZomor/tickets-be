@@ -42,7 +42,7 @@ class ShowViewSet(
     viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin
 ):
     serializer_class = ShowSerializer
-    queryset = Show.objects.all()
+    queryset = Show.objects.all().order_by('data', 'time')
 
     def get_queryset(self):
         queryset = super().get_queryset()
