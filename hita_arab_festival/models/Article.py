@@ -1,11 +1,7 @@
 from django.db import models
 
 from hita_arab_festival.models import Show, ArabFestival
-
-
-class Tags(models.TextChoices):
-    SHOW = 'SHOW', 'Show'
-    FEST = 'FESTIVAL', 'Festival'
+from hita_arab_festival.models.Tag import Tag
 
 
 class ArticleType(models.TextChoices):
@@ -16,7 +12,10 @@ class ArticleType(models.TextChoices):
 
 class Article(models.Model):
     title = models.CharField(max_length=100)
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)
+    section_one = models.TextField(null=True, blank=True)
+    section_two = models.TextField(null=True, blank=True)
+    section_three = models.TextField(null=True, blank=True)
     show = models.ForeignKey(
         Show,
         on_delete=models.CASCADE,
@@ -34,7 +33,7 @@ class Article(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     author = models.CharField(max_length=50)
-    tag = models.CharField(max_length=50, choices=Tags.choices, default=Tags.FEST)
+    tag = models.ManyToManyField(Tag)
     article_type = models.CharField(
         max_length=50, choices=ArticleType.choices, default=ArticleType.ARTICLE
     )

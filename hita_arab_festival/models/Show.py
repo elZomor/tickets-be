@@ -44,6 +44,7 @@ class Show(models.Model):
     venue_location = models.URLField()
     allowed_seats = models.IntegerField()
     allowed_waiting = models.IntegerField()
+    reservation_status_open = models.BooleanField(default=False)
 
     @property
     def is_open(self):
@@ -68,10 +69,7 @@ class Show(models.Model):
     def is_open_for_reservation(self):
         from hita_arab_festival.models.Reservation import ReservationStatus
 
-        current_datetime = timezone.now()
-        if self.date != current_datetime.date():
-            return ReservationStatus.CLOSED
-        if self.time < current_datetime.time():
+        if not self.reservation_status_open:
             return ReservationStatus.CLOSED
         reservation_status = self.reservation_status
         if not reservation_status:
