@@ -4,6 +4,7 @@ env = environ.Env()
 
 ACTOGRAM_FE_URL = env.str("FE_URL", default="http://localhost:8000")
 SHOW_NIGHT_FE_URL = env.str("SHOW_NIGHT_URL", default="http://localhost:8000")
+HITA_AF_FE_URL = env.str("HITA_AF_FE_URL", default="http://localhost:8000")
 BE_URL = env.str("BASE_URL", default="http://localhost:8000")
 GOOGLE_CLIENT_ID = env.str('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = env.str('GOOGLE_CLIENT_SECRET', default='')

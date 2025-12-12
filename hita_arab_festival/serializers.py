@@ -23,12 +23,18 @@ class ArabFestivalSerializer(serializers.ModelSerializer):
 
     total_shows = serializers.SerializerMethodField()
     total_articles = serializers.SerializerMethodField()
+    logo = serializers.SerializerMethodField()
 
     def get_total_shows(self, obj):
         return obj.total_shows
 
     def get_total_articles(self, obj):
         return obj.festival_articles.count()
+
+    def get_logo(self, obj):
+        if obj.poster:
+            return build_media_url(obj.logo, self.context.get('request'))
+        return None
 
 
 class ArticleSerializer(serializers.ModelSerializer):

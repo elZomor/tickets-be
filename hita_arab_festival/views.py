@@ -1,7 +1,10 @@
 from django.db import transaction
+from django.http import HttpResponse
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 
+from config.constants import HITA_AF_FE_URL
 from hita_arab_festival.models import Show, Reservation
 from hita_arab_festival.models.Article import Article
 from hita_arab_festival.models.Comment import Comment, CommentStatus
@@ -20,11 +23,58 @@ from utils.Response import (
 )
 
 
+def get_html_for_og(url, pk, file, content, object_name):
+    frontend_url = f"{HITA_AF_FE_URL}/{url}/{pk}"
+
+    padded_image_data = (
+        f"https://media.play-cast.com/{file.name}?w=1200&h=630&fit=pad&bg=ffffff&q=75&fmt=auto"
+        if file
+        else None
+    )
+
+    html_content = f"""<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta property="og:title" content="{content}">
+                    <meta property="og:image" content="{padded_image_data}">
+                    <meta property="og:image:secure_url" content="{padded_image_data}">
+                    <meta property="og:image:width" content="1200">
+                    <meta property="og:image:height" content="630">
+                    <meta property="og:image:type" content="image/jpeg">
+                    <meta property="og:image:alt" content="Poster of the festival {object_name}">
+                    <meta property="og:type" content="profile">
+                    <meta property="og:url" content="{frontend_url}">
+
+                    <script>
+                            window.location.href = "{frontend_url}";
+                    </script>
+
+                    <noscript>
+                        <meta http-equiv="refresh" content="3; url={frontend_url}">
+                    </noscript>
+                </head>
+                <body>
+                    <p>Redirecting to <a href="{frontend_url}">{frontend_url}</a> in a few seconds...</p>
+                </body>
+                </html>"""
+
+    return HttpResponse(html_content, content_type="text/html; charset=utf-8")
+
+
 class ArabFestivalViewSet(
     viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin
 ):
     serializer_class = ArabFestivalSerializer
     queryset = ArabFestival.objects.all()
+
+    @action(detail=True, methods=['GET'], url_path='share')
+    def profile_meta(self, request, pk=None):
+        festival = get_object_or_404(ArabFestival, id=pk)
+        html_content = get_html_for_og(
+            'festival', pk, festival.logo, festival.name, festival.name
+        )
+        return HttpResponse(html_content, content_type="text/html; charset=utf-8")
 
 
 class ArticleViewSet(
@@ -106,6 +156,14 @@ class ShowViewSet(
                     "reservation": None,
                 }
             )
+
+    @action(detail=True, methods=['GET'], url_path='share')
+    def profile_meta(self, request, pk=None):
+        show = get_object_or_404(Show, id=pk)
+        html_content = get_html_for_og(
+            'festivals', pk, show.poster, f"العرض المسرحي: {show.name}", show.name
+        )
+        return HttpResponse(html_content, content_type="text/html; charset=utf-8")
 
 
 class CommentViewSet(
