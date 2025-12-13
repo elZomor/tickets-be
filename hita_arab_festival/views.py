@@ -27,7 +27,7 @@ def get_html_for_og(url, pk, file, content, object_name):
     frontend_url = f"{HITA_AF_FE_URL}/{url}/{pk}"
 
     padded_image_data = (
-        f"https://media.play-cast.com/{file.name}?w=1200&h=630&fit=pad&bg=ffffff&q=75&fmt=auto"
+        f"https://media.play-cast.com/{file.name}?w=1200&h=630&fit=pad&bg=ffffff&q=75&fmt=jpg"
         if file
         else None
     )
