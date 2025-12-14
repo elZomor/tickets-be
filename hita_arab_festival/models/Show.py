@@ -45,6 +45,7 @@ class Show(models.Model):
     allowed_seats = models.IntegerField()
     allowed_waiting = models.IntegerField()
     reservation_status_open = models.BooleanField(default=False)
+    open_for_comments = models.BooleanField(default=False)
 
     @property
     def is_open(self):
@@ -84,12 +85,7 @@ class Show(models.Model):
 
     @property
     def is_comment_allowed(self):
-        current_datetime = timezone.now()
-        if self.date > current_datetime.date():
-            return False
-        if self.date == current_datetime.date() and self.time < current_datetime.time():
-            return False
-        return True
+        return self.open_for_comments
 
     def __str__(self):
         return f'{self.name}'
