@@ -27,3 +27,4 @@ django-celery-results==2.5.1
 whitenoise==6.8.2
 pgvector==0.4.1
 openai==1.99.9
+django-import-export==4.3.14

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from import_export.admin import ExportMixin
 
 from hita_arab_festival.models.Article import Article
 from hita_arab_festival.models.ArticleAttachment import ArticleAttachment
@@ -20,7 +21,7 @@ class ShowAdmin(admin.ModelAdmin):
 
 
 @admin.register(Reservation)
-class ReservationAdmin(admin.ModelAdmin):
+class ReservationAdmin(ExportMixin, admin.ModelAdmin):
     pass
 
 

@@ -51,6 +51,7 @@ THIRD_PARTY_APPS = [
     'django_celery_results',
     'utils_app',
     'django_json_widget',
+    'import_export',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
