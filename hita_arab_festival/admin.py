@@ -24,6 +24,7 @@ class ShowAdmin(admin.ModelAdmin):
 @admin.register(Reservation)
 class ReservationAdmin(ExportMixin, admin.ModelAdmin):
     formats = [XLSX]
+    list_filter = ('show__name',)
 
 
 class ArticleAttachmentInline(admin.StackedInline):
