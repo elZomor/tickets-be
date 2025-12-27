@@ -175,6 +175,243 @@ class SemesterAdmin(admin.ModelAdmin):
     list_display = ['year', 'type', 'is_current']
     list_filter = ['type', 'is_current', 'year']
     actions = ['export_department_report']
+    change_list_template = 'admin/semester_changelist.html'
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'import-semester/',
+                self.admin_site.admin_view(self.import_semester_view),
+                name='hita_evaluation_semester_import',
+            ),
+        ]
+        return custom_urls + urls
+
+    def import_semester_view(self, request):
+        """Import semester data from Excel file."""
+        from hita_evaluation.models import SemesterType, Category
+
+        if request.method == 'POST' and request.FILES.get('excel_file'):
+            excel_file = request.FILES['excel_file']
+
+            try:
+                wb = load_workbook(excel_file)
+                ws = wb.active
+
+                # Get headers from first row
+                headers = [cell.value for cell in ws[1]]
+                expected_headers = [
+                    'year', 'type', 'department', 'subject_name',
+                    'category', 'credit_hours', 'professor', 'is_split'
+                ]
+
+                # Validate headers
+                if not all(h in headers for h in expected_headers):
+                    self.message_user(
+                        request,
+                        f'الأعمدة المطلوبة: {", ".join(expected_headers)}',
+                        messages.ERROR,
+                    )
+                    return TemplateResponse(
+                        request,
+                        'admin/import_semester.html',
+                        {
+                            **self.admin_site.each_context(request),
+                            'opts': self.model._meta,
+                            'semester_types': [(st.value, st.label) for st in SemesterType],
+                            'departments': [(d.value, d.label) for d in Department],
+                            'categories': [(c.value, c.label) for c in Category],
+                        },
+                    )
+
+                # Get column indices
+                col_idx = {h: headers.index(h) for h in expected_headers}
+
+                # Get latest active survey template
+                latest_template = SurveyTemplate.objects.filter(is_active=True).order_by('-version').first()
+
+                # Track created objects
+                semester = None
+                subjects_created = 0
+                professors_created = 0
+                courses_created = 0
+
+                valid_semester_types = [st.value for st in SemesterType]
+                valid_departments = [d.value for d in Department]
+                valid_categories = [c.value for c in Category]
+
+                for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                    if not any(row):  # Skip empty rows
+                        continue
+
+                    year = row[col_idx['year']]
+                    semester_type = row[col_idx['type']]
+                    department = row[col_idx['department']]
+                    subject_name = row[col_idx['subject_name']]
+                    category = row[col_idx['category']]
+                    credit_hours = row[col_idx['credit_hours']]
+                    professor_str = row[col_idx['professor']]
+                    is_split = row[col_idx['is_split']]
+
+                    # Skip rows without subject name
+                    if not subject_name:
+                        continue
+
+                    # Create/get semester (use first row's data)
+                    if semester is None:
+                        if not year or not semester_type:
+                            self.message_user(
+                                request,
+                                'السنة ونوع الفصل مطلوبان في الصف الأول',
+                                messages.ERROR,
+                            )
+                            return TemplateResponse(
+                                request,
+                                'admin/import_semester.html',
+                                {
+                                    **self.admin_site.each_context(request),
+                                    'opts': self.model._meta,
+                                    'semester_types': [(st.value, st.label) for st in SemesterType],
+                                    'departments': [(d.value, d.label) for d in Department],
+                                    'categories': [(c.value, c.label) for c in Category],
+                                },
+                            )
+
+                        if semester_type not in valid_semester_types:
+                            self.message_user(
+                                request,
+                                f'نوع الفصل غير صالح: {semester_type}. الأنواع المتاحة: {", ".join(valid_semester_types)}',
+                                messages.ERROR,
+                            )
+                            return TemplateResponse(
+                                request,
+                                'admin/import_semester.html',
+                                {
+                                    **self.admin_site.each_context(request),
+                                    'opts': self.model._meta,
+                                    'semester_types': [(st.value, st.label) for st in SemesterType],
+                                    'departments': [(d.value, d.label) for d in Department],
+                                    'categories': [(c.value, c.label) for c in Category],
+                                },
+                            )
+
+                        semester, _ = Semester.objects.get_or_create(
+                            year=int(year),
+                            type=semester_type,
+                            defaults={'is_current': True}
+                        )
+                        # Update is_current if semester exists
+                        if not semester.is_current:
+                            semester.is_current = True
+                            semester.save()
+
+                    # Validate department
+                    if department and department not in valid_departments:
+                        self.message_user(
+                            request,
+                            f'القسم غير صالح في الصف {row_num}: {department}',
+                            messages.WARNING,
+                        )
+                        continue
+
+                    # Validate category
+                    if category and category not in valid_categories:
+                        self.message_user(
+                            request,
+                            f'التصنيف غير صالح في الصف {row_num}: {category}',
+                            messages.WARNING,
+                        )
+                        continue
+
+                    # Create/get subject
+                    subject, created = Subject.objects.get_or_create(
+                        name=subject_name,
+                        department=department,
+                        defaults={
+                            'category': category or Category.MANDATORY_DEPARTMENT,
+                            'credit_hours': int(credit_hours) if credit_hours else 3,
+                        }
+                    )
+                    if created:
+                        subjects_created += 1
+
+                    # Parse professors
+                    professors = []
+                    if professor_str:
+                        professor_names = [p.strip() for p in str(professor_str).split('-') if p.strip()]
+                        for prof_name in professor_names:
+                            prof, created = Professor.objects.get_or_create(
+                                full_name=prof_name,
+                                defaults={'department': department}
+                            )
+                            professors.append(prof)
+                            if created:
+                                professors_created += 1
+
+                    # Parse is_split
+                    if isinstance(is_split, bool):
+                        split = is_split
+                    elif isinstance(is_split, str):
+                        split = is_split.lower() in ['true', 'yes', '1', 'نعم']
+                    else:
+                        split = bool(is_split) if is_split is not None else False
+
+                    # Create course(s)
+                    if split and len(professors) > 1:
+                        # Create separate course for each professor
+                        for prof in professors:
+                            course = Course.objects.create(
+                                subject=subject,
+                                semester=semester,
+                                survey_template=latest_template,
+                            )
+                            course.professor.add(prof)
+                            courses_created += 1
+                    else:
+                        # Create one course with all professors
+                        course = Course.objects.create(
+                            subject=subject,
+                            semester=semester,
+                            survey_template=latest_template,
+                        )
+                        for prof in professors:
+                            course.professor.add(prof)
+                        courses_created += 1
+
+                self.message_user(
+                    request,
+                    f'تم استيراد الفصل الدراسي "{semester}" بنجاح. '
+                    f'المواد: {subjects_created}، الأساتذة: {professors_created}، المقررات: {courses_created}',
+                    messages.SUCCESS,
+                )
+                from django.urls import reverse
+                from django.http import HttpResponseRedirect
+                return HttpResponseRedirect(reverse('admin:hita_evaluation_semester_changelist'))
+
+            except Exception as e:
+                self.message_user(
+                    request,
+                    f'خطأ في استيراد الملف: {str(e)}',
+                    messages.ERROR,
+                )
+
+        from hita_evaluation.models import SemesterType, Category
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'استيراد فصل دراسي - Import Semester',
+            'opts': self.model._meta,
+            'semester_types': [(st.value, st.label) for st in SemesterType],
+            'departments': [(d.value, d.label) for d in Department],
+            'categories': [(c.value, c.label) for c in Category],
+        }
+
+        return TemplateResponse(
+            request,
+            'admin/import_semester.html',
+            context,
+        )
 
     @admin.action(description='تصدير تقرير القسم (Export Department Report)')
     def export_department_report(self, request, queryset):
