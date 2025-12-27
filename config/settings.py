@@ -42,7 +42,15 @@ DJANGO_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
 ]
-PROJECT_APPS = ['show', 'hita', 'social_login', 'eldorg', 'ai', 'hita_arab_festival']
+PROJECT_APPS = [
+    'show',
+    'hita',
+    'social_login',
+    'eldorg',
+    'ai',
+    'hita_arab_festival',
+    'hita_evaluation',
+]
 THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
@@ -73,7 +81,9 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'hita_evaluation', 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

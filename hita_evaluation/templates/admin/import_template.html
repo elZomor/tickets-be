@@ -1,0 +1,81 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <fieldset>
+        <div style="margin-bottom: 20px;">
+            <label for="excel_file" style="display: block; margin-bottom: 8px; font-weight: bold;">
+                اختر ملف Excel - Select Excel File:
+            </label>
+            <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls" required
+                   style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+    </fieldset>
+
+    <div style="margin-top: 20px;">
+        <input type="submit" value="استيراد - Import" class="default" style="padding: 10px 20px; cursor: pointer;">
+        <a href="{% url opts|admin_urlname:'changelist' %}" class="button" style="padding: 10px 20px; margin-right: 10px;">
+            إلغاء - Cancel
+        </a>
+    </div>
+</form>
+
+<div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+    <h3>تنسيق الملف المطلوب - Required File Format:</h3>
+    <p>يجب أن يحتوي ملف Excel على الأعمدة التالية:</p>
+    <table style="border-collapse: collapse; width: 100%; margin-top: 10px;">
+        <thead>
+            <tr style="background: #ddd;">
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">العمود</th>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">الوصف</th>
+                <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">مثال</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>survey_name</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">اسم الاستبيان</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">استبيان تقييم الأساتذة</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>version</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">رقم الإصدار</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">1</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>question_category</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">تصنيف السؤال</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">الأداء الأكاديمي</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>question_text</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">نص السؤال</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">هل يحضر الأستاذ في الموعد؟</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>question_type</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">نوع السؤال</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">
+                    {% for value, label in question_types %}
+                        <code>{{ value }}</code> ({{ label }}){% if not forloop.last %}، {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>is_mandatory</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">إجباري؟</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">true / false / نعم / 1 / 0</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p style="margin-top: 15px;">
+        <strong>ملاحظة:</strong> يجب أن يكون اسم الاستبيان والإصدار في الصف الأول فقط. باقي الصفوف يمكن تركها فارغة.
+    </p>
+</div>
+{% endblock %}

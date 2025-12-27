@@ -1,0 +1,34 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+
+    <p><strong>الفصول الدراسية المحددة - Selected Semesters:</strong></p>
+    <ul style="margin-bottom: 20px;">
+        {% for obj in queryset %}
+            <li>{{ obj }}</li>
+            <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />
+        {% endfor %}
+    </ul>
+
+    <div style="margin-bottom: 20px;">
+        <label for="department" style="display: block; margin-bottom: 8px; font-weight: bold;">
+            اختر القسم - Select Department:
+        </label>
+        <select name="department" id="department" required style="padding: 10px 15px; min-width: 300px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; height: auto !important;">
+            <option value="">--</option>
+            {% for value, label in departments %}
+                <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <input type="hidden" name="action" value="export_department_report" />
+        <input type="submit" name="apply" value="تصدير التقرير - Export Report" class="default" style="padding: 10px 20px; cursor: pointer;" />
+        <a href="{% url opts|admin_urlname:'changelist' %}" class="button" style="padding: 10px 20px; margin-right: 10px;">إلغاء - Cancel</a>
+    </div>
+</form>
+{% endblock %}
