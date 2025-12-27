@@ -22,16 +22,23 @@ from utils.Response import get_successful_response, get_bad_request_response
 
 class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
-        queryset = [
-            {'value': value, 'label': label}
-            for value, label in Department.choices
-            if value != Department.GENERAL
-        ]
+        queryset = sorted(
+            (
+                {'value': value, 'label': label}
+                for value, label in Department.choices
+                if value != Department.GENERAL
+            ),
+            key=lambda item: item['label'],
+        )
         return get_successful_response(data=queryset)
 
 
 class CourseViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = Course.objects.all()
+    queryset = (
+        Course.objects.select_related('subject')
+        .prefetch_related('professor')
+        .order_by('subject__name', 'id')
+    )
     serializer_class = CourseListSerializer
 
     def list(self, request, *args, **kwargs):
@@ -55,8 +62,11 @@ class SurveySessionViewSet(viewsets.mixins.CreateModelMixin, viewsets.GenericVie
         is_parallel = serializer.validated_data.get('is_parallel', False)
 
         # Validate courses exist
-        courses = Course.objects.filter(id__in=course_ids).prefetch_related(
-            'professor', 'survey_template'
+        courses = (
+            Course.objects.filter(id__in=course_ids)
+            .select_related('subject')
+            .prefetch_related('professor', 'survey_template')
+            .order_by('subject__name', 'id')
         )
         if courses.count() != len(course_ids):
             return get_bad_request_response(message='One or more courses not found')
@@ -81,7 +91,7 @@ class SurveySessionViewSet(viewsets.mixins.CreateModelMixin, viewsets.GenericVie
 
             # Build professors list - each professor gets the same set of questions
             professors_data = []
-            for professor in course.professor.all():
+            for professor in course.professor.all().order_by('full_name'):
                 professors_data.append(
                     {
                         'professor_id': professor.id,
@@ -98,6 +108,7 @@ class SurveySessionViewSet(viewsets.mixins.CreateModelMixin, viewsets.GenericVie
                 }
             )
 
+        courses_data.sort(key=lambda course: (course['subject_name'] or '', course['course_id']))
         response_data = {'session_id': session_id, 'courses': courses_data}
 
         return get_successful_response(data=response_data)

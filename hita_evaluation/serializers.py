@@ -34,7 +34,7 @@ class CourseListSerializer(serializers.ModelSerializer):
         return obj.subject.credit_hours if obj.subject else None
 
     def get_professor_name(self, obj):
-        professors = obj.professor.all()
+        professors = obj.professor.all().order_by('full_name')
         if not professors:
             return None
         return ' - '.join([p.full_name for p in professors])
