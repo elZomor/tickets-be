@@ -94,6 +94,37 @@
                 </td>
                 <td style="border: 1px solid #ccc; padding: 8px;">true</td>
             </tr>
+            <tr style="background: #e8f4e8;">
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>regulation</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">
+                    اسم اللائحة (اختياري) - يتم إنشاؤها إذا لم تكن موجودة
+                    {% if regulations %}
+                    <br>اللوائح الموجودة:
+                    {% for reg in regulations %}
+                        <code>{{ reg.name }}</code>{% if not forloop.last %}، {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </td>
+                <td style="border: 1px solid #ccc; padding: 8px;">2024</td>
+            </tr>
+            <tr style="background: #e8f4e8;">
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>is_parallel</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">
+                    هل هو تعليم موازي؟ (اختياري) (true / false / نعم / 1 / 0)
+                </td>
+                <td style="border: 1px solid #ccc; padding: 8px;">false</td>
+            </tr>
+            <tr style="background: #e8f4e8;">
+                <td style="border: 1px solid #ccc; padding: 8px;"><code>professor_grade</code></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">
+                    درجة الأستاذ (اختياري) - افصل بين الدرجات بـ <code>-</code> بنفس ترتيب الأساتذة
+                    <br>الدرجات المتاحة:
+                    {% for value, label in professor_grades %}
+                        <code>{{ value }}</code> ({{ label }}){% if not forloop.last %}، {% endif %}
+                    {% endfor %}
+                </td>
+                <td style="border: 1px solid #ccc; padding: 8px;">PROF - LECT</td>
+            </tr>
         </tbody>
     </table>
 

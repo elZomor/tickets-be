@@ -8,8 +8,11 @@ from io import BytesIO
 
 from hita_evaluation.models import (
     Professor,
+    ProfessorGrade,
     Subject,
     Course,
+    CourseProfessor,
+    Regulation,
     Semester,
     SurveyTemplate,
     QuestionCategory,
@@ -41,11 +44,13 @@ def generate_evaluation_report(courses, filename_prefix='evaluation_report'):
     # Headers
     headers = [
         'الفصل الدراسي',  # Semester
+        'اللائحة',  # Regulation
         'القسم',  # Department
         'المادة',  # Subject
         'التصنيف',  # Category
         'الساعات',  # Credit Hours
         'الأستاذ',  # Professor
+        'درجة الأستاذ',  # Professor Grade
         'تصنيف السؤال',  # Question Category
         'السؤال',  # Question
         'نوع السؤال',  # Question Type
@@ -65,9 +70,11 @@ def generate_evaluation_report(courses, filename_prefix='evaluation_report'):
     # Get all answers for the given courses
     answers = SurveyAnswer.objects.filter(course__in=courses).select_related(
         'survey_session',
+        'survey_session__regulation',
         'course',
         'course__subject',
         'course__semester',
+        'course__regulations',
         'professor',
         'question',
         'question__question_category',
@@ -109,16 +116,36 @@ def generate_evaluation_report(courses, filename_prefix='evaluation_report'):
         # Semester display
         semester_display = f"{semester.year} - {semester.get_type_display()}"
 
+        # Regulation (from session or course)
+        regulation_name = '-'
+        if session.regulation:
+            regulation_name = session.regulation.name
+        elif course.regulations:
+            regulation_name = course.regulations.name
+
+        # Professor grade from CourseProfessor through model
+        professor_grade = '-'
+        try:
+            course_professor = CourseProfessor.objects.get(
+                course=course, professor=professor
+            )
+            if course_professor.grade:
+                professor_grade = course_professor.get_grade_display()
+        except CourseProfessor.DoesNotExist:
+            pass
+
         # Education type
         education_type = 'التعليم الموازي' if session.is_parallel else 'الساعات المعتمدة'
 
         row_data = [
             semester_display,
+            regulation_name,
             subject.get_department_display() if subject.department else '-',
             subject.name,
             subject.get_category_display(),
             subject.credit_hours,
             professor.full_name,
+            professor_grade,
             question.question_category.name if question.question_category else '-',
             question.question_text,
             question.get_question_type_display(),
@@ -135,7 +162,7 @@ def generate_evaluation_report(courses, filename_prefix='evaluation_report'):
         row += 1
 
     # Adjust column widths
-    column_widths = [15, 25, 25, 20, 10, 20, 20, 50, 15, 15, 18, 18]
+    column_widths = [15, 15, 25, 25, 20, 10, 20, 18, 20, 50, 15, 15, 18, 18]
     for col, width in enumerate(column_widths, 1):
         ws.column_dimensions[get_column_letter(col)].width = width
 
@@ -156,10 +183,17 @@ def generate_evaluation_report(courses, filename_prefix='evaluation_report'):
     return response
 
 
+@admin.register(Regulation)
+class RegulationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'valid_from', 'valid_to', 'is_latest']
+    list_filter = ['is_latest']
+    search_fields = ['name']
+
+
 @admin.register(Professor)
 class ProfessorAdmin(admin.ModelAdmin):
-    list_display = ['full_name', 'department']
-    list_filter = ['department']
+    list_display = ['full_name', 'department', 'grade']
+    list_filter = ['department', 'grade']
     search_fields = ['full_name']
 
 
@@ -204,14 +238,19 @@ class SemesterAdmin(admin.ModelAdmin):
                 headers = [cell.value for cell in ws[1]]
                 expected_headers = [
                     'year', 'type', 'department', 'subject_name',
-                    'category', 'credit_hours', 'professor', 'is_split'
+                    'category', 'credit_hours', 'professor', 'is_split',
+                    'regulation', 'is_parallel', 'professor_grade',
+                ]
+                required_headers = [
+                    'year', 'type', 'department', 'subject_name',
+                    'category', 'credit_hours', 'professor', 'is_split',
                 ]
 
-                # Validate headers
-                if not all(h in headers for h in expected_headers):
+                # Validate required headers
+                if not all(h in headers for h in required_headers):
                     self.message_user(
                         request,
-                        f'الأعمدة المطلوبة: {", ".join(expected_headers)}',
+                        f'الأعمدة المطلوبة: {", ".join(required_headers)}',
                         messages.ERROR,
                     )
                     return TemplateResponse(
@@ -223,11 +262,13 @@ class SemesterAdmin(admin.ModelAdmin):
                             'semester_types': [(st.value, st.label) for st in SemesterType],
                             'departments': [(d.value, d.label) for d in Department],
                             'categories': [(c.value, c.label) for c in Category],
+                            'regulations': Regulation.objects.all(),
+                            'professor_grades': [(g.value, g.label) for g in ProfessorGrade],
                         },
                     )
 
-                # Get column indices
-                col_idx = {h: headers.index(h) for h in expected_headers}
+                # Get column indices (only for headers that exist)
+                col_idx = {h: headers.index(h) for h in headers if h in expected_headers}
 
                 # Get latest active survey template
                 latest_template = SurveyTemplate.objects.filter(is_active=True).order_by('-version').first()
@@ -242,6 +283,8 @@ class SemesterAdmin(admin.ModelAdmin):
                 valid_departments = [d.value for d in Department]
                 valid_categories = [c.value for c in Category]
 
+                valid_professor_grades = [g.value for g in ProfessorGrade]
+
                 for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                     if not any(row):  # Skip empty rows
                         continue
@@ -254,6 +297,11 @@ class SemesterAdmin(admin.ModelAdmin):
                     credit_hours = row[col_idx['credit_hours']]
                     professor_str = row[col_idx['professor']]
                     is_split = row[col_idx['is_split']]
+
+                    # Optional new columns
+                    regulation_name = row[col_idx['regulation']] if 'regulation' in col_idx else None
+                    is_parallel_val = row[col_idx['is_parallel']] if 'is_parallel' in col_idx else None
+                    professor_grade_str = row[col_idx['professor_grade']] if 'professor_grade' in col_idx else None
 
                     # Skip rows without subject name
                     if not subject_name:
@@ -337,8 +385,9 @@ class SemesterAdmin(admin.ModelAdmin):
                     if created:
                         subjects_created += 1
 
-                    # Parse professors
+                    # Parse professors and their grades
                     professors = []
+                    professor_grades = []
                     if professor_str:
                         professor_names = [p.strip() for p in str(professor_str).split('-') if p.strip()]
                         for prof_name in professor_names:
@@ -350,6 +399,25 @@ class SemesterAdmin(admin.ModelAdmin):
                             if created:
                                 professors_created += 1
 
+                    # Parse professor grades (same format as professors, using -)
+                    if professor_grade_str:
+                        grade_list = [g.strip() for g in str(professor_grade_str).split('-')]
+                        for grade in grade_list:
+                            if grade in valid_professor_grades:
+                                professor_grades.append(grade)
+                            else:
+                                professor_grades.append('')
+                    # Pad grades list to match professors
+                    while len(professor_grades) < len(professors):
+                        professor_grades.append('')
+
+                    # Attach grade to professor profiles when provided
+                    for idx, prof in enumerate(professors):
+                        grade_value = professor_grades[idx] if idx < len(professor_grades) else ''
+                        if grade_value and grade_value in valid_professor_grades and prof.grade != grade_value:
+                            prof.grade = grade_value
+                            prof.save(update_fields=['grade'])
+
                     # Parse is_split
                     if isinstance(is_split, bool):
                         split = is_split
@@ -358,16 +426,38 @@ class SemesterAdmin(admin.ModelAdmin):
                     else:
                         split = bool(is_split) if is_split is not None else False
 
+                    # Parse is_parallel
+                    if isinstance(is_parallel_val, bool):
+                        is_parallel = is_parallel_val
+                    elif isinstance(is_parallel_val, str):
+                        is_parallel = is_parallel_val.lower() in ['true', 'yes', '1', 'نعم']
+                    else:
+                        is_parallel = bool(is_parallel_val) if is_parallel_val is not None else False
+
+                    # Get/create regulation
+                    regulation = None
+                    if regulation_name:
+                        regulation, _ = Regulation.objects.get_or_create(
+                            name=str(regulation_name).strip()
+                        )
+
                     # Create course(s)
                     if split and len(professors) > 1:
                         # Create separate course for each professor
-                        for prof in professors:
+                        for idx, prof in enumerate(professors):
                             course = Course.objects.create(
                                 subject=subject,
                                 semester=semester,
                                 survey_template=latest_template,
+                                is_parallel=is_parallel,
+                                regulations=regulation,
                             )
-                            course.professor.add(prof)
+                            # Use through model to set professor with grade
+                            CourseProfessor.objects.create(
+                                course=course,
+                                professor=prof,
+                                grade=professor_grades[idx] if idx < len(professor_grades) else '',
+                            )
                             courses_created += 1
                     else:
                         # Create one course with all professors
@@ -375,9 +465,16 @@ class SemesterAdmin(admin.ModelAdmin):
                             subject=subject,
                             semester=semester,
                             survey_template=latest_template,
+                            is_parallel=is_parallel,
+                            regulations=regulation,
                         )
-                        for prof in professors:
-                            course.professor.add(prof)
+                        for idx, prof in enumerate(professors):
+                            # Use through model to set professor with grade
+                            CourseProfessor.objects.create(
+                                course=course,
+                                professor=prof,
+                                grade=professor_grades[idx] if idx < len(professor_grades) else '',
+                            )
                         courses_created += 1
 
                 self.message_user(
@@ -405,6 +502,8 @@ class SemesterAdmin(admin.ModelAdmin):
             'semester_types': [(st.value, st.label) for st in SemesterType],
             'departments': [(d.value, d.label) for d in Department],
             'categories': [(c.value, c.label) for c in Category],
+            'regulations': Regulation.objects.all(),
+            'professor_grades': [(g.value, g.label) for g in ProfessorGrade],
         }
 
         return TemplateResponse(
@@ -463,12 +562,18 @@ class SemesterAdmin(admin.ModelAdmin):
         )
 
 
+class CourseProfessorInline(admin.TabularInline):
+    model = CourseProfessor
+    extra = 1
+    autocomplete_fields = ['professor']
+
+
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ['subject', 'semester', 'survey_template', 'get_professors']
     list_filter = ['semester', 'subject__department', 'survey_template']
     search_fields = ['subject__name', 'professor__full_name']
-    filter_horizontal = ['professor']
+    inlines = [CourseProfessorInline]
     actions = ['export_evaluation_report']
 
     def get_professors(self, obj):
@@ -660,9 +765,17 @@ class SurveyQuestionAdmin(admin.ModelAdmin):
 
 @admin.register(SurveySession)
 class SurveySessionAdmin(admin.ModelAdmin):
-    list_display = ['session_id', 'department', 'is_parallel', 'created_at']
-    list_filter = ['department', 'is_parallel']
-    readonly_fields = ['created_at', 'updated_at']
+    list_display = [
+        'session_id',
+        'status',
+        'department',
+        'regulation',
+        'is_parallel',
+        'created_at',
+        'submitted_at',
+    ]
+    list_filter = ['status', 'department', 'regulation', 'is_parallel']
+    readonly_fields = ['session_id', 'created_at', 'submitted_at']
 
 
 @admin.register(SurveyAnswer)

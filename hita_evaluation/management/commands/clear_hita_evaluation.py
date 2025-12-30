@@ -11,6 +11,7 @@ class Command(BaseCommand):
         model_order = [
             m.SurveyAnswer,
             m.SurveySession,
+            m.CourseProfessor,
             m.Course,
             m.Semester,
             m.SurveyQuestion,
@@ -18,6 +19,7 @@ class Command(BaseCommand):
             m.QuestionCategory,
             m.Subject,
             m.Professor,
+            m.Regulation,
         ]
 
         with transaction.atomic():
