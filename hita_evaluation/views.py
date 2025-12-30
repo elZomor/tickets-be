@@ -7,8 +7,10 @@ from django.utils import timezone
 
 from hita_evaluation.models import (
     Course,
+    CourseProfessor,
     Department,
     Regulation,
+    Semester,
     SessionStatus,
     SurveySession,
     SurveyQuestion,
@@ -97,6 +99,12 @@ class SurveySessionViewSet(
 
     def _build_courses_data(self, courses):
         """Build response data for courses with professors and questions."""
+        # Build lookup dict for CourseProfessor grades
+        course_ids = [course.id for course in courses]
+        course_professor_grades = {}
+        for cp in CourseProfessor.objects.filter(course_id__in=course_ids):
+            course_professor_grades[(cp.course_id, cp.professor_id)] = cp.get_grade_display()
+
         courses_data = []
         for course in courses:
             questions = []
@@ -109,10 +117,17 @@ class SurveySessionViewSet(
 
             professors_data = []
             for professor in course.professor.all().order_by('full_name'):
+                # Get grade from CourseProfessor, fallback to Professor's grade
+                grade = course_professor_grades.get(
+                    (course.id, professor.id),
+                    professor.get_grade_display()
+                )
+                professor_name = f"{grade} {professor.full_name}".strip()
+
                 professors_data.append(
                     {
                         'professor_id': professor.id,
-                        'professor_name': professor.full_name,
+                        'professor_name': professor_name,
                         'questions': questions_data,
                     }
                 )
@@ -148,6 +163,29 @@ class SurveySessionViewSet(
         )
 
         courses_data = self._build_courses_data(courses)
+
+        # Fetch saved answers for this session
+        saved_answers = SurveyAnswer.objects.filter(
+            survey_session=session
+        ).select_related('question')
+
+        # Build answers map: {course_id-professor_id: {question_id: answer_data}}
+        answers_map = {}
+        for answer in saved_answers:
+            key = f"{answer.course_id}-{answer.professor_id}"
+            if key not in answers_map:
+                answers_map[key] = {}
+
+            answer_data = {'question_id': answer.question_id}
+            if answer.yes_no_answer is not None:
+                answer_data['yes_no_value'] = answer.yes_no_answer
+            if answer.rating_answer is not None:
+                answer_data['rating_value'] = answer.rating_answer
+            if answer.text_answer:
+                answer_data['text_value'] = answer.text_answer
+
+            answers_map[key][answer.question_id] = answer_data
+
         response_data = {
             'session_id': session.session_id,
             'status': session.status,
@@ -155,6 +193,7 @@ class SurveySessionViewSet(
             'regulation_id': session.regulation_id,
             'is_parallel': session.is_parallel,
             'courses': courses_data,
+            'saved_answers': answers_map,
         }
 
         return get_successful_response(data=response_data)
@@ -277,9 +316,113 @@ class SurveySessionViewSet(
             message='Answers submitted successfully',
         )
 
+    @action(detail=False, methods=['post'], url_path='save')
+    def save_answers(self, request):
+        """Save answers without completing the session (for resuming later)."""
+        serializer = SubmitAnswersRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return get_bad_request_response(
+                data=serializer.errors, message='Invalid request data'
+            )
+
+        session_id = serializer.validated_data['session_id']
+        courses_data = serializer.validated_data['courses']
+
+        # Validate session exists and is not already completed
+        try:
+            session = SurveySession.objects.get(session_id=session_id)
+        except SurveySession.DoesNotExist:
+            return get_bad_request_response(message='Session not found')
+
+        if session.status == SessionStatus.COMPLETED:
+            return get_bad_request_response(message='Session already submitted')
+
+        # Delete existing answers for this session (to handle updates)
+        SurveyAnswer.objects.filter(survey_session=session).delete()
+
+        # Create SurveyAnswer records
+        answers_to_create = []
+        for course_data in courses_data:
+            course_id = course_data['course_id']
+
+            try:
+                course = Course.objects.get(id=course_id)
+            except Course.DoesNotExist:
+                return get_bad_request_response(message=f'Course {course_id} not found')
+
+            for professor_data in course_data['professors']:
+                professor_id = professor_data['professor_id']
+
+                try:
+                    professor = Professor.objects.get(id=professor_id)
+                except Professor.DoesNotExist:
+                    return get_bad_request_response(
+                        message=f'Professor {professor_id} not found'
+                    )
+
+                for answer_data in professor_data['answers']:
+                    question_id = answer_data['question_id']
+
+                    # Skip empty answers
+                    if (
+                        answer_data.get('yes_no_value') is None
+                        and answer_data.get('rating_value') is None
+                        and not answer_data.get('text_value')
+                    ):
+                        continue
+
+                    try:
+                        question = SurveyQuestion.objects.get(id=question_id)
+                    except SurveyQuestion.DoesNotExist:
+                        return get_bad_request_response(
+                            message=f'Question {question_id} not found'
+                        )
+
+                    answer = SurveyAnswer(
+                        survey_session=session,
+                        course=course,
+                        professor=professor,
+                        question=question,
+                        yes_no_answer=answer_data.get('yes_no_value'),
+                        rating_answer=answer_data.get('rating_value'),
+                        text_answer=answer_data.get('text_value'),
+                    )
+                    answers_to_create.append(answer)
+
+        # Bulk create all answers
+        SurveyAnswer.objects.bulk_create(answers_to_create)
+
+        # Update session status to IN_PROGRESS if there are answers
+        if len(answers_to_create) > 0:
+            session.status = SessionStatus.IN_PROGRESS
+            session.save(update_fields=['status'])
+
+        return get_successful_response(
+            data={'answers_count': len(answers_to_create)},
+            message='Answers saved successfully',
+        )
+
 
 class DashboardViewSet(viewsets.GenericViewSet):
     """ViewSet for dashboard analytics endpoints."""
+
+    @action(detail=False, methods=['get'], url_path='semesters')
+    def semesters(self, request):
+        """Get semesters for dashboard filters."""
+        queryset = Semester.objects.all().order_by('-year', '-type')
+
+        data = [
+            {
+                'id': str(semester.id),
+                'year': semester.year,
+                'type': semester.type,
+                'type_display': semester.get_type_display(),
+                'is_current': semester.is_current,
+            }
+            for semester in queryset
+        ]
+
+        return get_successful_response(data=data)
 
     @action(detail=False, methods=['get'], url_path='answers')
     def answers(self, request):
@@ -292,18 +435,16 @@ class DashboardViewSet(viewsets.GenericViewSet):
             'survey_session__regulation',
             'course',
             'course__subject',
+            'course__semester',
             'professor',
             'question',
             'question__question_category',
         )
 
-        # Filter by date range
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
-        if start_date:
-            queryset = queryset.filter(survey_session__submitted_at__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(survey_session__submitted_at__lte=end_date)
+        # Filter by semester IDs
+        semester_ids = request.query_params.getlist('semester_ids')
+        if semester_ids:
+            queryset = queryset.filter(course__semester_id__in=semester_ids)
 
         # Filter by department IDs
         department_ids = request.query_params.getlist('department_ids')
@@ -325,6 +466,20 @@ class DashboardViewSet(viewsets.GenericViewSet):
         if regulations:
             queryset = queryset.filter(survey_session__regulation__name__in=regulations)
 
+        # Build lookup dict for CourseProfessor grades
+        # Get unique (course_id, professor_id) pairs from the queryset
+        course_professor_pairs = queryset.values_list(
+            'course_id', 'professor_id'
+        ).distinct()
+
+        # Fetch CourseProfessor records for these pairs
+        course_professor_grades = {}
+        for cp in CourseProfessor.objects.filter(
+            course_id__in=[p[0] for p in course_professor_pairs],
+            professor_id__in=[p[1] for p in course_professor_pairs],
+        ).select_related('professor'):
+            course_professor_grades[(cp.course_id, cp.professor_id)] = cp.get_grade_display()
+
         # Build response data
         data = []
         for answer in queryset:
@@ -333,6 +488,17 @@ class DashboardViewSet(viewsets.GenericViewSet):
             )
             department_name = Department(department).label if department else ''
             category = answer.question.question_category
+
+            # Get grade from CourseProfessor, fallback to Professor's grade
+            grade = course_professor_grades.get(
+                (answer.course_id, answer.professor_id),
+                answer.professor.get_grade_display() if answer.professor else ''
+            )
+            professor_name = (
+                f"{grade} {answer.professor.full_name}".strip()
+                if answer.professor
+                else ''
+            )
 
             data.append(
                 {
@@ -345,9 +511,7 @@ class DashboardViewSet(viewsets.GenericViewSet):
                         answer.course.subject.name if answer.course.subject else ''
                     ),
                     'professor_id': str(answer.professor_id),
-                    'professor_name': (
-                        answer.professor.full_name if answer.professor else ''
-                    ),
+                    'professor_name': professor_name,
                     'regulation': (
                         answer.survey_session.regulation.name
                         if answer.survey_session.regulation

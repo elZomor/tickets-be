@@ -148,13 +148,14 @@ class SurveyQuestion(models.Model):
 
 class SessionStatus(models.TextChoices):
     DRAFT = 'draft', 'Draft'
+    IN_PROGRESS = 'in_progress', 'In Progress'
     COMPLETED = 'completed', 'Completed'
 
 
 class SurveySession(models.Model):
     session_id = models.UUIDField(unique=True)
     status = models.CharField(
-        max_length=10, choices=SessionStatus.choices, default=SessionStatus.DRAFT
+        max_length=15, choices=SessionStatus.choices, default=SessionStatus.DRAFT
     )
     is_parallel = models.BooleanField(default=False)
     department = models.CharField(max_length=20, choices=Department.choices)
