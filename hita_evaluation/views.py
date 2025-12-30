@@ -32,6 +32,7 @@ from hita_evaluation.serializers import (
     DashboardCategorySerializer,
     EvaluationAnswerSerializer,
 )
+from hita_evaluation.permissions import CanViewDashboardPermission
 from utils.Response import get_successful_response, get_bad_request_response
 
 
@@ -406,6 +407,8 @@ class SurveySessionViewSet(
 class DashboardViewSet(viewsets.GenericViewSet):
     """ViewSet for dashboard analytics endpoints."""
 
+    permission_classes = [CanViewDashboardPermission]
+
     @action(detail=False, methods=['get'], url_path='semesters')
     def semesters(self, request):
         """Get semesters for dashboard filters."""
@@ -461,10 +464,10 @@ class DashboardViewSet(viewsets.GenericViewSet):
         if professor_ids:
             queryset = queryset.filter(professor_id__in=professor_ids)
 
-        # Filter by regulations
-        regulations = request.query_params.getlist('regulations')
-        if regulations:
-            queryset = queryset.filter(survey_session__regulation__name__in=regulations)
+        # Filter by regulation IDs
+        regulation_ids = request.query_params.getlist('regulation_ids')
+        if regulation_ids:
+            queryset = queryset.filter(survey_session__regulation_id__in=regulation_ids)
 
         # Build lookup dict for CourseProfessor grades
         # Get unique (course_id, professor_id) pairs from the queryset
@@ -599,6 +602,22 @@ class DashboardViewSet(viewsets.GenericViewSet):
                 'order_index': category.id,
             }
             for category in queryset
+        ]
+
+        return get_successful_response(data=data)
+
+    @action(detail=False, methods=['get'], url_path='regulations')
+    def regulations(self, request):
+        """Get regulations for dashboard filters."""
+        queryset = Regulation.objects.all().order_by('-is_latest', 'name')
+
+        data = [
+            {
+                'id': str(regulation.id),
+                'name': regulation.name,
+                'is_latest': regulation.is_latest,
+            }
+            for regulation in queryset
         ]
 
         return get_successful_response(data=data)

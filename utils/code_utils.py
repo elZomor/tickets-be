@@ -162,6 +162,25 @@ def fill_initial_data():
         group.permissions.add(*[permission, view_permission])
         User.objects.get(username='hita_admin').groups.add(group)
 
+    # Dashboard admin group and user setup
+    dashboard_group, _ = Group.objects.get_or_create(name='DASHBOARD_ADMIN')
+    dashboard_permission = Permission.objects.filter(
+        codename='can_view_dashboard'
+    ).first()
+    if dashboard_permission:
+        if not dashboard_group.permissions.filter(id=dashboard_permission.id).exists():
+            dashboard_group.permissions.add(dashboard_permission)
+
+        # Create dashboard_admin user if not exists
+        if not User.objects.filter(username='dashboard_admin').exists():
+            dashboard_user = User.objects.create(
+                username='dashboard_admin',
+                is_active=True,
+            )
+            dashboard_user.set_password('Dashboard@123')
+            dashboard_user.save()
+            dashboard_user.groups.add(dashboard_group)
+
 
 def get_upload_path(instance, filename):
     ext = filename.split('.')[-1]

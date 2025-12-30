@@ -175,3 +175,14 @@ class SurveyAnswer(models.Model):
     yes_no_answer = models.BooleanField(null=True, blank=True)
     rating_answer = models.IntegerField(null=True, blank=True)
     text_answer = models.TextField(null=True, blank=True)
+
+
+class DashboardPermission(models.Model):
+    """Proxy model to define dashboard permissions."""
+
+    class Meta:
+        managed = False  # No database table needed
+        default_permissions = ()
+        permissions = [
+            ('can_view_dashboard', 'Can view evaluation dashboard'),
+        ]
