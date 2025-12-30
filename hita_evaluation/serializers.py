@@ -158,3 +158,50 @@ class CourseAnswersSerializer(serializers.Serializer):
 class SubmitAnswersRequestSerializer(serializers.Serializer):
     session_id = serializers.UUIDField()
     courses = CourseAnswersSerializer(many=True)
+
+
+# Dashboard Serializers
+
+
+class DashboardDepartmentSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name_en = serializers.CharField()
+    name_ar = serializers.CharField()
+
+
+class DashboardCourseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name_en = serializers.CharField()
+    name_ar = serializers.CharField()
+    department_id = serializers.CharField()
+
+
+class DashboardProfessorSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name_en = serializers.CharField()
+    name_ar = serializers.CharField()
+    department_id = serializers.CharField()
+
+
+class DashboardCategorySerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name_en = serializers.CharField()
+    name_ar = serializers.CharField()
+    order_index = serializers.IntegerField()
+
+
+class EvaluationAnswerSerializer(serializers.Serializer):
+    evaluation_id = serializers.CharField()
+    submitted_at = serializers.DateTimeField()
+    department_id = serializers.CharField()
+    department_name = serializers.CharField()
+    course_id = serializers.CharField()
+    course_name = serializers.CharField()
+    professor_id = serializers.CharField()
+    professor_name = serializers.CharField()
+    regulation = serializers.CharField(allow_null=True)
+    question_id = serializers.CharField()
+    question_text = serializers.CharField()
+    category_id = serializers.CharField()
+    category_name = serializers.CharField()
+    rating = serializers.IntegerField()

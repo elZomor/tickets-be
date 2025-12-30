@@ -14,6 +14,9 @@ from hita_evaluation.models import (
     SurveyQuestion,
     SurveyAnswer,
     Professor,
+    Subject,
+    QuestionCategory,
+    QuestionType,
 )
 from hita_evaluation.serializers import (
     CourseListSerializer,
@@ -21,6 +24,11 @@ from hita_evaluation.serializers import (
     StartSessionRequestSerializer,
     QuestionSerializer,
     SubmitAnswersRequestSerializer,
+    DashboardDepartmentSerializer,
+    DashboardCourseSerializer,
+    DashboardProfessorSerializer,
+    DashboardCategorySerializer,
+    EvaluationAnswerSerializer,
 )
 from utils.Response import get_successful_response, get_bad_request_response
 
@@ -117,9 +125,7 @@ class SurveySessionViewSet(
                 }
             )
 
-        courses_data.sort(
-            key=lambda c: (c['subject_name'] or '', c['course_id'])
-        )
+        courses_data.sort(key=lambda c: (c['subject_name'] or '', c['course_id']))
         return courses_data
 
     def retrieve(self, request, session_id=None):
@@ -225,9 +231,7 @@ class SurveySessionViewSet(
             try:
                 course = Course.objects.get(id=course_id)
             except Course.DoesNotExist:
-                return get_bad_request_response(
-                    message=f'Course {course_id} not found'
-                )
+                return get_bad_request_response(message=f'Course {course_id} not found')
 
             for professor_data in course_data['professors']:
                 professor_id = professor_data['professor_id']
@@ -272,3 +276,165 @@ class SurveySessionViewSet(
             data={'answers_count': len(answers_to_create)},
             message='Answers submitted successfully',
         )
+
+
+class DashboardViewSet(viewsets.GenericViewSet):
+    """ViewSet for dashboard analytics endpoints."""
+
+    @action(detail=False, methods=['get'], url_path='answers')
+    def answers(self, request):
+        """Get evaluation answers with ratings for dashboard visualizations."""
+        queryset = SurveyAnswer.objects.filter(
+            rating_answer__isnull=False,
+            survey_session__status=SessionStatus.COMPLETED,
+        ).select_related(
+            'survey_session',
+            'survey_session__regulation',
+            'course',
+            'course__subject',
+            'professor',
+            'question',
+            'question__question_category',
+        )
+
+        # Filter by date range
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        if start_date:
+            queryset = queryset.filter(survey_session__submitted_at__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(survey_session__submitted_at__lte=end_date)
+
+        # Filter by department IDs
+        department_ids = request.query_params.getlist('department_ids')
+        if department_ids:
+            queryset = queryset.filter(course__subject__department__in=department_ids)
+
+        # Filter by course IDs
+        course_ids = request.query_params.getlist('course_ids')
+        if course_ids:
+            queryset = queryset.filter(course_id__in=course_ids)
+
+        # Filter by professor IDs
+        professor_ids = request.query_params.getlist('professor_ids')
+        if professor_ids:
+            queryset = queryset.filter(professor_id__in=professor_ids)
+
+        # Filter by regulations
+        regulations = request.query_params.getlist('regulations')
+        if regulations:
+            queryset = queryset.filter(survey_session__regulation__name__in=regulations)
+
+        # Build response data
+        data = []
+        for answer in queryset:
+            department = (
+                answer.course.subject.department if answer.course.subject else None
+            )
+            department_name = Department(department).label if department else ''
+            category = answer.question.question_category
+
+            data.append(
+                {
+                    'evaluation_id': str(answer.survey_session.session_id),
+                    'submitted_at': answer.survey_session.submitted_at,
+                    'department_id': department or '',
+                    'department_name': department_name,
+                    'course_id': str(answer.course_id),
+                    'course_name': (
+                        answer.course.subject.name if answer.course.subject else ''
+                    ),
+                    'professor_id': str(answer.professor_id),
+                    'professor_name': (
+                        answer.professor.full_name if answer.professor else ''
+                    ),
+                    'regulation': (
+                        answer.survey_session.regulation.name
+                        if answer.survey_session.regulation
+                        else None
+                    ),
+                    'question_id': str(answer.question_id),
+                    'question_text': answer.question.question_text,
+                    'category_id': str(category.id) if category else '',
+                    'category_name': category.name if category else '',
+                    'rating': answer.rating_answer,
+                }
+            )
+
+        return get_successful_response(data=data)
+
+    @action(detail=False, methods=['get'], url_path='departments')
+    def departments(self, request):
+        """Get departments for dashboard filters."""
+        data = [
+            {
+                'id': value,
+                'name_en': label,
+                'name_ar': label,
+            }
+            for value, label in Department.choices
+            if value != Department.GENERAL
+        ]
+        data.sort(key=lambda x: x['name_en'])
+        return get_successful_response(data=data)
+
+    @action(detail=False, methods=['get'], url_path='courses')
+    def courses(self, request):
+        """Get courses for dashboard filters."""
+        queryset = Subject.objects.all().order_by('name')
+
+        # Filter by department IDs
+        department_ids = request.query_params.getlist('department_ids')
+        if department_ids:
+            queryset = queryset.filter(department__in=department_ids)
+
+        data = [
+            {
+                'id': str(subject.id),
+                'name_en': subject.name,
+                'name_ar': subject.name,
+                'department_id': subject.department or '',
+            }
+            for subject in queryset
+        ]
+
+        return get_successful_response(data=data)
+
+    @action(detail=False, methods=['get'], url_path='professors')
+    def professors(self, request):
+        """Get professors for dashboard filters."""
+        queryset = Professor.objects.all().order_by('full_name')
+
+        # Filter by department IDs
+        department_ids = request.query_params.getlist('department_ids')
+        if department_ids:
+            queryset = queryset.filter(department__in=department_ids)
+
+        data = [
+            {
+                'id': str(professor.id),
+                'name_en': professor.get_grade_display() + ' ' + professor.full_name,
+                'name_ar': professor.get_grade_display() + ' ' + professor.full_name,
+                'department_id': professor.department or '',
+            }
+            for professor in queryset
+        ]
+
+        return get_successful_response(data=data)
+
+    @action(detail=False, methods=['get'], url_path='categories')
+    def categories(self, request):
+        """Get question categories for dashboard."""
+        queryset = QuestionCategory.objects.all().order_by('id')
+
+        data = [
+            {
+                'id': str(category.id),
+                'name_en': category.name,
+                'name_ar': category.name,
+                'order_index': category.id,
+            }
+            for category in queryset
+        ]
+
+        return get_successful_response(data=data)
