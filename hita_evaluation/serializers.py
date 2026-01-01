@@ -101,6 +101,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'question_text',
+            'question_sub_text',
             'question_type',
             'is_mandatory',
             'category_id',

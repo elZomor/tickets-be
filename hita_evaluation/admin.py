@@ -623,6 +623,7 @@ class SurveyTemplateAdmin(admin.ModelAdmin):
                     'survey_name', 'version', 'question_category',
                     'question_text', 'question_type', 'is_mandatory'
                 ]
+                optional_headers = ['question_sub_text']
 
                 # Validate headers
                 if not all(h in headers for h in expected_headers):
@@ -637,8 +638,9 @@ class SurveyTemplateAdmin(admin.ModelAdmin):
                         {**self.admin_site.each_context(request), 'opts': self.model._meta},
                     )
 
-                # Get column indices
-                col_idx = {h: headers.index(h) for h in expected_headers}
+                # Get column indices (required + optional headers that exist)
+                all_headers = expected_headers + optional_headers
+                col_idx = {h: headers.index(h) for h in all_headers if h in headers}
 
                 # Track created objects
                 template = None
@@ -657,6 +659,7 @@ class SurveyTemplateAdmin(admin.ModelAdmin):
                     question_text = row[col_idx['question_text']]
                     question_type = row[col_idx['question_type']]
                     is_mandatory = row[col_idx['is_mandatory']]
+                    question_sub_text = row[col_idx['question_sub_text']] if 'question_sub_text' in col_idx else None
 
                     # Skip rows without question text
                     if not question_text:
@@ -711,6 +714,7 @@ class SurveyTemplateAdmin(admin.ModelAdmin):
                     # Create question
                     question = SurveyQuestion.objects.create(
                         question_text=question_text,
+                        question_sub_text=question_sub_text if question_sub_text else None,
                         question_type=question_type,
                         question_category=question_category,
                         is_mandatory=mandatory,

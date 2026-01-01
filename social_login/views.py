@@ -126,24 +126,90 @@ class FacebookLogin(viewsets.GenericViewSet):
 
 
 class EmailSignup(viewsets.GenericViewSet):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     @action(detail=False, methods=['POST'], url_path='signup')
     def signup(self, request, *args, **kwargs):
-        if User.objects.filter(email=request.data['email']).exists():
-            return get_bad_request_response(data='Email already registered')
+        email = request.data.get('email', '').strip().lower()
+        password = request.data.get('password', '')
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+
+        # Validate email
+        if not email:
+            return get_bad_request_response(data={'email': 'Email is required'})
+
+        # Check existing user
+        if User.objects.filter(email=email).exists():
+            return get_bad_request_response(
+                data={'email': 'An account with this email already exists'}
+            )
+
+        # Validate password
+        if not password:
+            return get_bad_request_response(data={'password': 'Password is required'})
+
+        if len(password) < 8:
+            return get_bad_request_response(
+                data={'password': 'Password must be at least 8 characters'}
+            )
+
+        # Create user (active like Google OAuth)
         user = User.objects.create_user(
-            **{
-                'username': uuid.uuid4().hex[:30],
-                'email': request.data['email'],
-                'is_active': False,
-            }
+            username=uuid.uuid4().hex[:30],
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            is_active=True,
         )
-        user.set_password(request.data['password'])
+        user.set_password(password)
         user.save()
+
+        # Generate tokens with same format as Google OAuth
         refresh = RefreshToken.for_user(user)
         return get_successful_creation_response(
             data={
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
+                'ACCESS_TOKEN': str(refresh.access_token),
+                'REFRESH_TOKEN': str(refresh),
+            }
+        )
+
+    @action(detail=False, methods=['POST'], url_path='login')
+    def login(self, request, *args, **kwargs):
+        # Accept either 'email' or 'username' field as identifier
+        identifier = request.data.get('email', '') or request.data.get('username', '')
+        identifier = identifier.strip().lower() if identifier else ''
+        password = request.data.get('password', '')
+
+        if not identifier or not password:
+            return get_bad_request_response(
+                data={'detail': 'Email/username and password are required'}
+            )
+
+        # Find user by email first, then by username
+        user = User.objects.filter(email=identifier).first()
+        if not user:
+            user = User.objects.filter(username__iexact=identifier).first()
+
+        if not user or not user.check_password(password):
+            return get_bad_request_response(
+                data={'detail': 'Invalid credentials'}
+            )
+
+        if not user.is_active:
+            return get_bad_request_response(
+                data={'detail': 'Account is not active'}
+            )
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                'status': 'SUCCESS',
+                'data': {
+                    'ACCESS_TOKEN': str(refresh.access_token),
+                    'REFRESH_TOKEN': str(refresh),
+                },
             }
         )
 

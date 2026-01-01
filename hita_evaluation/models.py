@@ -133,6 +133,7 @@ class QuestionCategory(models.Model):
 
 class SurveyQuestion(models.Model):
     question_text = models.TextField()
+    question_sub_text = models.TextField(null=True, blank=True)
     question_type = models.CharField(
         max_length=5, choices=QuestionType.choices, default=QuestionType.RATING.value
     )
