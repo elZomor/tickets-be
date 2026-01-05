@@ -1,11 +1,12 @@
 import os
 
 from django.http import StreamingHttpResponse
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
-from config.storages import get_s3_object
+from config.storages import get_s3_object, generate_presigned_upload_url
 from hita.Exceptions import ResourceNotFound
 from hita.models import ShowReel
 from hita.permissions import IsHITAMemberPermission
@@ -45,6 +46,48 @@ class ShowReelViewSet(
     def delete_show_reel(self, request, performer, *args, **kwargs):
         performer.show_reel.delete()
         return get_successful_response(message='ShowReel deleted successfully!')
+
+    @action(detail=False, methods=['post'], url_path='presigned-url')
+    @get_hita_member_from_request
+    def get_presigned_upload_url(self, request, performer, *args, **kwargs):
+        """
+        Get a presigned URL for direct S3 upload.
+        Request body: { "content_type": "video/mp4", "file_extension": "mp4" }
+        """
+        content_type = request.data.get('content_type', 'video/mp4')
+        file_extension = request.data.get('file_extension', 'mp4')
+
+        result = generate_presigned_upload_url(
+            folder='showreels',
+            file_extension=file_extension,
+            content_type=content_type,
+        )
+
+        return get_successful_response(data=result)
+
+    @action(detail=False, methods=['post'], url_path='confirm-upload')
+    @get_hita_member_from_request
+    def confirm_upload(self, request, performer, *args, **kwargs):
+        """
+        Confirm the upload after direct S3 upload is complete.
+        Request body: { "file_key": "showreels/uuid.mp4" }
+        """
+        file_key = request.data.get('file_key')
+        if not file_key:
+            return Response(
+                {'error': 'file_key is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Delete existing showreel if exists
+        ShowReel.objects.filter(performer=performer).delete()
+
+        # Create new showreel with S3 key
+        ShowReel.objects.create(performer=performer, file=file_key)
+
+        return get_successful_creation_response(
+            message='ShowReel uploaded successfully!'
+        )
 
     @action(detail=True, methods=['get'], url_path='stream')
     def stream_video(self, request, *args, **kwargs):

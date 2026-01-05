@@ -279,6 +279,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
             'gallery',
             'public_channels',
             'has_show_reel',
+            'show_reel_file_key',
         ]
 
     performer = serializers.SerializerMethodField()
@@ -288,6 +289,7 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
     achievements = AchievementViewSerializer(many=True)
     public_channels = PublicChannelViewSerializer(many=True)
     has_show_reel = serializers.SerializerMethodField()
+    show_reel_file_key = serializers.SerializerMethodField()
 
     @staticmethod
     def get_performer(obj):
@@ -313,6 +315,12 @@ class PerformerViewOneSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_has_show_reel(obj):
         return obj.has_show_reel
+
+    @staticmethod
+    def get_show_reel_file_key(obj):
+        if hasattr(obj, 'show_reel') and obj.show_reel:
+            return obj.show_reel.file.name
+        return None
 
 
 class PerformerCreateSerializer(serializers.ModelSerializer):
