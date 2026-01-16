@@ -469,6 +469,12 @@ class DashboardViewSet(viewsets.GenericViewSet):
         if regulation_ids:
             queryset = queryset.filter(survey_session__regulation_id__in=regulation_ids)
 
+        # Filter by is_parallel
+        is_parallel = request.query_params.get('is_parallel')
+        if is_parallel is not None:
+            is_parallel_bool = is_parallel.lower() in ('true', '1', 'yes')
+            queryset = queryset.filter(course__is_parallel=is_parallel_bool)
+
         # Build lookup dict for CourseProfessor grades
         # Get unique (course_id, professor_id) pairs from the queryset
         course_professor_pairs = queryset.values_list(
@@ -520,6 +526,7 @@ class DashboardViewSet(viewsets.GenericViewSet):
                         if answer.survey_session.regulation
                         else None
                     ),
+                    'is_parallel': answer.course.is_parallel,
                     'question_id': str(answer.question_id),
                     'question_text': answer.question.question_text,
                     'category_id': str(category.id) if category else '',

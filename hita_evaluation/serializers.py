@@ -201,6 +201,7 @@ class EvaluationAnswerSerializer(serializers.Serializer):
     professor_id = serializers.CharField()
     professor_name = serializers.CharField()
     regulation = serializers.CharField(allow_null=True)
+    is_parallel = serializers.BooleanField()
     question_id = serializers.CharField()
     question_text = serializers.CharField()
     category_id = serializers.CharField()
