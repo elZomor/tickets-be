@@ -49,6 +49,7 @@ PROJECT_APPS = [
     'eldorg',
     'ai',
     'hita_arab_festival',
+    'global_festival',
     'hita_evaluation',
 ]
 THIRD_PARTY_APPS = [

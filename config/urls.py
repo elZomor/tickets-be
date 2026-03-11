@@ -16,6 +16,7 @@ urlpatterns = [
     path('eldorg/', include('eldorg.urls')),
     path('ai/', include('ai.urls')),
     path('hita_arab_festival/', include('hita_arab_festival.urls')),
+    path('global_festival/', include('global_festival.urls')),
     path('hita_evaluation/', include('hita_evaluation.urls')),
 ]
 

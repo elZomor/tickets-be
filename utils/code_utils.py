@@ -80,6 +80,29 @@ def upload_to_arabic_festival_article_attachment(instance, filename):
     return os.path.join('media', 'arabic_festival', 'article_attachment', file_name)
 
 
+def upload_to_global_festival(instance, filename):
+    instance_id = instance.id or "unassigned"
+    created_at = datetime.now().strftime('%Y-%m-%d')
+    file_name = f"{instance_id} - {created_at}{os.path.splitext(filename)[1]}"
+    return os.path.join('media', 'global_festival', 'poster', file_name)
+
+
+def upload_to_global_festival_show(instance, filename):
+    instance_id = instance.id or "unassigned"
+    cast_name = slugify("unknown")
+    created_at = datetime.now().strftime('%Y-%m-%d')
+    ext = os.path.splitext(filename)[1]
+    file_name = f"{instance_id}_{cast_name}_{created_at}{ext}"
+    return os.path.join('media', 'global_festival_shows', 'poster', file_name)
+
+
+def upload_to_global_festival_article_attachment(instance, filename):
+    instance_id = instance.id or "unassigned"
+    created_at = datetime.now().strftime('%Y-%m-%d')
+    file_name = f"{instance_id} - {created_at}{os.path.splitext(filename)[1]}"
+    return os.path.join('media', 'global_festival', 'article_attachment', file_name)
+
+
 def upload_to_publication(instance, filename):
     instance_id = instance.id or "unassigned"
     created_at = datetime.now().strftime('%Y-%m-%d')
