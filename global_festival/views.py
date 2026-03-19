@@ -1,6 +1,6 @@
 from django.db import transaction
 from django.http import HttpResponse
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, generics
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +16,7 @@ from global_festival.serializers import (
     ArticleSerializer,
     CommentSerializer,
     ReservationSerializer,
+    UserReservationSerializer,
 )
 from utils.Response import (
     get_not_found_response,
@@ -212,4 +213,17 @@ class CommentViewSet(
         return get_successful_creation_response(
             data={'id': comment.id, 'content': comment.content, 'show': show.name},
             message='Comment has been added successfully!',
+        )
+
+
+class UserReservationsView(generics.ListAPIView):
+    serializer_class = UserReservationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            Reservation.objects
+            .filter(user=self.request.user)
+            .select_related('show', 'show__festival')
+            .order_by('-created_at')
         )

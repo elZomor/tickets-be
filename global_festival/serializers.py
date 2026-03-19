@@ -94,3 +94,28 @@ class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
         fields = ['id', 'reservation_number', 'status', 'name', 'email', 'created_at']
+
+
+class UserReservationSerializer(serializers.ModelSerializer):
+    show_name = serializers.CharField(source='show.name')
+    show_poster = serializers.SerializerMethodField()
+    show_date = serializers.DateField(source='show.date')
+    show_time = serializers.TimeField(source='show.time')
+    venue_name = serializers.CharField(source='show.venue_name')
+    festival_name = serializers.CharField(source='show.festival.name')
+    festival_id = serializers.IntegerField(source='show.festival.pk')
+    show_id = serializers.IntegerField(source='show.pk')
+
+    class Meta:
+        model = Reservation
+        fields = [
+            'id', 'reservation_number', 'status',
+            'created_at', 'show_id', 'show_name', 'show_poster',
+            'show_date', 'show_time', 'venue_name',
+            'festival_name', 'festival_id',
+        ]
+
+    def get_show_poster(self, obj):
+        if obj.show.poster:
+            return build_media_url(obj.show.poster, self.context.get('request'))
+        return None
