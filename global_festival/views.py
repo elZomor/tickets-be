@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 
 from config.constants import GLOBAL_FESTIVAL_FE_URL
 from global_festival.models import Show, Reservation
@@ -14,6 +15,7 @@ from global_festival.serializers import (
     ShowSerializer,
     ArticleSerializer,
     CommentSerializer,
+    ReservationSerializer,
 )
 from utils.Response import (
     get_not_found_response,
@@ -21,6 +23,7 @@ from utils.Response import (
     get_successful_creation_response,
     get_bad_request_response,
 )
+from utils.email_utils import send_global_festival_ticket_confirmation_email
 
 
 def get_html_for_og(url, pk, file, content, object_name):
@@ -94,6 +97,11 @@ class ShowViewSet(
     serializer_class = ShowSerializer
     queryset = Show.objects.all().order_by('date', 'time')
 
+    def get_permissions(self):
+        if self.action in ['reserve', 'my_reservation']:
+            return [IsAuthenticated()]
+        return []
+
     def get_queryset(self):
         queryset = super().get_queryset()
         festival_id = self.request.query_params.get('festival')
@@ -103,14 +111,13 @@ class ShowViewSet(
 
     @action(url_path='reserve', detail=True, methods=["POST"])
     def reserve(self, request, pk, *args, **kwargs):
-        data = request.data
         show = Show.objects.filter(pk=pk).last()
         if not show:
             return get_not_found_response(message='NO_SHOW')
         if not show.reservation_status:
             return get_successful_response(message='NO_SEATS')
         previous_reservation = Reservation.objects.filter(
-            email=data.get('email'), show=show
+            user=request.user, show=show
         ).last()
         if previous_reservation:
             return get_successful_response(message='DUPLICATE_MAIL')
@@ -123,22 +130,24 @@ class ShowViewSet(
                 selected_show.reserved_seats += 1
                 selected_show.save(update_fields=['reserved_seats'])
 
+            user_name = request.user.get_full_name() or request.user.username
             reservation = Reservation.objects.create(
                 show=show,
-                name=data.get('name'),
-                email=data.get('email'),
+                name=user_name,
+                email=request.user.email,
+                user=request.user,
                 reservation_number=selected_show.reserved_seats,
                 status=selected_reservation_status,
             )
-            # send_global_festival_ticket_confirmation_email.delay(
-            #     to_email=data.get('email'),
-            #     name=data.get('name'),
-            #     show_name=show.name,
-            #     reservation_number=reservation.reservation_number,
-            #     show_date=show.date,
-            #     show_time=show.name,
-            #     show_venue=show.venue_name,
-            # )
+            send_global_festival_ticket_confirmation_email.delay(
+                to_email=request.user.email,
+                name=user_name,
+                show_name=show.name,
+                reservation_number=reservation.reservation_number,
+                show_date=show.date,
+                show_time=show.time,
+                show_venue=show.venue_name,
+            )
             return get_successful_creation_response(
                 data={
                     'id': reservation.id,
@@ -156,6 +165,16 @@ class ShowViewSet(
                     "reservation": None,
                 }
             )
+
+    @action(url_path='my_reservation', detail=True, methods=["GET"])
+    def my_reservation(self, request, pk, *args, **kwargs):
+        show = Show.objects.filter(pk=pk).last()
+        if not show:
+            return get_not_found_response(message='NO_SHOW')
+        reservation = Reservation.objects.filter(user=request.user, show=show).last()
+        if not reservation:
+            return get_not_found_response(message='NO_RESERVATION')
+        return get_successful_response(data=ReservationSerializer(reservation).data)
 
     @action(detail=True, methods=['GET'], url_path='share')
     def profile_meta(self, request, pk=None):

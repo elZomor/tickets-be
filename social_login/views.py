@@ -1,14 +1,15 @@
+import jwt
 from django.contrib.auth.models import User
-from rest_framework.response import Response
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
-import uuid
+from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+import uuid
 
 from social_login.authentication import (
-    GoogleJWTAuthentication,
     FacebookJWTAuthentication,
+    GoogleJWTAuthentication,
 )
 from social_login.models import Policy
 from utils.Response import get_bad_request_response, get_successful_creation_response

@@ -33,7 +33,6 @@ class GoogleJWTAuthentication:
             return AnonymousUser(), 'NoData'
 
     def get_extra_actions(self):
-        # If you don't need extra actions, just return an empty list
         return []
 
 
@@ -59,5 +58,4 @@ class FacebookJWTAuthentication:
             raise AuthenticationFailed('Invalid token')
 
     def get_extra_actions(self):
-        # If you don't need extra actions, just return an empty list
         return []

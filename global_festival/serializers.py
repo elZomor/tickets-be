@@ -5,6 +5,7 @@ from global_festival.models import Show
 from global_festival.models.Article import Article
 from global_festival.models.Comment import Comment
 from global_festival.models.Festival import GlobalFestival
+from global_festival.models.Reservation import Reservation
 
 
 def build_media_url(file_field, request):
@@ -87,3 +88,9 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = "__all__"
+
+
+class ReservationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reservation
+        fields = ['id', 'reservation_number', 'status', 'name', 'email', 'created_at']
