@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from config.constants import GLOBAL_FESTIVAL_FE_URL, SEND_EMAIL
 from global_festival.models import Show, Reservation
-from global_festival.models.Reservation import is_valid_seat
+from global_festival.models.Reservation import is_valid_seat, ReservationStatus
 from global_festival.models.Article import Article
 from global_festival.models.Comment import Comment, CommentStatus
 from global_festival.models.Festival import GlobalFestival
@@ -130,27 +130,38 @@ class ShowViewSet(
             return get_not_found_response(message='NO_SHOW')
         if not show.reservation_status:
             return get_successful_response(message='NO_SEATS')
-        seat_number = request.data.get('seat_number', '').strip().upper()
-        if not is_valid_seat(seat_number):
-            return get_bad_request_response(message='INVALID_SEAT')
+        is_waiting_list = show.reservation_status == ReservationStatus.WAITING_LIST
+        if not is_waiting_list:
+            seat_number = request.data.get('seat_number', '').strip().upper()
+            if not is_valid_seat(seat_number):
+                return get_bad_request_response(message='INVALID_SEAT')
         previous_reservation = Reservation.objects.filter(
             user=request.user, show=show
         ).last()
         if previous_reservation:
             return get_successful_response(
-                data={'seat_number': previous_reservation.seat_number},
+                data={
+                    'id': previous_reservation.id,
+                    'name': previous_reservation.name,
+                    'reservation_number': previous_reservation.reservation_number,
+                    'reservation_status': previous_reservation.status,
+                    'seat_number': previous_reservation.seat_number,
+                },
                 message='DUPLICATE_MAIL',
             )
         try:
             with transaction.atomic():
                 selected_show = Show.objects.select_for_update().get(pk=pk)
-                selected_reservation_status = show.reservation_status
+                selected_reservation_status = selected_show.reservation_status
                 if not selected_reservation_status:
                     return get_successful_response(message='NO_SEATS')
-                if Reservation.objects.filter(show=selected_show, seat_number=seat_number).exists():
-                    return get_bad_request_response(message='SEAT_TAKEN')
+                if selected_reservation_status != ReservationStatus.WAITING_LIST:
+                    if Reservation.objects.filter(show=selected_show, seat_number=seat_number).exists():
+                        return get_bad_request_response(message='SEAT_TAKEN')
                 selected_show.reserved_seats += 1
                 selected_show.save(update_fields=['reserved_seats'])
+                if selected_reservation_status == ReservationStatus.WAITING_LIST:
+                    seat_number = str(selected_show.reserved_seats - selected_show.allowed_seats)
 
             user_name = request.user.get_full_name() or request.user.username
             reservation = Reservation.objects.create(
