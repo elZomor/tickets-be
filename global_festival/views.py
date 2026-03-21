@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 
-from config.constants import GLOBAL_FESTIVAL_FE_URL
+from config.constants import GLOBAL_FESTIVAL_FE_URL, SEND_EMAIL
 from global_festival.models import Show, Reservation
 from global_festival.models.Reservation import is_valid_seat
 from global_festival.models.Article import Article
@@ -137,7 +137,10 @@ class ShowViewSet(
             user=request.user, show=show
         ).last()
         if previous_reservation:
-            return get_successful_response(message='DUPLICATE_MAIL')
+            return get_successful_response(
+                data={'seat_number': previous_reservation.seat_number},
+                message='DUPLICATE_MAIL',
+            )
         try:
             with transaction.atomic():
                 selected_show = Show.objects.select_for_update().get(pk=pk)
@@ -159,15 +162,16 @@ class ShowViewSet(
                 status=selected_reservation_status,
                 seat_number=seat_number,
             )
-            send_global_festival_ticket_confirmation_email.delay(
-                to_email=request.user.email,
-                name=user_name,
-                show_name=show.name,
-                reservation_number=reservation.reservation_number,
-                show_date=show.date,
-                show_time=show.time,
-                show_venue=show.venue_name,
-            )
+            if SEND_EMAIL:
+                send_global_festival_ticket_confirmation_email.delay(
+                    to_email=request.user.email,
+                    name=user_name,
+                    show_name=show.name,
+                    reservation_number=reservation.reservation_number,
+                    show_date=show.date,
+                    show_time=show.time,
+                    show_venue=show.venue_name,
+                )
             return get_successful_creation_response(
                 data={
                     'id': reservation.id,
