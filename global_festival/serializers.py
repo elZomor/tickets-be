@@ -93,7 +93,7 @@ class CommentSerializer(serializers.ModelSerializer):
 class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = ['id', 'reservation_number', 'status', 'name', 'email', 'created_at']
+        fields = ['id', 'reservation_number', 'status', 'name', 'email', 'created_at', 'seat_number']
 
 
 class UserReservationSerializer(serializers.ModelSerializer):
@@ -112,7 +112,7 @@ class UserReservationSerializer(serializers.ModelSerializer):
             'id', 'reservation_number', 'status',
             'created_at', 'show_id', 'show_name', 'show_poster',
             'show_date', 'show_time', 'venue_name',
-            'festival_name', 'festival_id',
+            'festival_name', 'festival_id', 'seat_number',
         ]
 
     def get_show_poster(self, obj):

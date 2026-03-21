@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from config.constants import GLOBAL_FESTIVAL_FE_URL
 from global_festival.models import Show, Reservation
+from global_festival.models.Reservation import is_valid_seat
 from global_festival.models.Article import Article
 from global_festival.models.Comment import Comment, CommentStatus
 from global_festival.models.Festival import GlobalFestival
@@ -103,6 +104,18 @@ class ShowViewSet(
             return [IsAuthenticated()]
         return []
 
+    @action(url_path='seats', detail=True, methods=["GET"])
+    def seats(self, request, pk, *args, **kwargs):
+        show = Show.objects.filter(pk=pk).last()
+        if not show:
+            return get_not_found_response(message='NO_SHOW')
+        taken = list(
+            Reservation.objects
+            .filter(show=show, seat_number__isnull=False)
+            .values_list('seat_number', flat=True)
+        )
+        return get_successful_response(data={'taken': taken})
+
     def get_queryset(self):
         queryset = super().get_queryset()
         festival_id = self.request.query_params.get('festival')
@@ -117,6 +130,9 @@ class ShowViewSet(
             return get_not_found_response(message='NO_SHOW')
         if not show.reservation_status:
             return get_successful_response(message='NO_SEATS')
+        seat_number = request.data.get('seat_number', '').strip().upper()
+        if not is_valid_seat(seat_number):
+            return get_bad_request_response(message='INVALID_SEAT')
         previous_reservation = Reservation.objects.filter(
             user=request.user, show=show
         ).last()
@@ -128,6 +144,8 @@ class ShowViewSet(
                 selected_reservation_status = show.reservation_status
                 if not selected_reservation_status:
                     return get_successful_response(message='NO_SEATS')
+                if Reservation.objects.filter(show=selected_show, seat_number=seat_number).exists():
+                    return get_bad_request_response(message='SEAT_TAKEN')
                 selected_show.reserved_seats += 1
                 selected_show.save(update_fields=['reserved_seats'])
 
@@ -139,6 +157,7 @@ class ShowViewSet(
                 user=request.user,
                 reservation_number=selected_show.reserved_seats,
                 status=selected_reservation_status,
+                seat_number=seat_number,
             )
             send_global_festival_ticket_confirmation_email.delay(
                 to_email=request.user.email,
@@ -155,6 +174,7 @@ class ShowViewSet(
                     'reservation_number': reservation.reservation_number,
                     'reservation_status': reservation.status,
                     'name': reservation.name,
+                    'seat_number': reservation.seat_number,
                 },
                 message='Reservation created successfully!',
             )
