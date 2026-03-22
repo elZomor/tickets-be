@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from config.constants import GLOBAL_FESTIVAL_FE_URL, SEND_EMAIL
 from global_festival.models import Show, Reservation
+from hita.models import HITAMember, Status
 from global_festival.models.Reservation import is_valid_seat, ReservationStatus
 from global_festival.models.Article import Article
 from global_festival.models.Comment import Comment, CommentStatus
@@ -123,6 +124,15 @@ class ShowViewSet(
             queryset = queryset.filter(festival__pk=festival_id)
         return queryset
 
+    @action(url_path='is_hita_member', detail=False, methods=['GET'])
+    def is_hita_member(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return get_successful_response(data={'is_member': False})
+        is_member = HITAMember.objects.filter(
+            user=request.user, request_status=Status.APPROVED.value
+        ).exists()
+        return get_successful_response(data={'is_member': is_member})
+
     @action(url_path='reserve', detail=True, methods=["POST"])
     def reserve(self, request, pk, *args, **kwargs):
         show = Show.objects.filter(pk=pk).last()
@@ -130,6 +140,10 @@ class ShowViewSet(
             return get_not_found_response(message='NO_SHOW')
         if not show.reservation_status:
             return get_successful_response(message='NO_SEATS')
+        if not HITAMember.objects.filter(
+            user=request.user, request_status=Status.APPROVED.value
+        ).exists():
+            return get_bad_request_response(message='NOT_HITA_MEMBER')
         is_waiting_list = show.reservation_status == ReservationStatus.WAITING_LIST
         if not is_waiting_list:
             seat_number = request.data.get('seat_number', '').strip().upper()
