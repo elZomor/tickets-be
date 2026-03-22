@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse
 from rest_framework import viewsets, mixins, generics
 from rest_framework.decorators import action
@@ -150,68 +150,57 @@ class ShowViewSet(
                 if not show.reservation_hash or provided_token != show.reservation_hash:
                     return get_bad_request_response(message='INVALID_TOKEN')
         is_waiting_list = show.reservation_status == ReservationStatus.WAITING_LIST
+        seat_number = ''
         if not is_waiting_list:
             seat_number = request.data.get('seat_number', '').strip().upper()
             if not is_valid_seat(seat_number):
                 return get_bad_request_response(message='INVALID_SEAT')
-        previous_reservation = Reservation.objects.filter(
-            user=request.user, show=show
-        ).last()
-        if previous_reservation:
-            return get_successful_response(
-                data={
-                    'id': previous_reservation.id,
-                    'name': previous_reservation.name,
-                    'reservation_number': previous_reservation.reservation_number,
-                    'reservation_status': previous_reservation.status,
-                    'seat_number': previous_reservation.seat_number,
-                },
-                message='DUPLICATE_MAIL',
-            )
         try:
             with transaction.atomic():
                 selected_show = Show.objects.select_for_update().get(pk=pk)
+
+                previous_reservation = Reservation.objects.filter(
+                    user=request.user, show=selected_show
+                ).last()
+                if previous_reservation:
+                    return get_successful_response(
+                        data={
+                            'id': previous_reservation.id,
+                            'name': previous_reservation.name,
+                            'reservation_number': previous_reservation.reservation_number,
+                            'reservation_status': previous_reservation.status,
+                            'seat_number': previous_reservation.seat_number,
+                        },
+                        message='DUPLICATE_MAIL',
+                    )
+
                 selected_reservation_status = selected_show.reservation_status
                 if not selected_reservation_status:
                     return get_successful_response(message='NO_SEATS')
+
                 if selected_reservation_status != ReservationStatus.WAITING_LIST:
                     if Reservation.objects.filter(show=selected_show, seat_number=seat_number).exists():
                         return get_bad_request_response(message='SEAT_TAKEN')
+
                 selected_show.reserved_seats += 1
                 selected_show.save(update_fields=['reserved_seats'])
+
                 if selected_reservation_status == ReservationStatus.WAITING_LIST:
                     seat_number = str(selected_show.reserved_seats - selected_show.allowed_seats)
 
-            user_name = request.user.get_full_name() or request.user.username
-            reservation = Reservation.objects.create(
-                show=show,
-                name=user_name,
-                email=request.user.email,
-                user=request.user,
-                reservation_number=selected_show.reserved_seats,
-                status=selected_reservation_status,
-                seat_number=seat_number,
-            )
-            if SEND_EMAIL:
-                send_global_festival_ticket_confirmation_email.delay(
-                    to_email=request.user.email,
+                user_name = request.user.get_full_name() or request.user.username
+                reservation = Reservation.objects.create(
+                    show=selected_show,
                     name=user_name,
-                    show_name=show.name,
-                    reservation_number=reservation.reservation_number,
-                    show_date=show.date,
-                    show_time=show.time,
-                    show_venue=show.venue_name,
+                    email=request.user.email,
+                    user=request.user,
+                    reservation_number=selected_show.reserved_seats,
+                    status=selected_reservation_status,
+                    seat_number=seat_number,
                 )
-            return get_successful_creation_response(
-                data={
-                    'id': reservation.id,
-                    'reservation_number': reservation.reservation_number,
-                    'reservation_status': reservation.status,
-                    'name': reservation.name,
-                    'seat_number': reservation.seat_number,
-                },
-                message='Reservation created successfully!',
-            )
+
+        except IntegrityError:
+            return get_bad_request_response(message='SEAT_TAKEN')
         except Exception as ex:
             return get_bad_request_response(
                 data={
@@ -220,6 +209,27 @@ class ShowViewSet(
                     "reservation": None,
                 }
             )
+
+        if SEND_EMAIL:
+            send_global_festival_ticket_confirmation_email.delay(
+                to_email=request.user.email,
+                name=reservation.name,
+                show_name=selected_show.name,
+                reservation_number=reservation.reservation_number,
+                show_date=selected_show.date,
+                show_time=selected_show.time,
+                show_venue=selected_show.venue_name,
+            )
+        return get_successful_creation_response(
+            data={
+                'id': reservation.id,
+                'reservation_number': reservation.reservation_number,
+                'reservation_status': reservation.status,
+                'name': reservation.name,
+                'seat_number': reservation.seat_number,
+            },
+            message='Reservation created successfully!',
+        )
 
     @action(url_path='my_reservation', detail=True, methods=["GET"])
     def my_reservation(self, request, pk, *args, **kwargs):

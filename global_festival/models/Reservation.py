@@ -58,7 +58,12 @@ class Reservation(models.Model):
                 fields=['show', 'seat_number'],
                 condition=Q(seat_number__isnull=False),
                 name='unique_seat_per_show',
-            )
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'show'],
+                condition=Q(user__isnull=False),
+                name='unique_user_reservation_per_show',
+            ),
         ]
 
     def __str__(self):

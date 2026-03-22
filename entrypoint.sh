@@ -29,5 +29,5 @@ python manage.py migrate
 if [ "$DEBUG" = "true" ]; then
   exec python manage.py runserver 0.0.0.0:8000
 else
-  exec gunicorn config.wsgi:application -b 0.0.0.0:8000 -w 4 --timeout 300 --graceful-timeout 60 --keep-alive 5
+  exec gunicorn config.wsgi:application -b 0.0.0.0:8000 -w 9 --timeout 300 --graceful-timeout 60 --keep-alive 5
 fi
