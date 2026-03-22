@@ -46,6 +46,7 @@ class Show(models.Model):
     allowed_waiting = models.IntegerField()
     reservation_status_open = models.BooleanField(default=False)
     open_for_comments = models.BooleanField(default=False)
+    reservation_hash = models.CharField(max_length=64, null=True, blank=True, unique=True, default=None)
 
     @property
     def is_open(self):

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
 from rest_framework import viewsets, mixins, generics
@@ -140,10 +141,14 @@ class ShowViewSet(
             return get_not_found_response(message='NO_SHOW')
         if not show.reservation_status:
             return get_successful_response(message='NO_SEATS')
-        if not HITAMember.objects.filter(
-            user=request.user, request_status=Status.APPROVED.value
-        ).exists():
-            return get_bad_request_response(message='NOT_HITA_MEMBER')
+        if settings.REQUIRE_RESERVATION_HASH:
+            is_hita = HITAMember.objects.filter(
+                user=request.user, request_status=Status.APPROVED.value
+            ).exists()
+            if not is_hita:
+                provided_token = request.data.get('access_token', '').strip()
+                if not show.reservation_hash or provided_token != show.reservation_hash:
+                    return get_bad_request_response(message='INVALID_TOKEN')
         is_waiting_list = show.reservation_status == ReservationStatus.WAITING_LIST
         if not is_waiting_list:
             seat_number = request.data.get('seat_number', '').strip().upper()

@@ -22,6 +22,8 @@ env = environ.Env()
 
 environment = env.str('ENVIRONMENT', default='local')
 
+REQUIRE_RESERVATION_HASH = os.environ.get('REQUIRE_RESERVATION_HASH', 'True') == 'True'
+
 SECRET_KEY = env.str('SECRET_KEY')
 
 DEBUG = env.bool('DEBUG')
