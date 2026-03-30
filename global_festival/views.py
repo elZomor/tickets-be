@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import IntegrityError, transaction
+from django.db.models import F
 from django.http import HttpResponse
 from rest_framework import viewsets, mixins, generics
 from rest_framework.decorators import action
@@ -149,12 +150,6 @@ class ShowViewSet(
                 provided_token = request.data.get('access_token', '').strip()
                 if not show.reservation_hash or provided_token != show.reservation_hash:
                     return get_bad_request_response(message='INVALID_TOKEN')
-        is_waiting_list = show.reservation_status == ReservationStatus.WAITING_LIST
-        seat_number = ''
-        if not is_waiting_list:
-            seat_number = request.data.get('seat_number', '').strip().upper()
-            if not is_valid_seat(seat_number):
-                return get_bad_request_response(message='INVALID_SEAT')
         try:
             with transaction.atomic():
                 selected_show = Show.objects.select_for_update().get(pk=pk)
@@ -178,14 +173,21 @@ class ShowViewSet(
                 if not selected_reservation_status:
                     return get_successful_response(message='NO_SEATS')
 
-                if selected_reservation_status != ReservationStatus.WAITING_LIST:
+                is_waiting_list = selected_reservation_status == ReservationStatus.WAITING_LIST
+                seat_number = ''
+                if not is_waiting_list:
+                    seat_number = request.data.get('seat_number', '').strip().upper()
+                    if not is_valid_seat(seat_number):
+                        return get_bad_request_response(message='INVALID_SEAT')
                     if Reservation.objects.filter(show=selected_show, seat_number=seat_number).exists():
                         return get_bad_request_response(message='SEAT_TAKEN')
 
-                selected_show.reserved_seats += 1
-                selected_show.save(update_fields=['reserved_seats'])
+                Show.objects.filter(pk=selected_show.pk).update(
+                    reserved_seats=F('reserved_seats') + 1
+                )
+                selected_show.refresh_from_db(fields=['reserved_seats'])
 
-                if selected_reservation_status == ReservationStatus.WAITING_LIST:
+                if is_waiting_list:
                     seat_number = str(selected_show.reserved_seats - selected_show.allowed_seats)
 
                 user_name = request.user.get_full_name() or request.user.username

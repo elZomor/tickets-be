@@ -109,27 +109,29 @@ class ShowViewSet(
             return get_not_found_response(message='NO_SHOW')
         if not show.reservation_status:
             return get_successful_response(message='NO_SEATS')
-        previous_reservation = Reservation.objects.filter(
-            email=data.get('email'), show=show
-        ).last()
-        if previous_reservation:
-            return get_successful_response(message='DUPLICATE_MAIL')
         try:
             with transaction.atomic():
                 selected_show = Show.objects.select_for_update().get(pk=pk)
-                selected_reservation_status = show.reservation_status
+
+                previous_reservation = Reservation.objects.filter(
+                    email=data.get('email'), show=selected_show
+                ).last()
+                if previous_reservation:
+                    return get_successful_response(message='DUPLICATE_MAIL')
+
+                selected_reservation_status = selected_show.reservation_status
                 if not selected_reservation_status:
                     return get_successful_response(message='NO_SEATS')
                 selected_show.reserved_seats += 1
                 selected_show.save(update_fields=['reserved_seats'])
 
-            reservation = Reservation.objects.create(
-                show=show,
-                name=data.get('name'),
-                email=data.get('email'),
-                reservation_number=selected_show.reserved_seats,
-                status=selected_reservation_status,
-            )
+                reservation = Reservation.objects.create(
+                    show=selected_show,
+                    name=data.get('name'),
+                    email=data.get('email'),
+                    reservation_number=selected_show.reserved_seats,
+                    status=selected_reservation_status,
+                )
             # send_hita_arab_ticket_confirmation_email.delay(
             #     to_email=data.get('email'),
             #     name=data.get('name'),
