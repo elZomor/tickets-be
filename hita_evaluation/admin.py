@@ -782,14 +782,206 @@ class SurveySessionAdmin(admin.ModelAdmin):
     readonly_fields = ['session_id', 'created_at', 'submitted_at']
 
 
+def generate_term_report(courses, filename_prefix='term_report'):
+    """Generate a single-sheet Excel report for a specific term."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'تقرير الفصل الدراسي'
+
+    header_font = Font(bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin'),
+    )
+
+    headers = [
+        'الفصل الدراسي',
+        'اللائحة',
+        'القسم',
+        'المادة',
+        'التصنيف',
+        'الساعات',
+        'الأستاذ',
+        'درجة الأستاذ',
+        'تصنيف السؤال',
+        'السؤال',
+        'نوع السؤال',
+        'الإجابة',
+        'تاريخ التقييم',
+        'نوع التعليم',
+    ]
+
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+
+    answers = SurveyAnswer.objects.filter(course__in=courses).select_related(
+        'survey_session',
+        'survey_session__regulation',
+        'course',
+        'course__subject',
+        'course__semester',
+        'course__regulations',
+        'professor',
+        'question',
+        'question__question_category',
+    ).order_by(
+        'course__subject__department',
+        'course__subject__name',
+        'professor__full_name',
+        'question__question_category__name',
+        'question__id',
+    )
+
+    cp_grades = {
+        (cp.course_id, cp.professor_id): cp.get_grade_display() if cp.grade else '-'
+        for cp in CourseProfessor.objects.filter(course__in=courses).select_related('course', 'professor')
+    }
+
+    row = 2
+    if not answers.exists():
+        cell = ws.cell(row=2, column=1, value='لا توجد تقييمات لهذا الفصل الدراسي')
+        cell.alignment = Alignment(horizontal='center')
+        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
+
+    for answer in answers:
+        course = answer.course
+        subject = course.subject
+        session = answer.survey_session
+        professor = answer.professor
+        question = answer.question
+
+        if question.question_type == 'YN':
+            answer_value = 'نعم' if answer.yes_no_answer else 'لا' if answer.yes_no_answer is False else '-'
+        elif question.question_type in ['R', 'S']:
+            answer_value = str(answer.rating_answer) if answer.rating_answer is not None else '-'
+        elif question.question_type == 'T':
+            answer_value = answer.text_answer or '-'
+        else:
+            answer_value = '-'
+
+        semester_display = f"{course.semester.year} - {course.semester.get_type_display()}"
+
+        regulation_name = '-'
+        if session.regulation:
+            regulation_name = session.regulation.name
+        elif course.regulations:
+            regulation_name = course.regulations.name
+
+        professor_grade = cp_grades.get((course.id, professor.id), '-')
+        education_type = 'التعليم الموازي' if session.is_parallel else 'الساعات المعتمدة'
+
+        row_data = [
+            semester_display,
+            regulation_name,
+            subject.get_department_display() if subject.department else '-',
+            subject.name,
+            subject.get_category_display(),
+            subject.credit_hours,
+            professor.full_name,
+            professor_grade,
+            question.question_category.name if question.question_category else '-',
+            question.question_text,
+            question.get_question_type_display(),
+            answer_value,
+            session.created_at.strftime('%Y-%m-%d %H:%M'),
+            education_type,
+        ]
+
+        for col, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row, column=col, value=value)
+            cell.border = thin_border
+            cell.alignment = Alignment(vertical='center', wrap_text=True)
+
+        row += 1
+
+    col_widths = [15, 15, 25, 25, 20, 10, 20, 18, 20, 50, 15, 15, 18, 18]
+    for col, width in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(col)].width = width
+    ws.sheet_view.rightToLeft = True
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename_prefix}.xlsx"'
+    return response
+
+
 @admin.register(SurveyAnswer)
 class SurveyAnswerAdmin(admin.ModelAdmin):
     list_display = [
-        'survey_session',
+        'get_semester',
         'course',
+        'professor',
         'question',
         'yes_no_answer',
         'rating_answer',
     ]
-    list_filter = ['course__subject__department', 'question__question_type']
-    search_fields = ['course__subject__name', 'question__question_text']
+    list_filter = [
+        'course__semester__year',
+        'course__semester__type',
+        'course__subject__department',
+        'question__question_type',
+    ]
+    search_fields = ['course__subject__name', 'professor__full_name', 'question__question_text']
+    change_list_template = 'admin/survey_answer_changelist.html'
+
+    def get_semester(self, obj):
+        s = obj.course.semester
+        return f"{s.year} - {s.get_type_display()}"
+    get_semester.short_description = 'الفصل'
+    get_semester.admin_order_field = 'course__semester__year'
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'export-term-report/',
+                self.admin_site.admin_view(self.export_term_report_view),
+                name='hita_evaluation_surveyanswer_export_term',
+            ),
+        ]
+        return custom_urls + urls
+
+    def export_term_report_view(self, request):
+        if request.method == 'POST':
+            semester_id = request.POST.get('semester')
+            if semester_id:
+                try:
+                    semester = Semester.objects.get(pk=semester_id)
+                except Semester.DoesNotExist:
+                    self.message_user(request, 'الفصل الدراسي غير موجود', messages.ERROR)
+                else:
+                    courses = Course.objects.filter(semester=semester)
+                    if not courses.exists():
+                        self.message_user(
+                            request,
+                            'لا توجد مقررات لهذا الفصل الدراسي',
+                            messages.WARNING,
+                        )
+                    else:
+                        filename = f'term_report_{semester.year}_{semester.type}'
+                        return generate_term_report(courses, filename)
+
+        semesters = Semester.objects.all().order_by('-year', 'type')
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'تصدير تقرير الفصل الدراسي - Export Term Report',
+            'opts': self.model._meta,
+            'semesters': semesters,
+            'media': self.media,
+        }
+        return TemplateResponse(request, 'admin/term_export.html', context)

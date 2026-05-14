@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+
+    <p style="margin-bottom: 16px; font-size: 14px; color: #555;">
+        اختر الفصل الدراسي لتصدير تقرير شامل يتضمن بيانات الأساتذة والمقررات والأسئلة ونتائج التقييم.
+        <br>
+        Select a term to export a full report including professors, courses, questions, and rating results.
+    </p>
+
+    <div style="margin-bottom: 24px;">
+        <label for="semester" style="display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px;">
+            اختر الفصل الدراسي - Select Term:
+        </label>
+        <select name="semester" id="semester" required style="padding: 10px 15px; min-width: 300px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px;">
+            <option value="">--</option>
+            {% for semester in semesters %}
+                <option value="{{ semester.pk }}">{{ semester }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div style="margin-bottom: 24px; padding: 16px; background: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+        <p style="margin: 0 0 10px; font-weight: bold;">محتوى التقرير - Report Contents:</p>
+        <ul style="margin: 0; padding-right: 20px; color: #555; line-height: 2;">
+            <li>الفصل الدراسي — اللائحة — القسم — المادة — التصنيف — الساعات</li>
+            <li>الأستاذ — درجة الأستاذ — تصنيف السؤال — السؤال — نوع السؤال — الإجابة</li>
+            <li>تاريخ التقييم — نوع التعليم</li>
+        </ul>
+    </div>
+
+    <div style="margin-top: 8px;">
+        <input type="submit" value="تصدير التقرير - Export Report" class="default" style="padding: 10px 20px; cursor: pointer;" />
+        <a href="{% url opts|admin_urlname:'changelist' %}" class="button" style="padding: 10px 20px; margin-right: 10px;">إلغاء - Cancel</a>
+    </div>
+</form>
+{% endblock %}
