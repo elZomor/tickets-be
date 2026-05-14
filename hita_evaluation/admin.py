@@ -964,31 +964,5 @@ class SurveyAnswerAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def export_term_report_view(self, request):
-        if request.method == 'POST':
-            semester_id = request.POST.get('semester')
-            if semester_id:
-                try:
-                    semester = Semester.objects.get(pk=semester_id)
-                except Semester.DoesNotExist:
-                    self.message_user(request, 'الفصل الدراسي غير موجود', messages.ERROR)
-                else:
-                    courses = Course.objects.filter(semester=semester)
-                    if not courses.exists():
-                        self.message_user(
-                            request,
-                            'لا توجد مقررات لهذا الفصل الدراسي',
-                            messages.WARNING,
-                        )
-                    else:
-                        filename = f'term_report_{semester.year}_{semester.type}'
-                        return generate_term_report(courses, filename)
-
-        semesters = Semester.objects.all().order_by('-year', 'type')
-        context = {
-            **self.admin_site.each_context(request),
-            'title': 'تصدير تقرير الفصل الدراسي - Export Term Report',
-            'opts': self.model._meta,
-            'semesters': semesters,
-            'media': self.media,
-        }
-        return TemplateResponse(request, 'admin/term_export.html', context)
+        courses = Course.objects.all()
+        return generate_term_report(courses, 'survey_answers_report')
