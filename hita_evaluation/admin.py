@@ -14,12 +14,14 @@ from hita_evaluation.models import (
     CourseProfessor,
     Regulation,
     Semester,
+    SemesterType,
     SurveyTemplate,
     QuestionCategory,
     SurveyQuestion,
     SurveySession,
     SurveyAnswer,
     Department,
+    Category,
     QuestionType,
 )
 
@@ -784,6 +786,45 @@ class SurveySessionAdmin(admin.ModelAdmin):
 
 def generate_term_report(courses, filename_prefix='term_report'):
     """Generate a single-sheet Excel report for a specific term."""
+    dept_labels = dict(Department.choices)
+    category_labels = dict(Category.choices)
+    semester_type_labels = dict(SemesterType.choices)
+    grade_labels = dict(ProfessorGrade.choices)
+    question_type_labels = dict(QuestionType.choices)
+
+    cp_grades = {
+        (cp['course_id'], cp['professor_id']): grade_labels.get(cp['grade'], '-') if cp['grade'] else '-'
+        for cp in CourseProfessor.objects.filter(course__in=courses).values('course_id', 'professor_id', 'grade')
+    }
+
+    answers = SurveyAnswer.objects.filter(course__in=courses).values(
+        'course_id',
+        'professor_id',
+        'course__semester__year',
+        'course__semester__type',
+        'survey_session__regulation__name',
+        'course__regulations__name',
+        'course__subject__department',
+        'course__subject__name',
+        'course__subject__category',
+        'course__subject__credit_hours',
+        'professor__full_name',
+        'question__question_category__name',
+        'question__question_text',
+        'question__question_type',
+        'survey_session__is_parallel',
+        'survey_session__created_at',
+        'yes_no_answer',
+        'rating_answer',
+        'text_answer',
+    ).order_by(
+        'course__subject__department',
+        'course__subject__name',
+        'professor__full_name',
+        'question__question_category__name',
+        'question__id',
+    )
+
     wb = Workbook()
     ws = wb.active
     ws.title = 'تقرير الفصل الدراسي'
@@ -815,92 +856,57 @@ def generate_term_report(courses, filename_prefix='term_report'):
         'نوع التعليم',
     ]
 
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
+    ws.append(headers)
+    for col in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col)
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = header_alignment
         cell.border = thin_border
 
-    answers = SurveyAnswer.objects.filter(course__in=courses).select_related(
-        'survey_session',
-        'survey_session__regulation',
-        'course',
-        'course__subject',
-        'course__semester',
-        'course__regulations',
-        'professor',
-        'question',
-        'question__question_category',
-    ).order_by(
-        'course__subject__department',
-        'course__subject__name',
-        'professor__full_name',
-        'question__question_category__name',
-        'question__id',
-    )
-
-    cp_grades = {
-        (cp.course_id, cp.professor_id): cp.get_grade_display() if cp.grade else '-'
-        for cp in CourseProfessor.objects.filter(course__in=courses).select_related('course', 'professor')
-    }
-
-    row = 2
-    if not answers.exists():
-        cell = ws.cell(row=2, column=1, value='لا توجد تقييمات لهذا الفصل الدراسي')
-        cell.alignment = Alignment(horizontal='center')
-        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
-
-    for answer in answers:
-        course = answer.course
-        subject = course.subject
-        session = answer.survey_session
-        professor = answer.professor
-        question = answer.question
-
-        if question.question_type == 'YN':
-            answer_value = 'نعم' if answer.yes_no_answer else 'لا' if answer.yes_no_answer is False else '-'
-        elif question.question_type in ['R', 'S']:
-            answer_value = str(answer.rating_answer) if answer.rating_answer is not None else '-'
-        elif question.question_type == 'T':
-            answer_value = answer.text_answer or '-'
+    has_data = False
+    for answer in answers.iterator(chunk_size=500):
+        has_data = True
+        q_type = answer['question__question_type']
+        yn = answer['yes_no_answer']
+        if q_type == 'YN':
+            answer_value = 'نعم' if yn is True else 'لا' if yn is False else '-'
+        elif q_type in ['R', 'S']:
+            answer_value = str(answer['rating_answer']) if answer['rating_answer'] is not None else '-'
+        elif q_type == 'T':
+            answer_value = answer['text_answer'] or '-'
         else:
             answer_value = '-'
 
-        semester_display = f"{course.semester.year} - {course.semester.get_type_display()}"
+        sem_type = answer['course__semester__type']
+        semester_display = f"{answer['course__semester__year']} - {semester_type_labels.get(sem_type, sem_type)}"
+        regulation_name = answer['survey_session__regulation__name'] or answer['course__regulations__name'] or '-'
+        dept = answer['course__subject__department']
+        professor_grade = cp_grades.get((answer['course_id'], answer['professor_id']), '-')
+        education_type = 'التعليم الموازي' if answer['survey_session__is_parallel'] else 'الساعات المعتمدة'
+        created_at = answer['survey_session__created_at']
+        date_str = created_at.strftime('%Y-%m-%d %H:%M') if created_at else '-'
 
-        regulation_name = '-'
-        if session.regulation:
-            regulation_name = session.regulation.name
-        elif course.regulations:
-            regulation_name = course.regulations.name
-
-        professor_grade = cp_grades.get((course.id, professor.id), '-')
-        education_type = 'التعليم الموازي' if session.is_parallel else 'الساعات المعتمدة'
-
-        row_data = [
+        ws.append([
             semester_display,
             regulation_name,
-            subject.get_department_display() if subject.department else '-',
-            subject.name,
-            subject.get_category_display(),
-            subject.credit_hours,
-            professor.full_name,
+            dept_labels.get(dept, dept or '-'),
+            answer['course__subject__name'],
+            category_labels.get(answer['course__subject__category'], answer['course__subject__category'] or '-'),
+            answer['course__subject__credit_hours'],
+            answer['professor__full_name'],
             professor_grade,
-            question.question_category.name if question.question_category else '-',
-            question.question_text,
-            question.get_question_type_display(),
+            answer['question__question_category__name'] or '-',
+            answer['question__question_text'],
+            question_type_labels.get(q_type, q_type),
             answer_value,
-            session.created_at.strftime('%Y-%m-%d %H:%M'),
+            date_str,
             education_type,
-        ]
+        ])
 
-        for col, value in enumerate(row_data, 1):
-            cell = ws.cell(row=row, column=col, value=value)
-            cell.border = thin_border
-            cell.alignment = Alignment(vertical='center', wrap_text=True)
-
-        row += 1
+    if not has_data:
+        ws.append(['لا توجد تقييمات لهذا الفصل الدراسي'])
+        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
 
     col_widths = [15, 15, 25, 25, 20, 10, 20, 18, 20, 50, 15, 15, 18, 18]
     for col, width in enumerate(col_widths, 1):
@@ -936,6 +942,7 @@ class SurveyAnswerAdmin(admin.ModelAdmin):
         'question__question_type',
     ]
     search_fields = ['course__subject__name', 'professor__full_name', 'question__question_text']
+    list_select_related = ['course__semester', 'course__subject', 'professor', 'question']
     change_list_template = 'admin/survey_answer_changelist.html'
 
     def get_semester(self, obj):
