@@ -785,89 +785,99 @@ class SurveySessionAdmin(admin.ModelAdmin):
 
 
 def generate_term_report(courses, filename_prefix='term_report'):
-    """Generate a single-sheet Excel report for a specific term."""
+    """Generate a single-sheet Excel report using separate simple queries joined in Python."""
     dept_labels = dict(Department.choices)
     category_labels = dict(Category.choices)
     semester_type_labels = dict(SemesterType.choices)
     grade_labels = dict(ProfessorGrade.choices)
     question_type_labels = dict(QuestionType.choices)
 
-    cp_grades = {
+    course_ids = list(courses.values_list('id', flat=True))
+
+    # --- Simple, flat lookups (no JOINs, no ORDER BY) ---
+    courses_map = {
+        c['id']: c for c in Course.objects.filter(id__in=course_ids).values(
+            'id', 'subject_id', 'semester_id', 'regulations_id'
+        )
+    }
+    subject_ids = {c['subject_id'] for c in courses_map.values()}
+    semester_ids = {c['semester_id'] for c in courses_map.values()}
+    course_reg_ids = {c['regulations_id'] for c in courses_map.values() if c['regulations_id']}
+
+    subjects_map = {s['id']: s for s in Subject.objects.filter(id__in=subject_ids).values(
+        'id', 'name', 'department', 'category', 'credit_hours'
+    )}
+    semesters_map = {s['id']: s for s in Semester.objects.filter(id__in=semester_ids).values(
+        'id', 'year', 'type'
+    )}
+    cp_map = {
         (cp['course_id'], cp['professor_id']): grade_labels.get(cp['grade'], '-') if cp['grade'] else '-'
-        for cp in CourseProfessor.objects.filter(course__in=courses).values('course_id', 'professor_id', 'grade')
+        for cp in CourseProfessor.objects.filter(course_id__in=course_ids).values('course_id', 'professor_id', 'grade')
     }
 
-    answers = SurveyAnswer.objects.filter(course__in=courses).values(
-        'course_id',
-        'professor_id',
-        'course__semester__year',
-        'course__semester__type',
-        'survey_session__regulation__name',
-        'course__regulations__name',
-        'course__subject__department',
-        'course__subject__name',
-        'course__subject__category',
-        'course__subject__credit_hours',
-        'professor__full_name',
-        'question__question_category__name',
-        'question__question_text',
-        'question__question_type',
-        'survey_session__is_parallel',
-        'survey_session__created_at',
-        'yes_no_answer',
-        'rating_answer',
-        'text_answer',
-    ).order_by(
-        'course__subject__department',
-        'course__subject__name',
-        'professor__full_name',
-        'question__question_category__name',
-        'question__id',
-    )
+    # Fetch answers (no JOINs, no ORDER BY)
+    raw_answers = list(SurveyAnswer.objects.filter(course_id__in=course_ids).values(
+        'course_id', 'professor_id', 'question_id', 'survey_session_id',
+        'yes_no_answer', 'rating_answer', 'text_answer',
+    ))
 
+    if not raw_answers:
+        wb = Workbook()
+        ws = wb.active
+        ws.append(['لا توجد تقييمات'])
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="{filename_prefix}.xlsx"'
+        return response
+
+    session_ids = {a['survey_session_id'] for a in raw_answers}
+    professor_ids = {a['professor_id'] for a in raw_answers}
+    question_ids = {a['question_id'] for a in raw_answers}
+
+    sessions_map = {s['id']: s for s in SurveySession.objects.filter(id__in=session_ids).values(
+        'id', 'regulation_id', 'is_parallel', 'created_at'
+    )}
+    professors_map = {p['id']: p['full_name'] for p in Professor.objects.filter(id__in=professor_ids).values('id', 'full_name')}
+    questions_map = {q['id']: q for q in SurveyQuestion.objects.filter(id__in=question_ids).values(
+        'id', 'question_text', 'question_type', 'question_category_id'
+    )}
+
+    cat_ids = {q['question_category_id'] for q in questions_map.values() if q['question_category_id']}
+    cats_map = {c['id']: c['name'] for c in QuestionCategory.objects.filter(id__in=cat_ids).values('id', 'name')}
+
+    all_reg_ids = course_reg_ids | {s['regulation_id'] for s in sessions_map.values() if s['regulation_id']}
+    regs_map = {r['id']: r['name'] for r in Regulation.objects.filter(id__in=all_reg_ids).values('id', 'name')}
+
+    # --- Build Excel ---
     wb = Workbook()
     ws = wb.active
-    ws.title = 'تقرير الفصل الدراسي'
+    ws.title = 'تقرير الاستبيان'
+
+    headers = [
+        'الفصل الدراسي', 'اللائحة', 'القسم', 'المادة', 'التصنيف', 'الساعات',
+        'الأستاذ', 'درجة الأستاذ', 'تصنيف السؤال', 'السؤال', 'نوع السؤال',
+        'الإجابة', 'تاريخ التقييم', 'نوع التعليم',
+    ]
+    ws.append(headers)
 
     header_font = Font(bold=True, color='FFFFFF')
     header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
-    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    thin_border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin'),
-    )
-
-    headers = [
-        'الفصل الدراسي',
-        'اللائحة',
-        'القسم',
-        'المادة',
-        'التصنيف',
-        'الساعات',
-        'الأستاذ',
-        'درجة الأستاذ',
-        'تصنيف السؤال',
-        'السؤال',
-        'نوع السؤال',
-        'الإجابة',
-        'تاريخ التقييم',
-        'نوع التعليم',
-    ]
-
-    ws.append(headers)
     for col in range(1, len(headers) + 1):
         cell = ws.cell(row=1, column=col)
         cell.font = header_font
         cell.fill = header_fill
-        cell.alignment = header_alignment
-        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
 
-    has_data = False
-    for answer in answers.iterator(chunk_size=500):
-        has_data = True
-        q_type = answer['question__question_type']
+    for answer in raw_answers:
+        course = courses_map.get(answer['course_id'], {})
+        subject = subjects_map.get(course.get('subject_id'), {})
+        semester = semesters_map.get(course.get('semester_id'), {})
+        session = sessions_map.get(answer['survey_session_id'], {})
+        question = questions_map.get(answer['question_id'], {})
+
+        q_type = question.get('question_type', '')
         yn = answer['yes_no_answer']
         if q_type == 'YN':
             answer_value = 'نعم' if yn is True else 'لا' if yn is False else '-'
@@ -878,35 +888,26 @@ def generate_term_report(courses, filename_prefix='term_report'):
         else:
             answer_value = '-'
 
-        sem_type = answer['course__semester__type']
-        semester_display = f"{answer['course__semester__year']} - {semester_type_labels.get(sem_type, sem_type)}"
-        regulation_name = answer['survey_session__regulation__name'] or answer['course__regulations__name'] or '-'
-        dept = answer['course__subject__department']
-        professor_grade = cp_grades.get((answer['course_id'], answer['professor_id']), '-')
-        education_type = 'التعليم الموازي' if answer['survey_session__is_parallel'] else 'الساعات المعتمدة'
-        created_at = answer['survey_session__created_at']
-        date_str = created_at.strftime('%Y-%m-%d %H:%M') if created_at else '-'
+        sem_type = semester.get('type', '')
+        reg_id = session.get('regulation_id') or course.get('regulations_id')
+        created_at = session.get('created_at')
 
         ws.append([
-            semester_display,
-            regulation_name,
-            dept_labels.get(dept, dept or '-'),
-            answer['course__subject__name'],
-            category_labels.get(answer['course__subject__category'], answer['course__subject__category'] or '-'),
-            answer['course__subject__credit_hours'],
-            answer['professor__full_name'],
-            professor_grade,
-            answer['question__question_category__name'] or '-',
-            answer['question__question_text'],
+            f"{semester.get('year', '')} - {semester_type_labels.get(sem_type, sem_type)}",
+            regs_map.get(reg_id, '-'),
+            dept_labels.get(subject.get('department', ''), '-'),
+            subject.get('name', '-'),
+            category_labels.get(subject.get('category', ''), '-'),
+            subject.get('credit_hours', '-'),
+            professors_map.get(answer['professor_id'], '-'),
+            cp_map.get((answer['course_id'], answer['professor_id']), '-'),
+            cats_map.get(question.get('question_category_id'), '-'),
+            question.get('question_text', '-'),
             question_type_labels.get(q_type, q_type),
             answer_value,
-            date_str,
-            education_type,
+            created_at.strftime('%Y-%m-%d %H:%M') if created_at else '-',
+            'التعليم الموازي' if session.get('is_parallel') else 'الساعات المعتمدة',
         ])
-
-    if not has_data:
-        ws.append(['لا توجد تقييمات لهذا الفصل الدراسي'])
-        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
 
     col_widths = [15, 15, 25, 25, 20, 10, 20, 18, 20, 50, 15, 15, 18, 18]
     for col, width in enumerate(col_widths, 1):
