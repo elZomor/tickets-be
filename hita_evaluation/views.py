@@ -11,6 +11,7 @@ from hita_evaluation.models import (
     Department,
     Regulation,
     Semester,
+    SemesterType,
     SessionStatus,
     SurveySession,
     SurveyQuestion,
@@ -49,6 +50,23 @@ class DepartmentViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet)
         return get_successful_response(data=queryset)
 
 
+class SemesterViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
+    def list(self, request, *args, **kwargs):
+        queryset = Semester.objects.all().order_by('-year', 'type')
+        data = [
+            {
+                'id': str(semester.id),
+                'year': semester.year,
+                'type': semester.type,
+                'type_display': semester.get_type_display(),
+                'label': f'{semester.get_type_display()} {semester.year}',
+                'is_current': semester.is_current,
+            }
+            for semester in queryset
+        ]
+        return get_successful_response(data=data)
+
+
 class RegulationViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Regulation.objects.all().order_by('-is_latest', 'name')
     serializer_class = RegulationSerializer
@@ -85,6 +103,11 @@ class CourseViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
         if is_parallel is not None:
             is_parallel_bool = is_parallel.lower() in ('true', '1', 'yes')
             queryset = queryset.filter(is_parallel=is_parallel_bool)
+
+        # Filter by semester
+        semester_id = request.query_params.get('semester_id')
+        if semester_id:
+            queryset = queryset.filter(semester_id=semester_id)
 
         serializer = self.get_serializer(queryset, many=True)
         return get_successful_response(data=serializer.data)
