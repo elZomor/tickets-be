@@ -140,6 +140,53 @@ def send_global_festival_ticket_confirmation_email(
 
 
 @shared_task(bind=True)
+def send_alt_spaces_festival_ticket_confirmation_email(
+    self,
+    to_email: str,
+    name: str,
+    show_name: str,
+    reservation_number: str,
+    show_date,
+    show_time,
+    show_venue,
+):
+    body = f'''
+        <html>
+          <body>
+          <div dir="ltr">
+                <p>Hello, {name}</p>
+                <p>Your reservation has been confirmed for ({show_name})</p>
+                <p>On {show_date} at {show_time} at {show_venue}</p>
+                <p>Reservation number: {reservation_number}</p>
+                <p>Name and reservation number are to be reviewed at the time of entry</p>
+                <p>Thank you!</p>
+                <p>Play-Cast Team</p>
+            </div>
+            <div dir="rtl">
+                <p> إزيك يا {name}</p>
+                <p>لقد تم حجز التذكرة في عرض ({show_name})</p>
+                <p>يوم {show_date} الساعة {show_time} على مسرح {show_venue}</p>
+                <p>رقم التذكرة: {reservation_number} </p>
+                <p>يتم مراجعة رقم التذكرة والاسم عند الدخول</p>
+                <p>شكرا!</p>
+                <p>Play-Cast فريق عمل</p>
+            </div>
+          </body>
+        </html>
+        '''
+    try:
+        send_email_https(
+            to_email=to_email,
+            body=body,
+            subject='Your reservation has been confirmed',
+            name=name,
+        )
+        return {'status': 'ok', 'email': to_email}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e), 'email': to_email}
+
+
+@shared_task(bind=True)
 def send_create_performer_reminder_email(self, to_email: str, name: str):
     body = f'''
         <html>

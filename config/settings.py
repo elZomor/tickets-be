@@ -52,6 +52,7 @@ PROJECT_APPS = [
     'ai',
     'hita_arab_festival',
     'global_festival',
+    'alt_spaces_festival',
     'hita_evaluation',
 ]
 THIRD_PARTY_APPS = [
