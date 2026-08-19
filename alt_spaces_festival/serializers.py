@@ -18,6 +18,17 @@ def build_media_url(file_field, request):
     return f'https://media.play-cast.com/{file_field.name}?w=800&q=75&fmt=auto'
 
 
+def build_document_url(file_field, request):
+    """
+    Absolute CDN URL for non-image documents (e.g. PDFs). Unlike build_media_url,
+    this skips the image-resize query params, which cause the CDN to error out
+    when applied to a non-image file.
+    """
+    if request and ENVIRONMENT == 'local':
+        return request.build_absolute_uri(file_field.url)
+    return f'https://media.play-cast.com/{file_field.name}'
+
+
 class PublicationPreviewSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
 
@@ -26,7 +37,7 @@ class PublicationPreviewSerializer(serializers.ModelSerializer):
         fields = ['file', 'publication_number', 'publication_date']
 
     def get_file(self, obj):
-        return build_media_url(obj.file, self.context.get('request'))
+        return build_document_url(obj.file, self.context.get('request'))
 
 
 class AltSpacesFestivalSerializer(serializers.ModelSerializer):
