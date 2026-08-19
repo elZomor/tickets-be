@@ -126,6 +126,13 @@ def upload_to_alt_spaces_festival_article_attachment(instance, filename):
     return os.path.join('media', 'alt_spaces_festival', 'article_attachment', file_name)
 
 
+def upload_to_alt_spaces_festival_publication(instance, filename):
+    instance_id = instance.id or "unassigned"
+    created_at = datetime.now().strftime('%Y-%m-%d')
+    file_name = f"{instance_id} - {created_at}{os.path.splitext(filename)[1]}"
+    return os.path.join('media', 'alt_spaces_festival', 'publication', file_name)
+
+
 def upload_to_publication(instance, filename):
     instance_id = instance.id or "unassigned"
     created_at = datetime.now().strftime('%Y-%m-%d')

@@ -10,13 +10,26 @@ from alt_spaces_festival.models.Article import Article
 from alt_spaces_festival.models.ArticleAttachment import ArticleAttachment
 from alt_spaces_festival.models.Comment import Comment
 from alt_spaces_festival.models.Festival import AltSpacesFestival
+from alt_spaces_festival.models.Publication import Publication
 from alt_spaces_festival.models.Show import Show
 from alt_spaces_festival.models.Reservation import Reservation
 from alt_spaces_festival.models.Tag import Tag
 
 
+class PublicationsInline(admin.StackedInline):
+    model = Publication
+    can_delete = False
+    verbose_name_plural = 'publications'
+    extra = 0
+
+
 @admin.register(AltSpacesFestival)
 class AltSpacesFestivalAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Publication)
+class PublicationAdmin(admin.ModelAdmin):
     pass
 
 

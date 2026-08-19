@@ -5,6 +5,7 @@ from alt_spaces_festival.models import Show
 from alt_spaces_festival.models.Article import Article
 from alt_spaces_festival.models.Comment import Comment
 from alt_spaces_festival.models.Festival import AltSpacesFestival
+from alt_spaces_festival.models.Publication import Publication
 from alt_spaces_festival.models.Reservation import Reservation
 
 
@@ -17,6 +18,17 @@ def build_media_url(file_field, request):
     return f'https://media.play-cast.com/{file_field.name}?w=800&q=75&fmt=auto'
 
 
+class PublicationPreviewSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Publication
+        fields = ['file', 'publication_number', 'publication_date']
+
+    def get_file(self, obj):
+        return build_media_url(obj.file, self.context.get('request'))
+
+
 class AltSpacesFestivalSerializer(serializers.ModelSerializer):
     class Meta:
         model = AltSpacesFestival
@@ -25,12 +37,17 @@ class AltSpacesFestivalSerializer(serializers.ModelSerializer):
     total_shows = serializers.SerializerMethodField()
     total_articles = serializers.SerializerMethodField()
     logo = serializers.SerializerMethodField()
+    publications = serializers.SerializerMethodField()
 
     def get_total_shows(self, obj):
         return obj.total_shows
 
     def get_total_articles(self, obj):
         return obj.festival_articles.count()
+
+    def get_publications(self, obj):
+        qs = obj.publications.all().order_by('-publication_date')
+        return PublicationPreviewSerializer(qs, many=True, context=self.context).data
 
     def get_logo(self, obj):
         if obj.logo:
