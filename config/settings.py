@@ -32,6 +32,8 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 REDIS_URL = env.str('REDIS_URL', 'redis://redis:6379/0')
 
+REPORT_AUTO_HIDE_THRESHOLD = env.int('REPORT_AUTO_HIDE_THRESHOLD', default=5)
+
 DJANGO_APPS = [
     'admin_interface',
     'colorfield',
@@ -54,6 +56,7 @@ PROJECT_APPS = [
     'global_festival',
     'alt_spaces_festival',
     'hita_evaluation',
+    'third_side',
 ]
 THIRD_PARTY_APPS = [
     'rest_framework',

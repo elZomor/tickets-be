@@ -19,6 +19,7 @@ urlpatterns = [
     path('global_festival/', include('global_festival.urls')),
     path('alt_spaces_festival/', include('alt_spaces_festival.urls')),
     path('hita_evaluation/', include('hita_evaluation.urls')),
+    path('third_side/', include('third_side.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
