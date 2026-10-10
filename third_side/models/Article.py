@@ -12,7 +12,7 @@ class ArticleStatus(models.TextChoices):
 
 class Article(models.Model):
     title = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=280, unique=True)
+    slug = models.SlugField(max_length=280, unique=True, allow_unicode=True)
     category = models.ForeignKey(to=Category, on_delete=models.PROTECT, related_name='articles')
     critic = models.ForeignKey(to=Critic, on_delete=models.PROTECT, related_name='articles')
     content = models.JSONField(null=True, blank=True)
