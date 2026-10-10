@@ -1,6 +1,17 @@
 from django.contrib import admin
+from django.db import models
+from django_json_widget.widgets import JSONEditorWidget
 
-from third_side.models import Article, Category, Comment, Critic, Profile, Rating, Report
+from third_side.models import (
+    Article,
+    Category,
+    Comment,
+    Critic,
+    Profile,
+    Rating,
+    Report,
+    SyncedArticle,
+)
 
 
 @admin.register(Profile)
@@ -42,3 +53,11 @@ class ReportAdmin(admin.ModelAdmin):
     list_display = ('id', 'reporter', 'content_type', 'object_id', 'created_at', 'reviewed_by')
     list_filter = ('content_type',)
     readonly_fields = ('created_at',)
+
+
+@admin.register(SyncedArticle)
+class SyncedArticleAdmin(admin.ModelAdmin):
+    list_display = ('payload_id', 'updated_at')
+    formfield_overrides = {
+        models.JSONField: {'widget': JSONEditorWidget},
+    }
