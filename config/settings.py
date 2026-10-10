@@ -176,6 +176,8 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+PAYLOAD_CMS_WEBHOOK_SECRET = env.str('PAYLOAD_CMS_WEBHOOK_SECRET')
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'config.pagination.CustomPagination',
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),

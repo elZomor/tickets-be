@@ -16,9 +16,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='showdate',
-            index=models.Index(
-                fields=['date', 'time'], name='showdate_date_time_idx'
-            ),
+            index=models.Index(fields=['date', 'time'], name='showdate_date_time_idx'),
         ),
         migrations.AddIndex(
             model_name='showdate',

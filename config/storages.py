@@ -28,7 +28,9 @@ def get_s3_object(file_name):
     return s3.get_object(Bucket=AWS_STORAGE_BUCKET_NAME, Key=file_name)
 
 
-def generate_presigned_upload_url(folder: str, file_extension: str, content_type: str, expires_in: int = 3600):
+def generate_presigned_upload_url(
+    folder: str, file_extension: str, content_type: str, expires_in: int = 3600
+):
     """
     Generate a presigned URL for direct S3 upload.
     Returns the presigned URL and the S3 key where the file will be stored.

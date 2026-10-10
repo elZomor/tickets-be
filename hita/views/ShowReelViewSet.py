@@ -75,8 +75,7 @@ class ShowReelViewSet(
         file_key = request.data.get('file_key')
         if not file_key:
             return Response(
-                {'error': 'file_key is required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': 'file_key is required'}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # Delete existing showreel if exists

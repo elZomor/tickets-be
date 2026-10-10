@@ -7,9 +7,13 @@ from third_side.models.Article import Article
 
 class Rating(models.Model):
     user = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='third_side_ratings'
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='third_side_ratings',
     )
-    article = models.ForeignKey(to=Article, on_delete=models.CASCADE, related_name='ratings')
+    article = models.ForeignKey(
+        to=Article, on_delete=models.CASCADE, related_name='ratings'
+    )
     value = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )

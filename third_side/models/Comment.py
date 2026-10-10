@@ -6,9 +6,13 @@ from third_side.models.Article import Article
 
 class Comment(models.Model):
     user = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='third_side_comments'
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='third_side_comments',
     )
-    article = models.ForeignKey(to=Article, on_delete=models.CASCADE, related_name='comments')
+    article = models.ForeignKey(
+        to=Article, on_delete=models.CASCADE, related_name='comments'
+    )
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_hidden = models.BooleanField(default=False)

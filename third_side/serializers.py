@@ -1,6 +1,15 @@
 from rest_framework import serializers
 
-from third_side.models import Article, Category, Comment, Critic, Profile, Rating, Report
+from third_side.models import (
+    Article,
+    Category,
+    Comment,
+    Critic,
+    Profile,
+    Rating,
+    Report,
+    SyncedArticle,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -66,7 +75,9 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class ReportSerializer(serializers.ModelSerializer):
     reporter = serializers.PrimaryKeyRelatedField(read_only=True)
-    content_type = serializers.ChoiceField(choices=['article', 'comment'], write_only=True)
+    content_type = serializers.ChoiceField(
+        choices=['article', 'comment'], write_only=True
+    )
     target_type = serializers.SerializerMethodField()
 
     class Meta:
@@ -94,3 +105,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['id', 'role']
         read_only_fields = ['role']
+
+
+class SyncedArticleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SyncedArticle
+        fields = '__all__'

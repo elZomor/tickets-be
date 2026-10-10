@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from third_side.views import (
     ArticleViewSet,
     CategoryViewSet,
+    CmsWebhookView,
     CommentViewSet,
     CriticViewSet,
     ProfileMeView,
@@ -21,4 +22,5 @@ router.register(r'reports', ReportViewSet, basename='report-view')
 
 urlpatterns = router.urls + [
     path('profile/me', ProfileMeView.as_view(), name='profile-me'),
+    path('cms-articles/webhook', CmsWebhookView.as_view(), name='cms-articles-webhook'),
 ]
