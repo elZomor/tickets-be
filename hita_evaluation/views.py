@@ -11,7 +11,6 @@ from hita_evaluation.models import (
     Department,
     Regulation,
     Semester,
-    SemesterType,
     SessionStatus,
     SurveySession,
     SurveyQuestion,
@@ -19,7 +18,6 @@ from hita_evaluation.models import (
     Professor,
     Subject,
     QuestionCategory,
-    QuestionType,
 )
 from hita_evaluation.serializers import (
     CourseListSerializer,
@@ -27,11 +25,6 @@ from hita_evaluation.serializers import (
     StartSessionRequestSerializer,
     QuestionSerializer,
     SubmitAnswersRequestSerializer,
-    DashboardDepartmentSerializer,
-    DashboardCourseSerializer,
-    DashboardProfessorSerializer,
-    DashboardCategorySerializer,
-    EvaluationAnswerSerializer,
 )
 from hita_evaluation.permissions import CanViewDashboardPermission
 from utils.Response import get_successful_response, get_bad_request_response
@@ -127,7 +120,9 @@ class SurveySessionViewSet(
         course_ids = [course.id for course in courses]
         course_professor_grades = {}
         for cp in CourseProfessor.objects.filter(course_id__in=course_ids):
-            course_professor_grades[(cp.course_id, cp.professor_id)] = cp.get_grade_display()
+            course_professor_grades[(cp.course_id, cp.professor_id)] = (
+                cp.get_grade_display()
+            )
 
         courses_data = []
         for course in courses:
@@ -143,8 +138,7 @@ class SurveySessionViewSet(
             for professor in course.professor.all().order_by('full_name'):
                 # Get grade from CourseProfessor, fallback to Professor's grade
                 grade = course_professor_grades.get(
-                    (course.id, professor.id),
-                    professor.get_grade_display()
+                    (course.id, professor.id), professor.get_grade_display()
                 )
                 professor_name = f"{grade} {professor.full_name}".strip()
 
@@ -510,7 +504,9 @@ class DashboardViewSet(viewsets.GenericViewSet):
             course_id__in=[p[0] for p in course_professor_pairs],
             professor_id__in=[p[1] for p in course_professor_pairs],
         ).select_related('professor'):
-            course_professor_grades[(cp.course_id, cp.professor_id)] = cp.get_grade_display()
+            course_professor_grades[(cp.course_id, cp.professor_id)] = (
+                cp.get_grade_display()
+            )
 
         # Build response data
         data = []
@@ -524,7 +520,7 @@ class DashboardViewSet(viewsets.GenericViewSet):
             # Get grade from CourseProfessor, fallback to Professor's grade
             grade = course_professor_grades.get(
                 (answer.course_id, answer.professor_id),
-                answer.professor.get_grade_display() if answer.professor else ''
+                answer.professor.get_grade_display() if answer.professor else '',
             )
             professor_name = (
                 f"{grade} {answer.professor.full_name}".strip()

@@ -11,6 +11,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='show',
             name='reservation_hash',
-            field=models.CharField(blank=True, default=None, max_length=64, null=True, unique=True),
+            field=models.CharField(
+                blank=True, default=None, max_length=64, null=True, unique=True
+            ),
         ),
     ]

@@ -4,7 +4,6 @@ from hita_evaluation.models import (
     Course,
     SurveyQuestion,
     Department,
-    QuestionType,
     Regulation,
 )
 
@@ -45,9 +44,9 @@ class CourseListSerializer(serializers.ModelSerializer):
         return obj.subject.credit_hours if obj.subject else None
 
     def get_professor_name(self, obj):
-        course_professors = (
-            obj.courseprofessor_set.select_related('professor').order_by('professor__full_name')
-        )
+        course_professors = obj.courseprofessor_set.select_related(
+            'professor'
+        ).order_by('professor__full_name')
         if not course_professors:
             return None
         display_parts = []

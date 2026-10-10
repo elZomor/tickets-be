@@ -32,7 +32,14 @@ class CriticAdmin(admin.ModelAdmin):
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'critic', 'status', 'is_hidden', 'published_at')
+    list_display = (
+        'title',
+        'category',
+        'critic',
+        'status',
+        'is_hidden',
+        'published_at',
+    )
     list_filter = ('status', 'category', 'is_hidden')
     prepopulated_fields = {'slug': ('title',)}
 
@@ -50,7 +57,14 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
-    list_display = ('id', 'reporter', 'content_type', 'object_id', 'created_at', 'reviewed_by')
+    list_display = (
+        'id',
+        'reporter',
+        'content_type',
+        'object_id',
+        'created_at',
+        'reviewed_by',
+    )
     list_filter = ('content_type',)
     readonly_fields = ('created_at',)
 

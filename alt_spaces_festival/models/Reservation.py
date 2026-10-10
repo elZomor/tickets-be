@@ -3,7 +3,12 @@ from django.db import models
 from django.db.models import Q
 
 RESERVABLE_ROWS = {
-    'G': 22, 'H': 22, 'I': 24, 'J': 24, 'K': 26, 'L': 22,
+    'G': 22,
+    'H': 22,
+    'I': 24,
+    'J': 24,
+    'K': 26,
+    'L': 22,
 }
 
 

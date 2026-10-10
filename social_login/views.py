@@ -1,4 +1,3 @@
-import jwt
 from django.contrib.auth.models import User
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -194,14 +193,10 @@ class EmailSignup(viewsets.GenericViewSet):
             user = User.objects.filter(username__iexact=identifier).first()
 
         if not user or not user.check_password(password):
-            return get_bad_request_response(
-                data={'detail': 'Invalid credentials'}
-            )
+            return get_bad_request_response(data={'detail': 'Invalid credentials'})
 
         if not user.is_active:
-            return get_bad_request_response(
-                data={'detail': 'Account is not active'}
-            )
+            return get_bad_request_response(data={'detail': 'Account is not active'})
 
         refresh = RefreshToken.for_user(user)
         return Response(

@@ -9,7 +9,9 @@ class AltSpacesFestival(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     extra_details = models.JSONField(null=True, blank=True)
-    logo = models.FileField(upload_to=upload_to_alt_spaces_festival, null=True, blank=True)
+    logo = models.FileField(
+        upload_to=upload_to_alt_spaces_festival, null=True, blank=True
+    )
     organizer = models.CharField(max_length=100, null=True, blank=True)
     jury_list = models.JSONField(null=True, blank=True)
     awards = models.JSONField(null=True, blank=True)

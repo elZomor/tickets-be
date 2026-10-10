@@ -40,7 +40,9 @@ class ShowAdmin(admin.ModelAdmin):
     def reservation_link(self, obj):
         if not obj.pk or not obj.reservation_hash:
             return '—'
-        url = f'{ALT_SPACES_FESTIVAL_FE_URL}/shows/{obj.pk}?token={obj.reservation_hash}'
+        url = (
+            f'{ALT_SPACES_FESTIVAL_FE_URL}/shows/{obj.pk}?token={obj.reservation_hash}'
+        )
         return format_html('<a href="{}" target="_blank">{}</a>', url, url)
 
     reservation_link.short_description = 'Reservation Link'

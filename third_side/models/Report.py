@@ -6,7 +6,9 @@ from django.db import models
 
 class Report(models.Model):
     reporter = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='third_side_reports'
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='third_side_reports',
     )
     content_type = models.ForeignKey(to=ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()

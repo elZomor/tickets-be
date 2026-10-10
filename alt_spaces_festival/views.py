@@ -113,9 +113,9 @@ class ShowViewSet(
         if not show:
             return get_not_found_response(message='NO_SHOW')
         taken = list(
-            Reservation.objects
-            .filter(show=show, seat_number__isnull=False)
-            .values_list('seat_number', flat=True)
+            Reservation.objects.filter(
+                show=show, seat_number__isnull=False
+            ).values_list('seat_number', flat=True)
         )
         return get_successful_response(data={'taken': taken})
 
@@ -173,13 +173,17 @@ class ShowViewSet(
                 if not selected_reservation_status:
                     return get_successful_response(message='NO_SEATS')
 
-                is_waiting_list = selected_reservation_status == ReservationStatus.WAITING_LIST
+                is_waiting_list = (
+                    selected_reservation_status == ReservationStatus.WAITING_LIST
+                )
                 seat_number = ''
                 if not is_waiting_list:
                     seat_number = request.data.get('seat_number', '').strip().upper()
                     if not is_valid_seat(seat_number):
                         return get_bad_request_response(message='INVALID_SEAT')
-                    if Reservation.objects.filter(show=selected_show, seat_number=seat_number).exists():
+                    if Reservation.objects.filter(
+                        show=selected_show, seat_number=seat_number
+                    ).exists():
                         return get_bad_request_response(message='SEAT_TAKEN')
 
                 Show.objects.filter(pk=selected_show.pk).update(
@@ -188,7 +192,9 @@ class ShowViewSet(
                 selected_show.refresh_from_db(fields=['reserved_seats'])
 
                 if is_waiting_list:
-                    seat_number = str(selected_show.reserved_seats - selected_show.allowed_seats)
+                    seat_number = str(
+                        selected_show.reserved_seats - selected_show.allowed_seats
+                    )
 
                 user_name = request.user.get_full_name() or request.user.username
                 reservation = Reservation.objects.create(
@@ -288,8 +294,7 @@ class UserReservationsView(generics.ListAPIView):
 
     def get_queryset(self):
         return (
-            Reservation.objects
-            .filter(user=self.request.user)
+            Reservation.objects.filter(user=self.request.user)
             .select_related('show', 'show__festival')
             .order_by('-created_at')
         )

@@ -75,7 +75,9 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class ReportSerializer(serializers.ModelSerializer):
     reporter = serializers.PrimaryKeyRelatedField(read_only=True)
-    content_type = serializers.ChoiceField(choices=['article', 'comment'], write_only=True)
+    content_type = serializers.ChoiceField(
+        choices=['article', 'comment'], write_only=True
+    )
     target_type = serializers.SerializerMethodField()
 
     class Meta:
