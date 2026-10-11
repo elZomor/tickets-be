@@ -177,6 +177,10 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 PAYLOAD_CMS_WEBHOOK_SECRET = env.str('PAYLOAD_CMS_WEBHOOK_SECRET')
+# Django -> Payload direction: create the article in Payload via its REST
+# API when it reaches READY_FOR_EDITING (see services/payload_sync.py).
+PAYLOAD_API_URL = env.str('PAYLOAD_API_URL', default='')
+PAYLOAD_API_KEY = env.str('PAYLOAD_API_KEY', default='')
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'config.pagination.CustomPagination',
