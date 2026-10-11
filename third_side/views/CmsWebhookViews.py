@@ -28,6 +28,17 @@ class CmsWebhookView(APIView):
         if operation == 'delete':
             SyncedArticle.objects.filter(payload_id=doc.get('id')).delete()
         else:
+            # Payload fires this webhook once per save, and concurrent saves
+            # (e.g. saving one locale right after another) can have their
+            # requests arrive out of order. Drop any delivery that is not
+            # newer than what we already have, so a stale request can't
+            # clobber a locale's content with an older webhook's payload.
+            existing = SyncedArticle.objects.filter(payload_id=doc.get('id')).first()
+            incoming_updated_at = doc.get('updatedAt')
+            if existing and incoming_updated_at and existing.data.get('updatedAt'):
+                if incoming_updated_at <= existing.data.get('updatedAt'):
+                    return Response({'ok': True, 'skipped': 'stale'}, status=200)
+
             SyncedArticle.objects.update_or_create(
                 payload_id=doc.get('id'), defaults={'data': doc}
             )
