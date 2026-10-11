@@ -71,7 +71,7 @@ class ReportAdmin(admin.ModelAdmin):
 
 @admin.register(SyncedArticle)
 class SyncedArticleAdmin(admin.ModelAdmin):
-    list_display = ('payload_id', 'updated_at')
+    list_display = ('payload_id', 'article', 'updated_at')
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
     }
