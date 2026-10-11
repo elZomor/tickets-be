@@ -14,6 +14,51 @@ def _payload_headers():
     return {'Authorization': f'users API-Key {settings.PAYLOAD_API_KEY}'}
 
 
+def _text_node(text):
+    return {
+        'mode': 'normal',
+        'text': text,
+        'type': 'text',
+        'style': '',
+        'detail': 0,
+        'format': 0,
+        'version': 1,
+    }
+
+
+def _paragraph_node(text):
+    return {
+        'type': 'paragraph',
+        'format': '',
+        'indent': 0,
+        'version': 1,
+        'children': [_text_node(text)] if text else [],
+        'direction': None,
+        'textStyle': '',
+        'textFormat': 0,
+    }
+
+
+def text_to_lexical(text):
+    """Wrap a plain-text Article.content into Payload's Lexical richText JSON.
+
+    One paragraph per non-empty line, matching the shape Payload's editor
+    itself produces (see an existing synced article's data.content for the
+    full node vocabulary — this only needs the plain-paragraph subset).
+    """
+    lines = (text or '').splitlines() or ['']
+    return {
+        'root': {
+            'type': 'root',
+            'format': '',
+            'indent': 0,
+            'version': 1,
+            'children': [_paragraph_node(line) for line in lines],
+            'direction': None,
+        }
+    }
+
+
 def create_payload_article(article):
     """Create the article in Payload and return its created doc."""
     resp = requests.post(
@@ -21,7 +66,7 @@ def create_payload_article(article):
         json={
             'title': article.title,
             'slug': article.slug,
-            'content': article.content,
+            'content': text_to_lexical(article.content),
             'status': PAYLOAD_STATUS_READY_FOR_REVIEW,
         },
         headers=_payload_headers(),
