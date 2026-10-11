@@ -3,6 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 
 from third_side.models import Article, Role
+from third_side.models.Article import ArticleStatus
 from third_side.permissions import IsEditor
 from third_side.serializers import ArticleSerializer
 
@@ -22,7 +23,7 @@ class ArticleViewSet(
         profile = getattr(self.request.user, 'third_side_profile', None)
         if profile and profile.role == Role.EDITOR:
             return queryset
-        return queryset.filter(is_hidden=False)
+        return queryset.filter(is_hidden=False, status=ArticleStatus.PUBLISHED)
 
     def get_permissions(self):
         if self.request.method == 'GET':

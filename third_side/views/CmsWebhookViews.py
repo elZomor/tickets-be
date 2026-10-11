@@ -69,7 +69,10 @@ class SyncedArticleViewSet(
     mixins.RetrieveModelMixin,
     GenericViewSet,
 ):
-    queryset = SyncedArticle.objects.all()
+    # Public endpoint: only show a CMS article once its linked Article has
+    # actually been published (covers both unlinked legacy rows and ones
+    # still mid-review).
+    queryset = SyncedArticle.objects.filter(article__status=ArticleStatus.PUBLISHED)
     serializer_class = SyncedArticleSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
