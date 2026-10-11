@@ -31,7 +31,7 @@ class Article(models.Model):
     critic = models.ForeignKey(
         to=Critic, on_delete=models.PROTECT, related_name='articles'
     )
-    content = models.JSONField(null=True, blank=True)
+    content = models.TextField(null=True, blank=True)
     status = models.CharField(
         max_length=24, choices=ArticleStatus.choices, default=ArticleStatus.DRAFT
     )
