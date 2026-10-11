@@ -52,7 +52,9 @@ class CmsWebhookView(APIView):
                 payload_id=doc.get('id'), defaults={'data': doc}
             )
 
-            new_article_status = _PAYLOAD_STATUS_TO_ARTICLE_STATUS.get(doc.get('status'))
+            new_article_status = _PAYLOAD_STATUS_TO_ARTICLE_STATUS.get(
+                doc.get('status')
+            )
             if new_article_status and synced.article_id:
                 article = synced.article
                 if article.status != new_article_status:
