@@ -1,11 +1,14 @@
 import hmac
 
 from django.conf import settings
+from rest_framework import mixins
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 
 from third_side.models import SyncedArticle
+from third_side.serializers import SyncedArticleSerializer
 
 
 class CmsWebhookView(APIView):
@@ -30,3 +33,15 @@ class CmsWebhookView(APIView):
             )
 
         return Response({'ok': True}, status=200)
+
+
+class SyncedArticleViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    GenericViewSet,
+):
+    queryset = SyncedArticle.objects.all()
+    serializer_class = SyncedArticleSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    lookup_field = 'payload_id'

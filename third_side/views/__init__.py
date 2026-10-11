@@ -5,4 +5,4 @@ from .RatingViews import RatingViewSet  # noqa:F401
 from .CommentViews import CommentViewSet  # noqa:F401
 from .ReportViews import ReportViewSet  # noqa:F401
 from .ProfileViews import ProfileMeView  # noqa:F401
-from .CmsWebhookViews import CmsWebhookView  # noqa:F401
+from .CmsWebhookViews import CmsWebhookView, SyncedArticleViewSet  # noqa:F401
