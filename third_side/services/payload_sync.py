@@ -42,18 +42,18 @@ def _paragraph_node(text):
 def text_to_lexical(text):
     """Wrap a plain-text Article.content into Payload's Lexical richText JSON.
 
-    One paragraph per non-empty line, matching the shape Payload's editor
-    itself produces (see an existing synced article's data.content for the
-    full node vocabulary — this only needs the plain-paragraph subset).
+    A single paragraph holding the whole string, matching the shape
+    Payload's editor itself produces (see an existing synced article's
+    data.content for the full node vocabulary — this only needs the
+    plain-paragraph subset).
     """
-    lines = (text or '').splitlines() or ['']
     return {
         'root': {
             'type': 'root',
             'format': '',
             'indent': 0,
             'version': 1,
-            'children': [_paragraph_node(line) for line in lines],
+            'children': [_paragraph_node(text or '')],
             'direction': None,
         }
     }
