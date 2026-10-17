@@ -50,7 +50,10 @@ class ArticleViewSet(
         queryset = (
             Article.objects.select_related('category', 'critic')
             .prefetch_related('translations', 'tags')
-            .annotate(rating_avg=Avg('ratings__value'), rating_count=Count('ratings'))
+            .annotate(
+                rating_avg=Avg('ratings__value'),
+                rating_count=Count('ratings', distinct=True),
+            )
             .order_by('-published_at', '-id')
         )
         if not self._is_editor():

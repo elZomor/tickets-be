@@ -87,6 +87,13 @@ class EngagementTests(APITestCase):
         self.assertEqual(self.client.get('/third_side/ratings').status_code, 401)
 
     def test_article_rating_summary(self):
+        from third_side.models import ArticleTranslation
+
+        # Joined translations must not inflate the rating count.
+        for locale in ('ar', 'en'):
+            ArticleTranslation.objects.create(
+                article=self.article, locale=locale, title='t', slug=f't-{locale}'
+            )
         for user, value in ((self.alice, 5), (self.bob, 3)):
             self.login(user)
             self.client.post('/third_side/ratings', {'article': self.article.pk, 'value': value}, format='json')
