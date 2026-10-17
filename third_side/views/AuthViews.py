@@ -1,5 +1,6 @@
 import logging
 import uuid
+from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -17,6 +18,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from config.constants import SEND_EMAIL
 from third_side.models import Profile
 from utils.email_utils import send_email
+
+# The FE serves the reset page at a localized URL segment (accountPaths.ts).
+RESET_SEGMENTS = {'ar': 'كلمة-مرور-جديدة', 'en': 'reset-password', 'ro': 'parola-noua'}
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -102,7 +106,10 @@ class ForgotPasswordView(APIView):
         if user and SEND_EMAIL:
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
-            link = f'{settings.THIRD_SIDE_FE_URL}/{lang}/reset-password?uid={uid}&token={token}'
+            segment = quote(RESET_SEGMENTS[lang])
+            link = (
+                f'{settings.THIRD_SIDE_FE_URL}/{lang}/{segment}?uid={uid}&token={token}'
+            )
             try:
                 send_email(
                     to_email=user.email,

@@ -96,3 +96,26 @@ class AuthFlowTests(APITestCase):
             format='json',
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_forgot_password_link_uses_localized_fe_segment(self):
+        from unittest import mock
+
+        from django.test import override_settings
+
+        User.objects.create_user('u3', 'u3@example.com', 'Old-pass-123')
+        with override_settings(THIRD_SIDE_FE_URL='https://fe.test'), mock.patch(
+            'third_side.views.AuthViews.SEND_EMAIL', True
+        ), mock.patch('third_side.views.AuthViews.send_email') as send:
+            for lang, segment in (
+                ('en', 'reset-password'),
+                ('ro', 'parola-noua'),
+                ('ar', '%D9%83%D9%84%D9%85%D8%A9'),
+            ):
+                self.client.post(
+                    '/third_side/auth/forgot-password',
+                    {'email': 'u3@example.com', 'lang': lang},
+                    format='json',
+                )
+                body = send.call_args.kwargs['body']
+                self.assertIn(f'https://fe.test/{lang}/{segment}', body)
+                self.assertIn('?uid=', body)
