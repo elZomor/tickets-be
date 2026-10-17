@@ -251,3 +251,33 @@ class WebhookTranslationSyncTests(APITestCase):
             slug={'ar': 'عنوان-3'},
         )
         self.assertEqual(doc_no_text, 'ar')
+
+class BackfillCommandTests(APITestCase):
+    def test_backfill_creates_translations_from_stored_docs(self):
+        from django.core.management import call_command
+
+        from third_side.models import SyncedArticle
+
+        category = Category.objects.create(name='C4', slug='c4')
+        critic = Critic.objects.create(name='K4')
+        article = Article.objects.create(
+            title='t', slug='t4', category=category, critic=critic,
+            status=ArticleStatus.PUBLISHED,
+        )
+        SyncedArticle.objects.create(
+            payload_id='13',
+            article=article,
+            data={
+                'id': 13,
+                'title': {'ar': 'عنوان', 'en': 'Title'},
+                'slug': {'ar': 'عنوان-4', 'en': 'title-4'},
+                'content': {'ar': lexical('ar'), 'en': lexical('en')},
+            },
+        )
+        SyncedArticle.objects.create(payload_id='14', data={'id': 14})  # unlinked
+        for _ in range(2):  # idempotent
+            call_command('sync_cms_translations', verbosity=0)
+        self.assertEqual(article.translations.count(), 2)
+        data = self.client.get('/third_side/articles/by-slug/title-4?lang=en').data
+        self.assertEqual(data['body'], lexical('en'))
+        self.assertEqual(data['languages']['missing'], ['ro'])
