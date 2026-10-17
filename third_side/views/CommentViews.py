@@ -17,14 +17,16 @@ class CommentViewSet(
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        queryset = Comment.objects.select_related('user', 'article')
+        queryset = Comment.objects.select_related('user', 'article').order_by(
+            '-created_at', '-id'
+        )
         profile = getattr(self.request.user, 'third_side_profile', None)
         if profile and profile.role == Role.EDITOR:
             return queryset
         return queryset.filter(is_hidden=False)
 
     def get_permissions(self):
-        if self.request.method == 'GET':
+        if getattr(self.request, 'method', None) == 'GET':
             return [AllowAny()]
         return [IsAuthenticated()]
 

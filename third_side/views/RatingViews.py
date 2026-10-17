@@ -14,15 +14,15 @@ class RatingViewSet(
     GenericViewSet,
 ):
     serializer_class = RatingSerializer
-    queryset = Rating.objects.all()
+    queryset = Rating.objects.order_by('-id')
 
     def get_authenticators(self):
-        if self.request.method == 'GET':
+        if getattr(self.request, 'method', None) == 'GET':
             return []
         return super().get_authenticators()
 
     def get_permissions(self):
-        if self.request.method == 'GET':
+        if getattr(self.request, 'method', None) == 'GET':
             return [AllowAny()]
         return [IsAuthenticated()]
 

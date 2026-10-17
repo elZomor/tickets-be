@@ -19,11 +19,11 @@ class CategoryViewSet(
     queryset = Category.objects.all()
 
     def get_authenticators(self):
-        if self.request.method == 'GET':
+        if getattr(self.request, 'method', None) == 'GET':
             return []
         return super().get_authenticators()
 
     def get_permissions(self):
-        if self.request.method == 'GET':
+        if getattr(self.request, 'method', None) == 'GET':
             return [AllowAny()]
         return [IsAuthenticated(), IsEditor()]

@@ -67,6 +67,7 @@ THIRD_PARTY_APPS = [
     'utils_app',
     'django_json_widget',
     'import_export',
+    'drf_spectacular',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -139,10 +140,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# Allow-all stays the default because other festival frontends share this
+# backend; set CORS_ALLOW_ALL_ORIGINS=False and list the exact origins in
+# CORS_EXTRA_ORIGINS (e.g. the Third Side site) to lock it down.
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)
 CORS_ALLOWED_ORIGINS = [
     item if item.startswith(('http')) else f'https://{item}' for item in ALLOWED_HOSTS
-]
+] + env.list('CORS_EXTRA_ORIGINS', default=[])
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     item if item.startswith(('http')) else f'https://{item}' for item in ALLOWED_HOSTS
@@ -188,6 +192,15 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Festival / Third Side API',
+    'DESCRIPTION': 'Backend API. The Third Side magazine contract lives under /third_side/.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'PREPROCESSING_HOOKS': ['third_side.schema.only_third_side'],
 }
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'

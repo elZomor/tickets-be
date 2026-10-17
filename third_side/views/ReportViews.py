@@ -21,7 +21,9 @@ class ReportViewSet(
     GenericViewSet,
 ):
     serializer_class = ReportSerializer
-    queryset = Report.objects.select_related('content_type', 'reporter', 'reviewed_by')
+    queryset = Report.objects.select_related(
+        'content_type', 'reporter', 'reviewed_by'
+    ).order_by('-created_at', '-id')
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):

@@ -16,14 +16,14 @@ class CriticViewSet(
     GenericViewSet,
 ):
     serializer_class = CriticSerializer
-    queryset = Critic.objects.all()
+    queryset = Critic.objects.order_by('name', 'id')
 
     def get_authenticators(self):
-        if self.request.method == 'GET':
+        if getattr(self.request, 'method', None) == 'GET':
             return []
         return super().get_authenticators()
 
     def get_permissions(self):
-        if self.request.method == 'GET':
+        if getattr(self.request, 'method', None) == 'GET':
             return [AllowAny()]
         return [IsAuthenticated(), IsEditor()]

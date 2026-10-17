@@ -72,7 +72,9 @@ class SyncedArticleViewSet(
     # Public endpoint: only show a CMS article once its linked Article has
     # actually been published (covers both unlinked legacy rows and ones
     # still mid-review).
-    queryset = SyncedArticle.objects.filter(article__status=ArticleStatus.PUBLISHED)
+    queryset = SyncedArticle.objects.filter(
+        article__status=ArticleStatus.PUBLISHED
+    ).order_by('-article__published_at', '-id')
     serializer_class = SyncedArticleSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
