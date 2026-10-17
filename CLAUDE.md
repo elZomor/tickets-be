@@ -63,3 +63,16 @@ python manage.py migrate
 
 ### Environment
 Key variables in `.env`: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `ENVIRONMENT` (local/production), database credentials, AWS S3 config, OpenAI API keys, Google/Clerk OAuth credentials.
+
+## Third Side (`third_side` app)
+
+API for the Third Side magazine frontend (`../../third_side_frontend`, see its CLAUDE.md). Mounted at `/third_side/`, no trailing slashes; auth is the shared simplejwt (`/token/`, `/token/refresh/`).
+
+- Localized reads take `?lang=ar|en|ro` (`third_side/i18n.py`: `localize`, `localize_tree`). Localized taxonomy fields are `{ar,en,ro}` JSON maps; articles have `ArticleTranslation` rows (title/slug/Lexical body synced from Payload by the webhook, excerpt/AI flag set here). Django owns article metadata (category, critic, cover, tags); Payload owns title/slug/body per locale (Payload locales: ar, en; `ro` not added yet).
+- Read serializers shaped for the FE: `third_side/read_serializers.py`. Writes still use `serializers.py`.
+- Endpoints: `home`, `nav-groups`, `tags`, `categories`, `category-pages/{slug}`, `articles` (filters `category group tag critic featured search`; `by-slug/{slug}`, `{id}/similar`, `{id}/read`), `comments` (`?article=`, `{id}/like`), `ratings` (own only), `reports` (one per reader per target), `critics` (`by-slug/{slug}`), `about`, `ads/pick` + `ads/{id}/impression|click`, `submissions` + `submissions/mine`, `auth/signup|forgot-password|reset-password`, `profile/me`. Schema: `/third_side/schema` (drf-spectacular).
+- Reader submissions are `Article`s in `SUBMITTED`; the reader sees pending/published/rejected (`views/SubmissionViews.py`).
+- Throttle scopes: `third_side_write`, `third_side_read`, `third_side_submit` (env `THIRD_SIDE_*_RATE`). Tests that post repeatedly should `cache.clear()` in `setUp`.
+- Seed from the FE mock JSON: `python manage.py seed_third_side [--mock-dir ../../third_side_frontend/app/lib/mock]`; `tests/test_seed_contract.py` diffs API output against those mocks.
+- Tests: `python manage.py test third_side` (set `ENVIRONMENT=local DEBUG=true ALLOWED_HOSTS=localhost SECRET_KEY=... PAYLOAD_CMS_WEBHOOK_SECRET=...`).
+- Env: `THIRD_SIDE_FE_URL` (reset links), `CORS_ALLOW_ALL_ORIGINS`/`CORS_EXTRA_ORIGINS`, `SEND_EMAIL`.
