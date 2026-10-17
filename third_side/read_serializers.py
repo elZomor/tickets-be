@@ -2,8 +2,8 @@
 
 from rest_framework import serializers
 
-from third_side.i18n import clean_locale, localize
-from third_side.models import Article, Category, NavGroup, Tag
+from third_side.i18n import LOCALES, clean_locale, localize
+from third_side.models import Article, Category, Critic, NavGroup, Tag
 from third_side.services.translations import (
     languages_of,
     pick_locale,
@@ -235,3 +235,41 @@ class ArticleDetailSerializer(ArticleReadSerializer):
     def get_meta_description(self, obj) -> str:
         data = self._shown(obj)[1]
         return data['meta_description'] or data['excerpt']
+
+
+class CriticReadSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    photo = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
+    slugs = serializers.SerializerMethodField()
+    main_category = serializers.SlugRelatedField(slug_field='slug', read_only=True)
+    article_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Critic
+        fields = [
+            'id',
+            'name',
+            'bio',
+            'photo',
+            'slug',
+            'slugs',
+            'main_category',
+            'article_count',
+        ]
+
+    def get_name(self, obj) -> str:
+        return localize(obj.name_i18n, _lang(self), obj.name)
+
+    def get_bio(self, obj) -> str:
+        return localize(obj.bio_i18n, _lang(self), obj.bio or '')
+
+    def get_photo(self, obj) -> str | None:
+        return _media_url(self, obj.photo, obj.photo_url)
+
+    def get_slug(self, obj) -> str:
+        return localize(obj.slug_i18n, _lang(self), str(obj.pk))
+
+    def get_slugs(self, obj) -> dict:
+        return {code: localize(obj.slug_i18n, code, str(obj.pk)) for code in LOCALES}

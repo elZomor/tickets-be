@@ -1,4 +1,6 @@
 import json
+import re
+from datetime import date
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
@@ -6,6 +8,8 @@ from django.utils import timezone
 
 from third_side.i18n import LOCALES
 from third_side.models import (
+    AboutPage,
+    Ad,
     Article,
     ArticleTranslation,
     Category,
@@ -42,9 +46,13 @@ class Command(BaseCommand):
         languages = _load(directory, 'article-languages.json')
 
         self._site(home)
+        writers = _load(directory, 'writers.json')['writers']
         groups = self._groups(home)
         categories = self._categories(home, pages, groups)
         count = self._articles(home, pages, bodies, languages, categories)
+        self._writers(writers, categories)
+        self._about(_load(directory, 'about.json'))
+        self._ads(_load(directory, 'ads.json')['ads'])
         self.stdout.write(
             self.style.SUCCESS(
                 f'Seeded {len(groups)} groups, {len(categories)} categories, '
@@ -181,3 +189,57 @@ class Command(BaseCommand):
             )
             tags.append(tag)
         return tags
+
+    def _writers(self, writers, categories):
+        for raw in writers:
+            critic, _ = Critic.objects.get_or_create(name=raw['name']['en'])
+            critic.name_i18n = raw['name']
+            critic.bio_i18n = raw['bio']
+            critic.bio = raw['bio']['en']
+            critic.slug_i18n = {
+                locale: writer_slug(name) for locale, name in raw['name'].items()
+            }
+            critic.photo_url = raw.get('photo', '')
+            critic.main_category = categories.get(raw['mainCategory'])
+            critic.save()
+        # Every article author gets a localized name/slug even without a profile.
+        for critic in Critic.objects.filter(name_i18n={}):
+            critic.name_i18n = {locale: critic.name for locale in LOCALES}
+            critic.slug_i18n = {locale: writer_slug(critic.name) for locale in LOCALES}
+            critic.save()
+
+    def _about(self, about):
+        page = AboutPage.objects.first() or AboutPage()
+        page.content = {
+            'eyebrow': about['eyebrow'],
+            'title': about['title'],
+            'hero_image': about['heroImage'],
+            'hero_alt': about['heroAlt'],
+            'sections': about['sections'],
+            'gallery': about['gallery'],
+            'values': about['values'],
+        }
+        page.save()
+
+    def _ads(self, ads):
+        for raw in ads:
+            Ad.objects.update_or_create(
+                name=raw['name'],
+                defaults={
+                    'type': raw['type'],
+                    'url': raw['url'],
+                    'internal': raw['internal'],
+                    'locales': raw['locales'],
+                    'starts_at': date.fromisoformat(raw['startsAt']),
+                    'ends_at': date.fromisoformat(raw['endsAt']),
+                    'weight': raw['weight'],
+                    'alt': raw['alt'],
+                    'images': raw['images'],
+                },
+            )
+
+
+def writer_slug(name):
+    """Same rule as the frontend's writerSlug: lower-case, drop punctuation, hyphenate."""
+    cleaned = re.sub(r'[^\w\s-]', '', name.strip().lower())
+    return re.sub(r'\s+', '-', cleaned)

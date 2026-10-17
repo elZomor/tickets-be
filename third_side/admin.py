@@ -3,6 +3,8 @@ from django.db import models
 from django_json_widget.widgets import JSONEditorWidget
 
 from third_side.models import (
+    AboutPage,
+    Ad,
     Article,
     ArticleTranslation,
     Category,
@@ -51,7 +53,7 @@ class CategoryAdmin(JsonFieldsAdmin):
 
 
 @admin.register(Critic)
-class CriticAdmin(admin.ModelAdmin):
+class CriticAdmin(JsonFieldsAdmin):
     list_display = ('name',)
 
 
@@ -112,3 +114,24 @@ class SiteSettingsAdmin(JsonFieldsAdmin):
 @admin.register(CommentLike)
 class CommentLikeAdmin(admin.ModelAdmin):
     list_display = ('user', 'comment', 'created_at')
+
+
+@admin.register(AboutPage)
+class AboutPageAdmin(JsonFieldsAdmin):
+    list_display = ('__str__',)
+
+
+@admin.register(Ad)
+class AdAdmin(JsonFieldsAdmin):
+    list_display = (
+        'name',
+        'type',
+        'is_active',
+        'starts_at',
+        'ends_at',
+        'weight',
+        'impressions',
+        'clicks',
+    )
+    list_filter = ('type', 'is_active')
+    readonly_fields = ('impressions', 'clicks')

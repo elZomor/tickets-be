@@ -2,6 +2,10 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from third_side.views import (
+    AboutView,
+    AdClickView,
+    AdImpressionView,
+    AdPickView,
     ArticleViewSet,
     CategoryViewSet,
     CategoryPageView,
@@ -36,6 +40,10 @@ urlpatterns = [
     path('auth/forgot-password', ForgotPasswordView.as_view(), name='auth-forgot'),
     path('auth/reset-password', ResetPasswordView.as_view(), name='auth-reset'),
     path('home', HomeView.as_view(), name='home'),
+    path('about', AboutView.as_view(), name='about'),
+    path('ads/pick', AdPickView.as_view(), name='ad-pick'),
+    path('ads/<int:pk>/impression', AdImpressionView.as_view(), name='ad-impression'),
+    path('ads/<int:pk>/click', AdClickView.as_view(), name='ad-click'),
     path('category-pages/<str:slug>', CategoryPageView.as_view(), name='category-page'),
     path('profile/me', ProfileMeView.as_view(), name='profile-me'),
     # Must come before router.urls — otherwise the router's `cms-articles/<payload_id>`

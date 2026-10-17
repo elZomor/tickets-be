@@ -1,0 +1,105 @@
+import random
+from datetime import date
+
+from django.db.models import F
+from django.http import Http404
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from third_side.i18n import clean_locale, localize, localize_tree
+from third_side.models import AboutPage, Ad
+
+AD_SIZES = ('tall', 'rect')
+
+
+class AboutView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    serializer_class = None
+
+    def get(self, request):
+        page = AboutPage.load()
+        if not page.content:
+            raise Http404
+        return Response(
+            localize_tree(page.content, clean_locale(request.query_params.get('lang')))
+        )
+
+
+def _active_ads(lang, today):
+    return [
+        ad
+        for ad in Ad.objects.filter(
+            is_active=True, starts_at__lte=today, ends_at__gte=today
+        )
+        if lang in ad.locales
+    ]
+
+
+class AdPickView(APIView):
+    """One weighted-random active ad for a locale and size, or 204.
+
+    ?lang= ?size=tall|rect ?exclude=1,2 (avoid repeating an ad on one page).
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    serializer_class = None
+
+    def get(self, request):
+        lang = clean_locale(request.query_params.get('lang'))
+        size = request.query_params.get('size')
+        if size not in AD_SIZES:
+            return Response({'size': 'must be tall or rect'}, status=400)
+        exclude = {
+            int(part)
+            for part in request.query_params.get('exclude', '').split(',')
+            if part.strip().isdigit()
+        }
+        active = _active_ads(lang, date.today())
+        pool = [ad for ad in active if ad.pk not in exclude]
+        candidates = pool or active
+        weighted = [ad for ad in candidates if ad.weight > 0]
+        if not weighted:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        ad = random.choices(weighted, weights=[a.weight for a in weighted])[0]
+        image = (ad.images.get(lang) or {}).get(size) or ''
+        return Response(
+            {
+                'id': ad.pk,
+                'type': ad.type,
+                'name': ad.name,
+                'url': ad.url,
+                'internal': ad.internal,
+                'image': image,
+                'alt': localize(ad.alt, lang),
+            }
+        )
+
+
+class AdEventView(APIView):
+    """Public first-party counters: POST ads/<id>/impression|click."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    serializer_class = None
+    throttle_scope = 'third_side_read'
+    field = 'impressions'
+
+    def post(self, request, pk):
+        updated = Ad.objects.filter(pk=pk, is_active=True).update(
+            **{self.field: F(self.field) + 1}
+        )
+        if not updated:
+            raise Http404
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdImpressionView(AdEventView):
+    field = 'impressions'
+
+
+class AdClickView(AdEventView):
+    field = 'clicks'

@@ -7,6 +7,8 @@ from pathlib import Path
 from django.core.management import call_command
 from rest_framework.test import APITestCase
 
+from third_side.models import Ad
+
 MOCK_DIR = Path(__file__).resolve().parents[4] / 'third_side_frontend/app/lib/mock'
 
 
@@ -99,3 +101,22 @@ class SeedContractTests(APITestCase):
                 set(entry['ai']) - set(entry.get('missing', [])),
                 key,
             )
+
+    def test_writers_about_ads_match_mock(self):
+        writers = json.loads((MOCK_DIR / 'writers.json').read_text(encoding='utf-8'))['writers']
+        about = json.loads((MOCK_DIR / 'about.json').read_text(encoding='utf-8'))
+        ads = json.loads((MOCK_DIR / 'ads.json').read_text(encoding='utf-8'))['ads']
+        listed = self.client.get('/third_side/critics?lang=en&page_size=100').data['results']
+        for raw in writers:
+            found = next(c for c in listed if c['name'] == raw['name']['en'])
+            self.assertEqual(found['bio'], raw['bio']['en'])
+            self.assertEqual(found['main_category'], raw['mainCategory'])
+            self.assertEqual(found['photo'], raw.get('photo'))
+            for locale in ('ar', 'en', 'ro'):
+                by_slug = self.client.get(f"/third_side/critics/by-slug/{found['slugs'][locale]}?lang={locale}")
+                self.assertEqual(by_slug.data['name'], raw['name'][locale])
+        data = self.client.get('/third_side/about?lang=ro').data
+        self.assertEqual(data['title'], about['title']['ro'])
+        self.assertEqual(len(data['sections']), len(about['sections']))
+        self.assertEqual([v['id'] for v in data['values']], [v['id'] for v in about['values']])
+        self.assertEqual(Ad.objects.count(), len(ads))
