@@ -152,3 +152,44 @@ class WebhookTranslationSyncTests(APITestCase):
         self.assertEqual(set(rows), {'ar', 'en'})
         self.assertEqual(rows['en'].slug, 'title')
         self.assertEqual(rows['en'].content, lexical('en'))
+
+
+    def test_webhook_copies_ai_flag_and_keeps_it_when_absent(self):
+        from third_side.models import SyncedArticle
+
+        category = Category.objects.create(name='C2', slug='c2')
+        critic = Critic.objects.create(name='K2')
+        article = Article.objects.create(
+            title='t', slug='t2', category=category, critic=critic
+        )
+        SyncedArticle.objects.create(payload_id='11', data={}, article=article)
+
+        def push(updated_at, **extra):
+            doc = {
+                'id': 11,
+                'updatedAt': updated_at,
+                'title': {'ar': 'عنوان', 'en': 'Title'},
+                'slug': {'ar': 'عنوان-2', 'en': 'title-2'},
+                'content': {'ar': lexical('ar'), 'en': lexical('en')},
+                **extra,
+            }
+            return self.client.post(
+                '/third_side/cms-articles/webhook',
+                {'operation': 'update', 'doc': doc},
+                format='json',
+                HTTP_X_WEBHOOK_SECRET='s3cret',
+            )
+
+        def flags():
+            return {
+                t.locale: t.is_ai_generated for t in article.translations.all()
+            }
+
+        push('2026-10-01T00:00:00Z', aiGenerated={'ar': False, 'en': True})
+        self.assertEqual(flags(), {'ar': False, 'en': True})
+        # An older Payload doc (no field) must not clear the flag.
+        push('2026-10-02T00:00:00Z')
+        self.assertEqual(flags(), {'ar': False, 'en': True})
+        # A human review unticks it.
+        push('2026-10-03T00:00:00Z', aiGenerated={'ar': False, 'en': False})
+        self.assertEqual(flags(), {'ar': False, 'en': False})
