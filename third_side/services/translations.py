@@ -14,22 +14,28 @@ def sync_translations(article, doc):
     titles = doc.get('title') or {}
     slugs = doc.get('slug') or {}
     contents = doc.get('content') or {}
+    # Per-locale "machine-translated" tick from Payload. An older doc without
+    # the field leaves the Django-side flag untouched.
+    ai_flags = doc.get('aiGenerated')
+    if not isinstance(ai_flags, dict):
+        ai_flags = {}
     if not all(isinstance(m, dict) for m in (titles, slugs, contents)):
         return
     for locale in LOCALES:
         title, slug = titles.get(locale), slugs.get(locale)
         if not title or not slug:
             continue
+        defaults = {
+            'title': title,
+            'slug': slug,
+            'content': contents.get(locale),
+        }
+        if locale in ai_flags:
+            defaults['is_ai_generated'] = bool(ai_flags[locale])
         try:
             with transaction.atomic():
                 ArticleTranslation.objects.update_or_create(
-                    article=article,
-                    locale=locale,
-                    defaults={
-                        'title': title,
-                        'slug': slug,
-                        'content': contents.get(locale),
-                    },
+                    article=article, locale=locale, defaults=defaults
                 )
         except IntegrityError:
             logger.warning(
