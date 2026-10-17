@@ -3,7 +3,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from third_side.models import Rating, Role
+from third_side.auth import ThirdSideJWTAuthentication
+from third_side.models import Rating
+from third_side.permissions import is_editor
 from third_side.serializers import RatingSerializer
 
 
@@ -19,13 +21,13 @@ class RatingViewSet(
     """
 
     serializer_class = RatingSerializer
+    authentication_classes = [ThirdSideJWTAuthentication]
     permission_classes = [IsAuthenticated]
     throttle_scope = 'third_side_write'
 
     def get_queryset(self):
         queryset = Rating.objects.order_by('-id')
-        profile = getattr(self.request.user, 'third_side_profile', None)
-        if not (profile and profile.role == Role.EDITOR):
+        if not (is_editor(self.request.user)):
             queryset = queryset.filter(user=self.request.user)
         if self.request.query_params.get('article'):
             queryset = queryset.filter(article_id=self.request.query_params['article'])

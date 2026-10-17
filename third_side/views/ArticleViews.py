@@ -6,9 +6,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from third_side.models import Article, Role
+from third_side.auth import ThirdSideJWTAuthentication
+from third_side.models import Article
 from third_side.models.Article import ArticleStatus
-from third_side.permissions import IsEditor
+from third_side.permissions import IsEditor, is_editor
 from third_side.read_serializers import (
     ArticleDetailSerializer,
     ArticleReadSerializer,
@@ -30,6 +31,8 @@ class ArticleViewSet(
     ?featured=true ?search=<text>. Editors write with the plain serializer.
     """
 
+    authentication_classes = [ThirdSideJWTAuthentication]
+
     @property
     def throttle_scope(self):
         # Only the public counter is throttled; reads of content are not.
@@ -43,8 +46,7 @@ class ArticleViewSet(
         return ArticleReadSerializer
 
     def _is_editor(self):
-        profile = getattr(self.request.user, 'third_side_profile', None)
-        return bool(profile and profile.role == Role.EDITOR)
+        return bool(is_editor(self.request.user))
 
     def get_queryset(self):
         queryset = (

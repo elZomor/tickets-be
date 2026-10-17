@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Critic
 from third_side.models.Article import ArticleStatus
 from third_side.permissions import IsEditor
@@ -23,6 +24,8 @@ class CriticViewSet(
 ):
     """Writers. Public reads are localized with ?lang=; their articles are
     GET /articles?critic=<id>."""
+
+    authentication_classes = [ThirdSideJWTAuthentication]
 
     def get_serializer_class(self):
         if getattr(self.request, 'method', None) == 'GET':

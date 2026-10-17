@@ -1,10 +1,9 @@
-from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 
-from third_side.models import Article, Category, Comment, Critic
+from third_side.models import Article, Category, Comment, Critic, ThirdSideUser
 from third_side.models.Article import ArticleStatus
 
-User = get_user_model()
+User = ThirdSideUser
 
 
 class EngagementTests(APITestCase):
@@ -20,8 +19,8 @@ class EngagementTests(APITestCase):
             title='o', slug='o', category=category, critic=critic,
             status=ArticleStatus.PUBLISHED,
         )
-        cls.alice = User.objects.create_user('alice', 'alice@example.com', 'pw-12345678', first_name='Alice')
-        cls.bob = User.objects.create_user('bob', 'bob@example.com', 'pw-12345678')
+        cls.alice = User.objects.create_user('alice@example.com', 'pw-12345678', name='Alice')
+        cls.bob = User.objects.create_user('bob@example.com', 'pw-12345678')
 
     def login(self, user):
         self.client.force_authenticate(user)

@@ -7,6 +7,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from third_side.auth import ThirdSideJWTAuthentication
 from third_side.i18n import LOCALE_CHOICES, clean_locale, localize, slugify_name
 from third_side.models import Article, Category, Critic
 from third_side.models.Article import ArticleStatus
@@ -99,7 +100,7 @@ def _writer_for(user):
     critic = Critic.objects.filter(user=user).first()
     if critic:
         return critic
-    name = user.get_full_name().strip() or user.first_name or user.email.split('@')[0]
+    name = user.display_name
     critic = Critic.objects.create(user=user, name=name)
     base = slugify_name(name) or 'writer'
     critic.name_i18n = {code: name for code, _ in LOCALE_CHOICES}
@@ -111,6 +112,7 @@ def _writer_for(user):
 class SubmissionsView(GenericAPIView):
     """POST: send an article for review. GET: the signed-in reader's own."""
 
+    authentication_classes = [ThirdSideJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = SubmissionSerializer
 

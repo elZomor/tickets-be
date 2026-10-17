@@ -2,6 +2,7 @@ from rest_framework import mixins
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 
+from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Category, NavGroup, Tag
 from third_side.permissions import IsEditor
 from third_side.read_serializers import (
@@ -20,6 +21,7 @@ class CategoryViewSet(
     mixins.DestroyModelMixin,
     GenericViewSet,
 ):
+    authentication_classes = [ThirdSideJWTAuthentication]
     queryset = Category.objects.select_related('group').order_by('order', 'id')
 
     def get_serializer_class(self):

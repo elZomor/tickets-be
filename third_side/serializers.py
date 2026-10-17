@@ -5,10 +5,10 @@ from third_side.models import (
     Category,
     Comment,
     Critic,
-    Profile,
     Rating,
     Report,
     SyncedArticle,
+    ThirdSideUser,
 )
 
 
@@ -100,10 +100,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_author_name(obj) -> str:
-        user = obj.user
-        return (
-            user.get_full_name().strip() or user.first_name or user.email.split('@')[0]
-        )
+        return obj.user.display_name
 
     @staticmethod
     def get_likes_count(obj) -> int:
@@ -149,17 +146,18 @@ class ReportSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    """The signed-in reader: GET /profile/me."""
+
     name = serializers.SerializerMethodField()
-    email = serializers.EmailField(source='user.email', read_only=True)
 
     class Meta:
-        model = Profile
+        model = ThirdSideUser
         fields = ['id', 'name', 'email', 'role']
-        read_only_fields = ['role']
+        read_only_fields = fields
 
-    def get_name(self, obj) -> str:
-        user = obj.user
-        return user.get_full_name().strip() or user.first_name or user.email
+    @staticmethod
+    def get_name(obj) -> str:
+        return obj.display_name
 
 
 class SyncedArticleSerializer(serializers.ModelSerializer):

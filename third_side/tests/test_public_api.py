@@ -1,10 +1,10 @@
-from django.contrib.auth import get_user_model
+from third_side.models import ThirdSideUser
 from rest_framework.test import APITestCase
 
 from third_side.models import Article, Category, Critic
 from third_side.models.Article import ArticleStatus
 
-User = get_user_model()
+User = ThirdSideUser
 
 
 class PublicArticleApiTests(APITestCase):

@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -6,7 +5,7 @@ from django.db import models
 
 class Report(models.Model):
     reporter = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL,
+        to='third_side.ThirdSideUser',
         on_delete=models.CASCADE,
         related_name='third_side_reports',
     )
@@ -16,7 +15,7 @@ class Report(models.Model):
     reason = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     reviewed_by = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL,
+        to='third_side.ThirdSideUser',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

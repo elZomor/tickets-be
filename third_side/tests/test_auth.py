@@ -1,10 +1,11 @@
-from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APITestCase
 
-User = get_user_model()
+from third_side.models import ThirdSideUser
+
+User = ThirdSideUser
 SIGNUP = {'name': 'Sara Ali', 'email': 'Sara@Example.com', 'password': 'S3cure-pass!'}
 
 
@@ -42,8 +43,8 @@ class AuthFlowTests(APITestCase):
     def test_login_with_email_via_token_endpoint(self):
         self.client.post('/third_side/auth/signup', SIGNUP, format='json')
         response = self.client.post(
-            '/token/',
-            {'username': 'sara@example.com', 'password': SIGNUP['password']},
+            '/third_side/auth/login',
+            {'email': 'Sara@example.com', 'password': SIGNUP['password']},
             format='json',
         )
         self.assertEqual(response.status_code, 200)
@@ -52,8 +53,8 @@ class AuthFlowTests(APITestCase):
     def test_login_wrong_password_is_400(self):
         self.client.post('/third_side/auth/signup', SIGNUP, format='json')
         response = self.client.post(
-            '/token/',
-            {'username': 'sara@example.com', 'password': 'nope-nope-nope'},
+            '/third_side/auth/login',
+            {'email': 'sara@example.com', 'password': 'nope-nope-nope'},
             format='json',
         )
         self.assertEqual(response.status_code, 400)
@@ -67,7 +68,7 @@ class AuthFlowTests(APITestCase):
             self.assertEqual(response.data, {'ok': True})
 
     def test_reset_password_with_valid_token(self):
-        user = User.objects.create_user('u1', 'u1@example.com', 'Old-pass-123')
+        user = User.objects.create_user('u1@example.com', 'Old-pass-123')
         payload = {
             'uid': urlsafe_base64_encode(force_bytes(user.pk)),
             'token': default_token_generator.make_token(user),
@@ -85,7 +86,7 @@ class AuthFlowTests(APITestCase):
         self.assertEqual(again.status_code, 400)
 
     def test_reset_password_bad_token(self):
-        user = User.objects.create_user('u2', 'u2@example.com', 'Old-pass-123')
+        user = User.objects.create_user('u2@example.com', 'Old-pass-123')
         response = self.client.post(
             '/third_side/auth/reset-password',
             {
@@ -102,7 +103,7 @@ class AuthFlowTests(APITestCase):
 
         from django.test import override_settings
 
-        User.objects.create_user('u3', 'u3@example.com', 'Old-pass-123')
+        User.objects.create_user('u3@example.com', 'Old-pass-123')
         with override_settings(THIRD_SIDE_FE_URL='https://fe.test'), mock.patch(
             'third_side.views.AuthViews.SEND_EMAIL', True
         ), mock.patch('third_side.views.AuthViews.send_email') as send:
@@ -119,3 +120,55 @@ class AuthFlowTests(APITestCase):
                 body = send.call_args.kwargs['body']
                 self.assertIn(f'https://fe.test/{lang}/{segment}', body)
                 self.assertIn('?uid=', body)
+
+    def test_refresh_rotates_and_rejects_garbage(self):
+        tokens = self.client.post('/third_side/auth/signup', SIGNUP, format='json').data
+        response = self.client.post(
+            '/third_side/auth/refresh', {'refresh': tokens['refresh']}, format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(response.data), {'access', 'refresh'})
+        bad = self.client.post(
+            '/third_side/auth/refresh', {'refresh': 'garbage'}, format='json'
+        )
+        self.assertEqual(bad.status_code, 401)
+        # An access token is not a refresh token.
+        wrong = self.client.post(
+            '/third_side/auth/refresh', {'refresh': tokens['access']}, format='json'
+        )
+        self.assertEqual(wrong.status_code, 401)
+
+    def test_inactive_user_cannot_log_in(self):
+        ThirdSideUser.objects.create_user('off@example.com', 'Pass-1234-xyz', is_active=False)
+        response = self.client.post(
+            '/third_side/auth/login',
+            {'email': 'off@example.com', 'password': 'Pass-1234-xyz'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_realms_are_isolated(self):
+        """A shared django-User token must not open Third Side, nor the reverse."""
+        from django.contrib.auth.models import User as DjangoUser
+        from rest_framework_simplejwt.tokens import RefreshToken
+
+        django_user = DjangoUser.objects.create_user('legacy', 'l@example.com', 'pw-12345678')
+        legacy = str(RefreshToken.for_user(django_user).access_token)
+        response = self.client.get(
+            '/third_side/profile/me', HTTP_AUTHORIZATION=f'Bearer {legacy}'
+        )
+        self.assertEqual(response.status_code, 401)
+
+        ours = self.client.post('/third_side/auth/signup', SIGNUP, format='json').data['access']
+        from rest_framework.test import APIRequestFactory
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        from rest_framework_simplejwt.exceptions import InvalidToken
+
+        request = APIRequestFactory().get('/', HTTP_AUTHORIZATION=f'Bearer {ours}')
+        with self.assertRaises(InvalidToken):
+            JWTAuthentication().authenticate(request)
+
+    def test_signup_name_is_kept_and_email_lowercased(self):
+        self.client.post('/third_side/auth/signup', SIGNUP, format='json')
+        user = ThirdSideUser.objects.get()
+        self.assertEqual((user.name, user.email), ('Sara Ali', 'sara@example.com'))

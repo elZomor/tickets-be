@@ -1,6 +1,5 @@
 import logging
 
-from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
@@ -40,7 +39,7 @@ class Article(models.Model):
     )
     published_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL,
+        to='third_side.ThirdSideUser',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

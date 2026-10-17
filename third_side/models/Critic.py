@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import models
 
 from third_side.utils import upload_to_critic_photo
@@ -9,7 +8,7 @@ class Critic(models.Model):
     bio = models.TextField(null=True, blank=True)
     # The reader account behind a writer profile created on a submission.
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
+        'third_side.ThirdSideUser',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

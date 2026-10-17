@@ -1,4 +1,4 @@
-from .Profile import *  # noqa:F401, F403
+from .ThirdSideUser import *  # noqa:F401, F403
 from .NavGroup import *  # noqa:F401, F403
 from .Tag import *  # noqa:F401, F403
 from .Category import *  # noqa:F401, F403

@@ -11,6 +11,8 @@ from third_side.views import (
     CategoryPageView,
     CmsWebhookView,
     ForgotPasswordView,
+    LoginView,
+    RefreshView,
     HomeView,
     CommentViewSet,
     NavGroupViewSet,
@@ -37,6 +39,8 @@ router.register(r'reports', ReportViewSet, basename='report-view')
 router.register(r'cms-articles', SyncedArticleViewSet, basename='cms-article-view')
 
 urlpatterns = [
+    path('auth/login', LoginView.as_view(), name='auth-login'),
+    path('auth/refresh', RefreshView.as_view(), name='auth-refresh'),
     path('auth/signup', SignupView.as_view(), name='auth-signup'),
     path('auth/forgot-password', ForgotPasswordView.as_view(), name='auth-forgot'),
     path('auth/reset-password', ResetPasswordView.as_view(), name='auth-reset'),

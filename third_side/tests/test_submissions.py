@@ -1,11 +1,10 @@
-from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from rest_framework.test import APITestCase
 
-from third_side.models import Article, Category, Critic, NavGroup
+from third_side.models import Article, Category, Critic, NavGroup, ThirdSideUser
 from third_side.models.Article import ArticleStatus
 
-User = get_user_model()
+User = ThirdSideUser
 BODY = 'x' * 120
 
 
@@ -16,8 +15,8 @@ class SubmissionTests(APITestCase):
         cls.category = Category.objects.create(
             name='Cinema', slug='cinema', group=group, name_i18n={'ar': 'سينما', 'en': 'Cinema'}
         )
-        cls.user = User.objects.create_user('u', 'u@example.com', 'pw-12345678', first_name='Ali')
-        cls.other = User.objects.create_user('o', 'o@example.com', 'pw-12345678')
+        cls.user = User.objects.create_user('u@example.com', 'pw-12345678', name='Ali')
+        cls.other = User.objects.create_user('o@example.com', 'pw-12345678')
 
     def setUp(self):
         cache.clear()  # throttle counters live in the cache

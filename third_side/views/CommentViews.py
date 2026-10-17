@@ -5,7 +5,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from third_side.models import Comment, CommentLike, Role
+from third_side.auth import ThirdSideJWTAuthentication
+from third_side.models import Comment, CommentLike
+from third_side.permissions import is_editor
 from third_side.serializers import CommentSerializer
 
 
@@ -20,6 +22,7 @@ class CommentViewSet(
     """Comments. List filter: ?article=<id>. Newest first."""
 
     serializer_class = CommentSerializer
+    authentication_classes = [ThirdSideJWTAuthentication]
     throttle_scope = 'third_side_write'
 
     def get_queryset(self):
@@ -28,8 +31,7 @@ class CommentViewSet(
             .annotate(likes_total=Count('likes'))
             .order_by('-created_at', '-id')
         )
-        profile = getattr(self.request.user, 'third_side_profile', None)
-        if not (profile and profile.role == Role.EDITOR):
+        if not (is_editor(self.request.user)):
             queryset = queryset.filter(is_hidden=False)
         if self.action == 'list' and self.request.query_params.get('article'):
             queryset = queryset.filter(article_id=self.request.query_params['article'])
@@ -46,8 +48,7 @@ class CommentViewSet(
     def _is_owner_or_editor(self, instance):
         if instance.user_id == self.request.user.id:
             return True
-        profile = getattr(self.request.user, 'third_side_profile', None)
-        return bool(profile and profile.role == Role.EDITOR)
+        return bool(is_editor(self.request.user))
 
     def perform_update(self, serializer):
         if not self._is_owner_or_editor(serializer.instance):

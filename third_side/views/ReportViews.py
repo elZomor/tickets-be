@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Article, Comment, Report
 from third_side.permissions import IsEditor
 from third_side.serializers import ReportSerializer
@@ -21,6 +22,7 @@ class ReportViewSet(
     GenericViewSet,
 ):
     serializer_class = ReportSerializer
+    authentication_classes = [ThirdSideJWTAuthentication]
     queryset = Report.objects.select_related(
         'content_type', 'reporter', 'reviewed_by'
     ).order_by('-created_at', '-id')

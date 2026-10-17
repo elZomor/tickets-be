@@ -1,10 +1,9 @@
-from django.conf import settings
 from django.db import models
 
 
 class CommentLike(models.Model):
     user = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL,
+        to='third_side.ThirdSideUser',
         on_delete=models.CASCADE,
         related_name='third_side_comment_likes',
     )

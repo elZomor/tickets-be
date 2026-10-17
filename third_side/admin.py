@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.db import models
 from django_json_widget.widgets import JSONEditorWidget
@@ -12,12 +13,12 @@ from third_side.models import (
     CommentLike,
     Critic,
     NavGroup,
-    Profile,
     SiteSettings,
     Rating,
     Report,
     SyncedArticle,
     Tag,
+    ThirdSideUser,
 )
 
 
@@ -41,9 +42,32 @@ class ArticleTranslationInline(admin.StackedInline):
     formfield_overrides = {models.JSONField: {'widget': JSONEditorWidget}}
 
 
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'role')
+class ThirdSideUserForm(forms.ModelForm):
+    new_password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput,
+        help_text='Leave blank to keep the current password.',
+    )
+
+    class Meta:
+        model = ThirdSideUser
+        fields = ('email', 'name', 'role', 'is_active', 'new_password')
+
+
+@admin.register(ThirdSideUser)
+class ThirdSideUserAdmin(admin.ModelAdmin):
+    form = ThirdSideUserForm
+    list_display = ('email', 'name', 'role', 'is_active', 'created_at')
+    list_filter = ('role', 'is_active')
+    search_fields = ('email', 'name')
+
+    def save_model(self, request, obj, form, change):
+        password = form.cleaned_data.get('new_password')
+        if password:
+            obj.set_password(password)
+        elif not change:
+            obj.set_unusable_password()
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Category)
