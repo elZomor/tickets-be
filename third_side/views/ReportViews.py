@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Article, Comment, Report
 from third_side.permissions import IsEditor
 from third_side.serializers import ReportSerializer
@@ -21,8 +22,12 @@ class ReportViewSet(
     GenericViewSet,
 ):
     serializer_class = ReportSerializer
-    queryset = Report.objects.select_related('content_type', 'reporter', 'reviewed_by')
+    authentication_classes = [ThirdSideJWTAuthentication]
+    queryset = Report.objects.select_related(
+        'content_type', 'reporter', 'reviewed_by'
+    ).order_by('-created_at', '-id')
     permission_classes = [IsAuthenticated]
+    throttle_scope = 'third_side_write'
 
     def get_permissions(self):
         if self.action in ('list', 'retrieve', 'review'):
@@ -37,15 +42,20 @@ class ReportViewSet(
         object_id = serializer.validated_data['object_id']
         get_object_or_404(target_model, pk=object_id)
 
-        report = Report.objects.create(
+        # One report per reader per target: repeating it is a no-op, so a
+        # single reader cannot push a target past the auto-hide threshold.
+        report, created = Report.objects.get_or_create(
             reporter=request.user,
             content_type=ContentType.objects.get_for_model(target_model),
             object_id=object_id,
-            reason=serializer.validated_data.get('reason', ''),
+            defaults={'reason': serializer.validated_data.get('reason', '')},
         )
 
         response_serializer = self.get_serializer(report)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=['PATCH'])
     def review(self, request, pk=None):

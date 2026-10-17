@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularAPIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from config.views import CustomTokenObtainPairView
@@ -20,6 +21,7 @@ urlpatterns = [
     path('alt_spaces_festival/', include('alt_spaces_festival.urls')),
     path('hita_evaluation/', include('hita_evaluation.urls')),
     path('third_side/', include('third_side.urls')),
+    path('third_side/schema', SpectacularAPIView.as_view(), name='third-side-schema'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

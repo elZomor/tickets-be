@@ -1,9 +1,11 @@
 from rest_framework import mixins, status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Rating
+from third_side.permissions import is_editor
 from third_side.serializers import RatingSerializer
 
 
@@ -13,18 +15,23 @@ class RatingViewSet(
     mixins.DestroyModelMixin,
     GenericViewSet,
 ):
+    """A reader's own ratings. Article averages come with the article payload.
+
+    GET /ratings?article=<id> is the signed-in user's rating(s); editors see all.
+    """
+
     serializer_class = RatingSerializer
-    queryset = Rating.objects.all()
+    authentication_classes = [ThirdSideJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    throttle_scope = 'third_side_write'
 
-    def get_authenticators(self):
-        if self.request.method == 'GET':
-            return []
-        return super().get_authenticators()
-
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+    def get_queryset(self):
+        queryset = Rating.objects.order_by('-id')
+        if not (is_editor(self.request.user)):
+            queryset = queryset.filter(user=self.request.user)
+        if self.request.query_params.get('article'):
+            queryset = queryset.filter(article_id=self.request.query_params['article'])
+        return queryset
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

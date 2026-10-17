@@ -32,6 +32,9 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 REDIS_URL = env.str('REDIS_URL', 'redis://redis:6379/0')
 
+# Third Side site origin, used in password-reset links.
+THIRD_SIDE_FE_URL = env.str('THIRD_SIDE_FE_URL', default='http://localhost:3000')
+
 REPORT_AUTO_HIDE_THRESHOLD = env.int('REPORT_AUTO_HIDE_THRESHOLD', default=5)
 
 DJANGO_APPS = [
@@ -67,6 +70,7 @@ THIRD_PARTY_APPS = [
     'utils_app',
     'django_json_widget',
     'import_export',
+    'drf_spectacular',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -139,10 +143,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# Allow-all stays the default because other festival frontends share this
+# backend; set CORS_ALLOW_ALL_ORIGINS=False and list the exact origins in
+# CORS_EXTRA_ORIGINS (e.g. the Third Side site) to lock it down.
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)
 CORS_ALLOWED_ORIGINS = [
     item if item.startswith(('http')) else f'https://{item}' for item in ALLOWED_HOSTS
-]
+] + env.list('CORS_EXTRA_ORIGINS', default=[])
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     item if item.startswith(('http')) else f'https://{item}' for item in ALLOWED_HOSTS
@@ -188,6 +195,23 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Only views that set `throttle_scope` are limited.
+    'DEFAULT_THROTTLE_CLASSES': ('rest_framework.throttling.ScopedRateThrottle',),
+    'DEFAULT_THROTTLE_RATES': {
+        'third_side_write': env.str('THIRD_SIDE_WRITE_RATE', default='60/min'),
+        'third_side_auth': env.str('THIRD_SIDE_AUTH_RATE', default='30/min'),
+        'third_side_submit': env.str('THIRD_SIDE_SUBMIT_RATE', default='10/hour'),
+        'third_side_read': env.str('THIRD_SIDE_READ_RATE', default='120/min'),
+    },
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Festival / Third Side API',
+    'DESCRIPTION': 'Backend API. The Third Side magazine contract lives under /third_side/.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'PREPROCESSING_HOOKS': ['third_side.schema.only_third_side'],
 }
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'

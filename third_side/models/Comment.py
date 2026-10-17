@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import models
 
 from third_side.models.Article import Article
@@ -6,7 +5,7 @@ from third_side.models.Article import Article
 
 class Comment(models.Model):
     user = models.ForeignKey(
-        to=settings.AUTH_USER_MODEL,
+        to='third_side.ThirdSideUser',
         on_delete=models.CASCADE,
         related_name='third_side_comments',
     )
