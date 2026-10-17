@@ -9,6 +9,31 @@ from third_side.services.payload_sync import text_to_lexical
 logger = logging.getLogger(__name__)
 
 
+def _sync_original_language(article, ticks, titles, slugs):
+    """Set Article.original_language from Payload's per-locale tick.
+
+    Exactly one ticked locale wins. With several ticked, keep the current
+    original if it is among them, else the first in ar/en/ro order. With none
+    ticked (or a doc without the field) the current value stays. A locale with
+    no text yet cannot be the original.
+    """
+    if not isinstance(ticks, dict):
+        return
+    ticked = [
+        locale
+        for locale in LOCALES
+        if ticks.get(locale) and titles.get(locale) and slugs.get(locale)
+    ]
+    if not ticked:
+        return
+    chosen = (
+        article.original_language if article.original_language in ticked else ticked[0]
+    )
+    if chosen != article.original_language:
+        article.original_language = chosen
+        article.save(update_fields=['original_language'])
+
+
 def sync_translations(article, doc):
     """Upsert ArticleTranslation rows from a Payload doc (locale: 'all' maps)."""
     titles = doc.get('title') or {}
@@ -21,6 +46,7 @@ def sync_translations(article, doc):
         ai_flags = {}
     if not all(isinstance(m, dict) for m in (titles, slugs, contents)):
         return
+    _sync_original_language(article, doc.get('isOriginalLanguage'), titles, slugs)
     for locale in LOCALES:
         title, slug = titles.get(locale), slugs.get(locale)
         if not title or not slug:
