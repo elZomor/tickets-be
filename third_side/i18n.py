@@ -1,5 +1,7 @@
 """Locale helpers for the Third Side content (ar is the default and RTL)."""
 
+import re
+
 LOCALES = ('ar', 'en', 'ro')
 DEFAULT_LOCALE = 'ar'
 LOCALE_CHOICES = [(code, code) for code in LOCALES]
@@ -32,3 +34,8 @@ def localize_tree(value, lang):
     if isinstance(value, list):
         return [localize_tree(item, lang) for item in value]
     return value
+
+
+def slugify_name(name):
+    """Lower-case, drop punctuation, hyphenate: the frontend's writerSlug rule."""
+    return re.sub(r'\s+', '-', re.sub(r'[^\w\s-]', '', name.strip().lower()))

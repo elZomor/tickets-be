@@ -21,6 +21,7 @@ from third_side.views import (
     ReportViewSet,
     ResetPasswordView,
     SignupView,
+    SubmissionsView,
     SyncedArticleViewSet,
 )
 
@@ -40,6 +41,8 @@ urlpatterns = [
     path('auth/forgot-password', ForgotPasswordView.as_view(), name='auth-forgot'),
     path('auth/reset-password', ResetPasswordView.as_view(), name='auth-reset'),
     path('home', HomeView.as_view(), name='home'),
+    path('submissions', SubmissionsView.as_view(), name='submissions'),
+    path('submissions/mine', SubmissionsView.as_view(), name='submissions-mine'),
     path('about', AboutView.as_view(), name='about'),
     path('ads/pick', AdPickView.as_view(), name='ad-pick'),
     path('ads/<int:pk>/impression', AdImpressionView.as_view(), name='ad-impression'),

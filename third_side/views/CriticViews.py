@@ -44,6 +44,13 @@ class CriticViewSet(
             .order_by('name', 'id')
         )
 
+    def filter_queryset(self, queryset):
+        # Reader accounts that submitted but have nothing published are not
+        # public writers yet.
+        if self.action in ('list', 'by_slug'):
+            queryset = queryset.filter(Q(user__isnull=True) | Q(article_count__gt=0))
+        return super().filter_queryset(queryset)
+
     def get_authenticators(self):
         if getattr(self.request, 'method', None) == 'GET':
             return []

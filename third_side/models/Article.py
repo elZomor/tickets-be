@@ -21,6 +21,7 @@ class ArticleStatus(models.TextChoices):
     READY_FOR_PUBLISHING = 'READY_FOR_PUBLISHING', 'Ready for Publishing'
     PUBLISHED = 'PUBLISHED', 'Published'
     ARCHIVED = 'ARCHIVED', 'Archived'
+    REJECTED = 'REJECTED', 'Rejected'
     REPORTED = 'REPORTED', 'Reported'
 
 
@@ -55,6 +56,8 @@ class Article(models.Model):
     cover = models.ImageField(upload_to='third_side/covers', null=True, blank=True)
     cover_url = models.CharField(max_length=300, blank=True, default='')
     tags = models.ManyToManyField(Tag, blank=True, related_name='articles')
+    # A reader submission: the author lets us machine-translate it.
+    allow_translation = models.BooleanField(default=True)
     # Highlighted on its category page.
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True)

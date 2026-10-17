@@ -200,6 +200,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': ('rest_framework.throttling.ScopedRateThrottle',),
     'DEFAULT_THROTTLE_RATES': {
         'third_side_write': env.str('THIRD_SIDE_WRITE_RATE', default='60/min'),
+        'third_side_submit': env.str('THIRD_SIDE_SUBMIT_RATE', default='10/hour'),
         'third_side_read': env.str('THIRD_SIDE_READ_RATE', default='120/min'),
     },
 }

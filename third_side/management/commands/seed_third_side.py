@@ -1,12 +1,11 @@
 import json
-import re
 from datetime import date
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
-from third_side.i18n import LOCALES
+from third_side.i18n import LOCALES, slugify_name
 from third_side.models import (
     AboutPage,
     Ad,
@@ -242,7 +241,4 @@ class Command(BaseCommand):
             )
 
 
-def writer_slug(name):
-    """Same rule as the frontend's writerSlug: lower-case, drop punctuation, hyphenate."""
-    cleaned = re.sub(r'[^\w\s-]', '', name.strip().lower())
-    return re.sub(r'\s+', '-', cleaned)
+writer_slug = slugify_name

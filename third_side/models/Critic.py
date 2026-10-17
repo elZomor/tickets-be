@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from third_side.utils import upload_to_critic_photo
@@ -6,6 +7,14 @@ from third_side.utils import upload_to_critic_photo
 class Critic(models.Model):
     name = models.CharField(max_length=150)
     bio = models.TextField(null=True, blank=True)
+    # The reader account behind a writer profile created on a submission.
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='third_side_critic',
+    )
     photo = models.ImageField(upload_to=upload_to_critic_photo, null=True, blank=True)
     photo_url = models.CharField(max_length=300, blank=True, default='')
     # Localized maps {"ar": ..., "en": ..., "ro": ...}; `name`/`bio` are the fallback.
