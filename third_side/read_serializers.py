@@ -144,7 +144,7 @@ class ArticleReadSerializer(serializers.ModelSerializer):
     languages = serializers.SerializerMethodField()
     category_slug = serializers.CharField(source='category.slug', read_only=True)
     category_name = serializers.SerializerMethodField()
-    critic_name = serializers.CharField(source='critic.name', read_only=True)
+    critic_name = serializers.SerializerMethodField()
     cover = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
     rating = serializers.SerializerMethodField()
@@ -207,6 +207,9 @@ class ArticleReadSerializer(serializers.ModelSerializer):
 
     def get_languages(self, obj) -> dict:
         return languages_of(self._translations(obj), obj.original_language)
+
+    def get_critic_name(self, obj) -> str:
+        return localize(obj.critic.name_i18n, _lang(self), obj.critic.name)
 
     def get_category_name(self, obj) -> str:
         return localize(obj.category.name_i18n, _lang(self), obj.category.name)

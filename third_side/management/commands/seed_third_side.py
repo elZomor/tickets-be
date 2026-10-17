@@ -140,6 +140,9 @@ class Command(BaseCommand):
             content = own.get('content', default_body)
             reads = bodies['stats']['bySlug'].get(key, default_stats)['reads']
             critic, _ = Critic.objects.get_or_create(name=raw['author']['en'])
+            critic.name_i18n = raw['author']
+            critic.slug_i18n = {k: writer_slug(v) for k, v in raw['author'].items()}
+            critic.save(update_fields=['name_i18n', 'slug_i18n'])
             article, _ = Article.objects.update_or_create(
                 slug=raw['slug'][original],
                 defaults={
