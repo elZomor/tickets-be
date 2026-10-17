@@ -193,3 +193,61 @@ class WebhookTranslationSyncTests(APITestCase):
         # A human review unticks it.
         push('2026-10-03T00:00:00Z', aiGenerated={'ar': False, 'en': False})
         self.assertEqual(flags(), {'ar': False, 'en': False})
+
+
+    def test_webhook_sets_original_language_from_tick(self):
+        from third_side.models import SyncedArticle
+
+        category = Category.objects.create(name='C3', slug='c3')
+        critic = Critic.objects.create(name='K3')
+        article = Article.objects.create(
+            title='t', slug='t3', category=category, critic=critic
+        )
+        SyncedArticle.objects.create(payload_id='12', data={}, article=article)
+
+        def push(updated_at, **extra):
+            doc = {
+                'id': 12,
+                'updatedAt': updated_at,
+                'title': {'ar': 'عنوان', 'en': 'Title', 'ro': 'Titlu'},
+                'slug': {'ar': 'عنوان-3', 'en': 'title-3', 'ro': 'titlu-3'},
+                'content': {'ar': lexical('ar'), 'en': lexical('en')},
+                **extra,
+            }
+            self.client.post(
+                '/third_side/cms-articles/webhook',
+                {'operation': 'update', 'doc': doc},
+                format='json',
+                HTTP_X_WEBHOOK_SECRET='s3cret',
+            )
+            article.refresh_from_db()
+            return article.original_language
+
+        self.assertEqual(article.original_language, 'ar')
+        self.assertEqual(
+            push('2026-10-01T00:00:00Z', isOriginalLanguage={'en': True}), 'en'
+        )
+        # No field: unchanged.
+        self.assertEqual(push('2026-10-02T00:00:00Z'), 'en')
+        # Nothing ticked: unchanged.
+        self.assertEqual(
+            push('2026-10-03T00:00:00Z', isOriginalLanguage={'ar': False}), 'en'
+        )
+        # Several ticked: keep the current one if still ticked.
+        self.assertEqual(
+            push('2026-10-04T00:00:00Z', isOriginalLanguage={'ar': True, 'en': True}),
+            'en',
+        )
+        # Several ticked and the current one is not among them: first in order.
+        self.assertEqual(
+            push('2026-10-05T00:00:00Z', isOriginalLanguage={'ar': True, 'ro': True}),
+            'ar',
+        )
+        # A language without text cannot be the original.
+        doc_no_text = push(
+            '2026-10-06T00:00:00Z',
+            isOriginalLanguage={'ro': True},
+            title={'ar': 'عنوان'},
+            slug={'ar': 'عنوان-3'},
+        )
+        self.assertEqual(doc_no_text, 'ar')
