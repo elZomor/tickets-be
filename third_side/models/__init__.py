@@ -10,3 +10,4 @@ from .Comment import *  # noqa:F401, F403
 from .Report import *  # noqa:F401, F403
 from .SyncedArticle import *  # noqa:F401, F403
 from .SiteSettings import *  # noqa:F401, F403
+from .CommentLike import *  # noqa:F401, F403

@@ -24,5 +24,13 @@ class Report(models.Model):
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['reporter', 'content_type', 'object_id'],
+                name='uniq_report_per_reporter_target',
+            )
+        ]
+
     def __str__(self):
         return f'Report #{self.id} on {self.content_type}:{self.object_id}'

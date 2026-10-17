@@ -7,6 +7,7 @@ from third_side.models import (
     ArticleTranslation,
     Category,
     Comment,
+    CommentLike,
     Critic,
     NavGroup,
     Profile,
@@ -106,3 +107,8 @@ class SyncedArticleAdmin(admin.ModelAdmin):
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(JsonFieldsAdmin):
     list_display = ('__str__',)
+
+
+@admin.register(CommentLike)
+class CommentLikeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'comment', 'created_at')

@@ -1,8 +1,11 @@
-from rest_framework import mixins
+from django.db.models import Count
+from rest_framework import mixins, status
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from third_side.models import Comment, Role
+from third_side.models import Comment, CommentLike, Role
 from third_side.serializers import CommentSerializer
 
 
@@ -14,16 +17,23 @@ class CommentViewSet(
     mixins.DestroyModelMixin,
     GenericViewSet,
 ):
+    """Comments. List filter: ?article=<id>. Newest first."""
+
     serializer_class = CommentSerializer
+    throttle_scope = 'third_side_write'
 
     def get_queryset(self):
-        queryset = Comment.objects.select_related('user', 'article').order_by(
-            '-created_at', '-id'
+        queryset = (
+            Comment.objects.select_related('user', 'article')
+            .annotate(likes_total=Count('likes'))
+            .order_by('-created_at', '-id')
         )
         profile = getattr(self.request.user, 'third_side_profile', None)
-        if profile and profile.role == Role.EDITOR:
-            return queryset
-        return queryset.filter(is_hidden=False)
+        if not (profile and profile.role == Role.EDITOR):
+            queryset = queryset.filter(is_hidden=False)
+        if self.action == 'list' and self.request.query_params.get('article'):
+            queryset = queryset.filter(article_id=self.request.query_params['article'])
+        return queryset
 
     def get_permissions(self):
         if getattr(self.request, 'method', None) == 'GET':
@@ -48,3 +58,17 @@ class CommentViewSet(
         if not self._is_owner_or_editor(instance):
             self.permission_denied(self.request)
         instance.delete()
+
+    def _respond(self, comment_id, http_status=status.HTTP_200_OK):
+        comment = self.get_queryset().get(pk=comment_id)
+        return Response(self.get_serializer(comment).data, status=http_status)
+
+    @action(detail=True, methods=['post', 'delete'], url_path='like')
+    def like(self, request, pk=None):
+        """POST likes, DELETE unlikes. Both idempotent; returns the comment."""
+        comment = self.get_object()
+        if request.method == 'POST':
+            CommentLike.objects.get_or_create(user=request.user, comment=comment)
+        else:
+            CommentLike.objects.filter(user=request.user, comment=comment).delete()
+        return self._respond(comment.pk)

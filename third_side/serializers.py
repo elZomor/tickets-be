@@ -64,13 +64,61 @@ class RatingSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'article', 'value']
 
 
+COMMENT_MAX_LENGTH = 2000
+
+
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
+    author_name = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+    liked_by_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['id', 'user', 'article', 'text', 'created_at', 'is_hidden']
+        fields = [
+            'id',
+            'user',
+            'author_name',
+            'article',
+            'text',
+            'created_at',
+            'is_hidden',
+            'likes_count',
+            'liked_by_me',
+        ]
         read_only_fields = ['created_at', 'is_hidden']
+
+    def validate_text(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Comment cannot be empty')
+        if len(value) > COMMENT_MAX_LENGTH:
+            raise serializers.ValidationError(
+                f'Comment is limited to {COMMENT_MAX_LENGTH} characters'
+            )
+        return value
+
+    @staticmethod
+    def get_author_name(obj) -> str:
+        user = obj.user
+        return (
+            user.get_full_name().strip() or user.first_name or user.email.split('@')[0]
+        )
+
+    @staticmethod
+    def get_likes_count(obj) -> int:
+        annotated = getattr(obj, 'likes_total', None)
+        return annotated if annotated is not None else obj.likes.count()
+
+    def get_liked_by_me(self, obj) -> bool:
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user or not user.is_authenticated:
+            return False
+        liked = getattr(obj, 'liked_ids', None)
+        if liked is not None:
+            return obj.pk in liked
+        return obj.likes.filter(user=user).exists()
 
 
 class ReportSerializer(serializers.ModelSerializer):

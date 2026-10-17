@@ -196,6 +196,12 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Only views that set `throttle_scope` are limited.
+    'DEFAULT_THROTTLE_CLASSES': ('rest_framework.throttling.ScopedRateThrottle',),
+    'DEFAULT_THROTTLE_RATES': {
+        'third_side_write': env.str('THIRD_SIDE_WRITE_RATE', default='60/min'),
+        'third_side_read': env.str('THIRD_SIDE_READ_RATE', default='120/min'),
+    },
 }
 
 SPECTACULAR_SETTINGS = {

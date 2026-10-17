@@ -30,6 +30,11 @@ class ArticleViewSet(
     ?featured=true ?search=<text>. Editors write with the plain serializer.
     """
 
+    @property
+    def throttle_scope(self):
+        # Only the public counter is throttled; reads of content are not.
+        return 'third_side_read' if self.action == 'read' else None
+
     def get_serializer_class(self):
         if getattr(self.request, 'method', None) != 'GET':
             return ArticleSerializer
