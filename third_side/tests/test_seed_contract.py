@@ -56,6 +56,9 @@ class SeedContractTests(APITestCase):
             self.assertEqual(len(data['latest_articles']), 6)
 
     def test_category_pages_match_mock(self):
+        languages = json.loads(
+            (MOCK_DIR / 'article-languages.json').read_text(encoding='utf-8')
+        )
         for slug, page in self.pages.items():
             data = self.client.get(f'/third_side/category-pages/{slug}?lang=en').data
             shown = data['featured']['content_locale']
@@ -68,15 +71,17 @@ class SeedContractTests(APITestCase):
             expected = {a['slug']['en'] for a in page['articles']} | {
                 page['featured']['slug']['en']
             }
-            self.assertEqual(len(listed), len(expected))
-            self.assertEqual(
-                {a['id'] for a in listed},
-                {
-                    a['id']
-                    for a in listed
-                    if a['category_slug'] == slug
-                },
-            )
+            # The BE lists every article of the category; the mock page curates a subset.
+            self.assertTrue(all(a['category_slug'] == slug for a in listed))
+            raws = {a['slug']['en']: a for a in page['articles']}
+            raws[page['featured']['slug']['en']] = page['featured']
+            for key, raw in raws.items():
+                original = languages['bySlug'].get(key, languages['default'])['original']
+                found = self.client.get(
+                    f"/third_side/articles/by-slug/{raw['slug'][original]}?lang=en"
+                )
+                self.assertEqual(found.status_code, 200, key)
+                self.assertIn(found.data['id'], {a['id'] for a in listed}, key)
 
     def test_article_languages_match_mock(self):
         languages = json.loads(
