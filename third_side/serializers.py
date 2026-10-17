@@ -101,10 +101,17 @@ class ReportSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    email = serializers.EmailField(source='user.email', read_only=True)
+
     class Meta:
         model = Profile
-        fields = ['id', 'role']
+        fields = ['id', 'name', 'email', 'role']
         read_only_fields = ['role']
+
+    def get_name(self, obj) -> str:
+        user = obj.user
+        return user.get_full_name().strip() or user.first_name or user.email
 
 
 class SyncedArticleSerializer(serializers.ModelSerializer):

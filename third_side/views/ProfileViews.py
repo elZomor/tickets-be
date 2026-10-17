@@ -8,6 +8,7 @@ from third_side.serializers import ProfileSerializer
 
 class ProfileMeView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ProfileSerializer
 
     def get(self, request):
         profile, _ = Profile.objects.get_or_create(user=request.user)

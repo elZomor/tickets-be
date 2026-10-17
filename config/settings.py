@@ -32,6 +32,9 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 REDIS_URL = env.str('REDIS_URL', 'redis://redis:6379/0')
 
+# Third Side site origin, used in password-reset links.
+THIRD_SIDE_FE_URL = env.str('THIRD_SIDE_FE_URL', default='http://localhost:3000')
+
 REPORT_AUTO_HIDE_THRESHOLD = env.int('REPORT_AUTO_HIDE_THRESHOLD', default=5)
 
 DJANGO_APPS = [

@@ -21,6 +21,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         attrs["username"] = user.username
 
         if not user.is_active:
-            return True
+            raise serializers.ValidationError("Account is not active")
 
         return super().validate(attrs)
