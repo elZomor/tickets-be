@@ -1,4 +1,8 @@
-from .CategoryViews import CategoryViewSet  # noqa:F401
+from .CategoryViews import (  # noqa:F401
+    CategoryViewSet,
+    NavGroupViewSet,
+    TagViewSet,
+)
 from .CriticViews import CriticViewSet  # noqa:F401
 from .ArticleViews import ArticleViewSet  # noqa:F401
 from .RatingViews import RatingViewSet  # noqa:F401

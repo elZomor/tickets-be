@@ -10,6 +10,7 @@ from rest_framework.viewsets import GenericViewSet
 from third_side.models import SyncedArticle
 from third_side.models.Article import ArticleStatus
 from third_side.serializers import SyncedArticleSerializer
+from third_side.services.translations import sync_translations
 
 # Payload status -> Django Article status, for the states Payload reports
 # back on. Payload's other states (ready_for_review/in_review) are its own
@@ -51,6 +52,9 @@ class CmsWebhookView(APIView):
             synced, _ = SyncedArticle.objects.update_or_create(
                 payload_id=doc.get('id'), defaults={'data': doc}
             )
+
+            if synced.article_id:
+                sync_translations(synced.article, doc)
 
             new_article_status = _PAYLOAD_STATUS_TO_ARTICLE_STATUS.get(
                 doc.get('status')

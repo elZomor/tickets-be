@@ -4,14 +4,37 @@ from django_json_widget.widgets import JSONEditorWidget
 
 from third_side.models import (
     Article,
+    ArticleTranslation,
     Category,
     Comment,
     Critic,
+    NavGroup,
     Profile,
     Rating,
     Report,
     SyncedArticle,
+    Tag,
 )
+
+
+class JsonFieldsAdmin(admin.ModelAdmin):
+    formfield_overrides = {models.JSONField: {'widget': JSONEditorWidget}}
+
+
+@admin.register(NavGroup)
+class NavGroupAdmin(JsonFieldsAdmin):
+    list_display = ('slug', 'order')
+
+
+@admin.register(Tag)
+class TagAdmin(JsonFieldsAdmin):
+    list_display = ('slug',)
+
+
+class ArticleTranslationInline(admin.StackedInline):
+    model = ArticleTranslation
+    extra = 0
+    formfield_overrides = {models.JSONField: {'widget': JSONEditorWidget}}
 
 
 @admin.register(Profile)
@@ -20,8 +43,8 @@ class ProfileAdmin(admin.ModelAdmin):
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'order')
+class CategoryAdmin(JsonFieldsAdmin):
+    list_display = ('name', 'slug', 'group', 'order', 'show_in_nav', 'featured')
     prepopulated_fields = {'slug': ('name',)}
 
 
@@ -40,8 +63,10 @@ class ArticleAdmin(admin.ModelAdmin):
         'is_hidden',
         'published_at',
     )
-    list_filter = ('status', 'category', 'is_hidden')
+    list_filter = ('status', 'category', 'is_hidden', 'original_language')
     prepopulated_fields = {'slug': ('title',)}
+    inlines = [ArticleTranslationInline]
+    filter_horizontal = ('tags',)
 
 
 @admin.register(Rating)

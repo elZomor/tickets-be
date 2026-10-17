@@ -7,6 +7,8 @@ from third_side.views import (
     CmsWebhookView,
     ForgotPasswordView,
     CommentViewSet,
+    NavGroupViewSet,
+    TagViewSet,
     CriticViewSet,
     ProfileMeView,
     RatingViewSet,
@@ -18,6 +20,8 @@ from third_side.views import (
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r'categories', CategoryViewSet, basename='category-view')
+router.register(r'nav-groups', NavGroupViewSet, basename='nav-group-view')
+router.register(r'tags', TagViewSet, basename='tag-view')
 router.register(r'critics', CriticViewSet, basename='critic-view')
 router.register(r'articles', ArticleViewSet, basename='article-view')
 router.register(r'ratings', RatingViewSet, basename='rating-view')
