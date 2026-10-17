@@ -4,8 +4,10 @@ from rest_framework.routers import DefaultRouter
 from third_side.views import (
     ArticleViewSet,
     CategoryViewSet,
+    CategoryPageView,
     CmsWebhookView,
     ForgotPasswordView,
+    HomeView,
     CommentViewSet,
     NavGroupViewSet,
     TagViewSet,
@@ -33,6 +35,8 @@ urlpatterns = [
     path('auth/signup', SignupView.as_view(), name='auth-signup'),
     path('auth/forgot-password', ForgotPasswordView.as_view(), name='auth-forgot'),
     path('auth/reset-password', ResetPasswordView.as_view(), name='auth-reset'),
+    path('home', HomeView.as_view(), name='home'),
+    path('category-pages/<str:slug>', CategoryPageView.as_view(), name='category-page'),
     path('profile/me', ProfileMeView.as_view(), name='profile-me'),
     # Must come before router.urls — otherwise the router's `cms-articles/<payload_id>`
     # detail route swallows "webhook" as a payload_id and never reaches this view.

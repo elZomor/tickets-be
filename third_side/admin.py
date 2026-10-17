@@ -10,6 +10,7 @@ from third_side.models import (
     Critic,
     NavGroup,
     Profile,
+    SiteSettings,
     Rating,
     Report,
     SyncedArticle,
@@ -100,3 +101,8 @@ class SyncedArticleAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
     }
+
+
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(JsonFieldsAdmin):
+    list_display = ('__str__',)

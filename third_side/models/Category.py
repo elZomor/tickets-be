@@ -12,6 +12,8 @@ class Category(models.Model):
         blank=True,
         related_name='categories',
     )
+    # Position inside its group's menu (the group dictates its own order).
+    group_order = models.PositiveIntegerField(default=0)
     show_in_nav = models.BooleanField(default=True)
     featured = models.BooleanField(default=False)
     # Localized maps: {"ar": ..., "en": ..., "ro": ...}. `name` is the fallback.

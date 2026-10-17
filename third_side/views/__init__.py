@@ -13,5 +13,6 @@ from .AuthViews import (  # noqa:F401
     ResetPasswordView,
     SignupView,
 )
+from .HomeViews import CategoryPageView, HomeView  # noqa:F401
 from .ProfileViews import ProfileMeView  # noqa:F401
 from .CmsWebhookViews import CmsWebhookView, SyncedArticleViewSet  # noqa:F401

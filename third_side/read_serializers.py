@@ -62,7 +62,8 @@ class NavGroupSerializer(serializers.ModelSerializer):
         return localize(obj.description, _lang(self))
 
     def get_categories(self, obj) -> list[str]:
-        return [c.slug for c in obj.categories.all()]
+        ordered = sorted(obj.categories.all(), key=lambda c: (c.group_order, c.id))
+        return [c.slug for c in ordered]
 
 
 class CategoryReadSerializer(serializers.ModelSerializer):
