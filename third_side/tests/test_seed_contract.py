@@ -120,3 +120,36 @@ class SeedContractTests(APITestCase):
         self.assertEqual(len(data['sections']), len(about['sections']))
         self.assertEqual([v['id'] for v in data['values']], [v['id'] for v in about['values']])
         self.assertEqual(Ad.objects.count(), len(ads))
+
+
+@unittest.skipUnless(MOCK_DIR.is_dir(), 'frontend mock directory not available')
+class SeedNavTests(APITestCase):
+    def test_nav_only_adopts_existing_category_and_touches_nothing_else(self):
+        from third_side.models import Article, Category, Critic, NavGroup
+
+        # A live DB: one real category (slug = the Arabic URL segment) with an article.
+        live = Category.objects.create(name='مسرح', slug='مسرح')
+        critic = Critic.objects.create(name='Real')
+        article = Article.objects.create(
+            title='real', slug='real', category=live, critic=critic
+        )
+        call_command('seed_nav', mock_dir=str(MOCK_DIR), dry_run=True, verbosity=0)
+        self.assertEqual(NavGroup.objects.count(), 0)  # dry run saved nothing
+        for _ in range(2):  # idempotent
+            call_command('seed_nav', mock_dir=str(MOCK_DIR), verbosity=0)
+        self.assertEqual(NavGroup.objects.count(), 2)
+        self.assertEqual(Category.objects.count(), 8)  # no duplicate theater
+        live.refresh_from_db()
+        self.assertEqual((live.slug, live.name), ('مسرح', 'مسرح'))
+        self.assertEqual(live.group.slug, 'visual')
+        self.assertEqual(live.url_slug['en'], 'theater')
+        article.refresh_from_db()
+        self.assertEqual(article.category_id, live.pk)
+        self.assertEqual(Article.objects.count(), 1)  # nothing else seeded
+        self.assertEqual(Critic.objects.count(), 1)
+        data = self.client.get('/third_side/nav-groups?lang=en').data['results']
+        self.assertEqual([g['slug'] for g in data], ['visual', 'written'])
+        self.assertEqual(data[0]['categories'], ['tv', 'مسرح', 'cinema'])
+        self.assertEqual(
+            data[1]['categories'], ['novel', 'story', 'poetry', 'literature']
+        )
