@@ -11,9 +11,10 @@ class AdType(models.TextChoices):
 class Ad(models.Model):
     """Our own ad (sponsor or event), not an ad network. Counters are first-party.
 
-    images: {"ar": {"tall": url, "rect": url}, "en": {...}, "ro": {...}}
+    images: {"ar": {"tall": url, "rect": url, "wide": url}, "en": {...}, "ro": {...}}
     alt:    {"ar": text, ...}
-    Creative sizes: tall 300x600, rect 300x250.
+    Creative sizes: tall 300x600, rect 300x250, wide 970x250 (home banner).
+    An ad is only picked for sizes it has an image for.
     """
 
     type = models.CharField(max_length=10, choices=AdType.choices)
