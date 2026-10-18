@@ -71,17 +71,15 @@ class AboutTests(APITestCase):
         self.assertEqual(self.client.get('/third_side/about').status_code, 404)
         AboutPage.objects.create(
             content={
-                'title': LOC,
-                'sections': [{'lead': LOC, 'body': [LOC]}],
-                'values': [{'id': 'v', 'title': LOC, 'text': LOC}],
-                'hero_image': '/x.jpg',
+                'hero': {'title': LOC, 'body': [LOC], 'image': '/x.jpg'},
+                'journey': {'title': LOC, 'items': [{'year': '2020', 'title': LOC, 'text': LOC}]},
             }
         )
         data = self.client.get('/third_side/about?lang=en').data
-        self.assertEqual(data['title'], 'English')
-        self.assertEqual(data['sections'][0]['body'], ['English'])
-        self.assertEqual(data['values'][0]['id'], 'v')
-        self.assertEqual(data['hero_image'], '/x.jpg')
+        self.assertEqual(data['hero']['title'], 'English')
+        self.assertEqual(data['hero']['body'], ['English'])
+        self.assertEqual(data['journey']['items'][0]['year'], '2020')
+        self.assertEqual(data['hero']['image'], '/x.jpg')
 
 
 class AdsTests(APITestCase):
@@ -114,6 +112,15 @@ class AdsTests(APITestCase):
     def test_weight_zero_never_picked(self):
         ad('zero', weight=0)
         self.assertEqual(self.pick().status_code, 204)
+
+    def test_wide_only_picks_ads_with_a_wide_image(self):
+        ad('no-wide')
+        url = '/third_side/ads/pick?size=wide&lang=en'
+        self.assertEqual(self.client.get(url).status_code, 204)
+        banner = ad('banner')
+        banner.images['en']['wide'] = '/banner-en-w.png'
+        banner.save()
+        self.assertEqual(self.client.get(url).data['image'], '/banner-en-w.png')
 
     def test_size_required(self):
         self.assertEqual(self.client.get('/third_side/ads/pick').status_code, 400)

@@ -211,16 +211,9 @@ class Command(BaseCommand):
             critic.save()
 
     def _about(self, about):
+        # The page content is stored exactly as the frontend mock shapes it.
         page = AboutPage.objects.first() or AboutPage()
-        page.content = {
-            'eyebrow': about['eyebrow'],
-            'title': about['title'],
-            'hero_image': about['heroImage'],
-            'hero_alt': about['heroAlt'],
-            'sections': about['sections'],
-            'gallery': about['gallery'],
-            'values': about['values'],
-        }
+        page.content = about
         page.save()
 
     def _ads(self, ads):

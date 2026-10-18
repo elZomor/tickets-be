@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from third_side.i18n import clean_locale, localize, localize_tree
 from third_side.models import AboutPage, Ad
 
-AD_SIZES = ('tall', 'rect')
+AD_SIZES = ('tall', 'rect', 'wide')
 
 
 class AboutView(APIView):
@@ -41,7 +41,7 @@ def _active_ads(lang, today):
 class AdPickView(APIView):
     """One weighted-random active ad for a locale and size, or 204.
 
-    ?lang= ?size=tall|rect ?exclude=1,2 (avoid repeating an ad on one page).
+    ?lang= ?size=tall|rect|wide ?exclude=1,2 (avoid repeating an ad on one page).
     """
 
     permission_classes = [AllowAny]
@@ -52,13 +52,18 @@ class AdPickView(APIView):
         lang = clean_locale(request.query_params.get('lang'))
         size = request.query_params.get('size')
         if size not in AD_SIZES:
-            return Response({'size': 'must be tall or rect'}, status=400)
+            return Response({'size': 'must be tall, rect or wide'}, status=400)
         exclude = {
             int(part)
             for part in request.query_params.get('exclude', '').split(',')
             if part.strip().isdigit()
         }
-        active = _active_ads(lang, date.today())
+        # An ad without a creative for this size and locale cannot fill the slot.
+        active = [
+            ad
+            for ad in _active_ads(lang, date.today())
+            if (ad.images.get(lang) or {}).get(size)
+        ]
         pool = [ad for ad in active if ad.pk not in exclude]
         candidates = pool or active
         weighted = [ad for ad in candidates if ad.weight > 0]

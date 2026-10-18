@@ -5,10 +5,14 @@ class AboutPage(models.Model):
     """Singleton: the About page copy.
 
     `content` keeps the shape the page renders, with every text as a
-    {"ar": ..., "en": ..., "ro": ...} map:
-      {eyebrow, title, hero_image, hero_alt,
-       sections: [{lead, body: [text]}],
-       gallery: [{image, alt}], values: [{id, title, text}]}
+    {"ar": ..., "en": ..., "ro": ...} map (resolved per ?lang= on read):
+      {hero: {eyebrow, title, lead, body: [text], image, alt},
+       topics: {title, body: [text], gallery: [{image, alt}]},
+       journey: {title, items: [{year, title, text}]},
+       principles: {title, items: [{title, text}]},
+       why: {title: {before, highlight, after}, text,
+             items: [{title, text}]},
+       team: {title, members: [{name, role, image, alt}]}}
     """
 
     content = models.JSONField(default=dict, blank=True)

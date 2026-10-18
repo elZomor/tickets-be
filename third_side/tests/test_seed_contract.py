@@ -116,7 +116,10 @@ class SeedContractTests(APITestCase):
                 by_slug = self.client.get(f"/third_side/critics/by-slug/{found['slugs'][locale]}?lang={locale}")
                 self.assertEqual(by_slug.data['name'], raw['name'][locale])
         data = self.client.get('/third_side/about?lang=ro').data
-        self.assertEqual(data['title'], about['title']['ro'])
-        self.assertEqual(len(data['sections']), len(about['sections']))
-        self.assertEqual([v['id'] for v in data['values']], [v['id'] for v in about['values']])
+        self.assertEqual(data['hero']['title'], about['hero']['title']['ro'])
+        self.assertEqual(len(data['journey']['items']), len(about['journey']['items']))
+        self.assertEqual(
+            [i['title'] for i in data['principles']['items']],
+            [i['title']['ro'] for i in about['principles']['items']],
+        )
         self.assertEqual(Ad.objects.count(), len(ads))
