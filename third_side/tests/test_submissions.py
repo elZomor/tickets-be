@@ -76,6 +76,10 @@ class SubmissionTests(APITestCase):
         self.assertEqual(by_id[ids[2]]['status'], 'pending')
         self.assertEqual(by_id[ids[2]]['category_name'], 'سينما')
         self.assertEqual(by_id[ids[2]]['group_name'], 'فنون')
+        published = by_id[ids[0]]
+        self.assertEqual(published['slug'], Article.objects.get(pk=ids[0]).slug)
+        self.assertEqual(published['category_url_slug'], 'cinema')
+        self.assertEqual(published['group_url_slug'], 'visual')
 
     def test_writer_profile_hidden_until_published(self):
         self.client.force_authenticate(self.user)
