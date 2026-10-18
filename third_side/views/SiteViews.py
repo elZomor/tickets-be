@@ -79,6 +79,8 @@ class AdPickView(APIView):
                 'url': ad.url,
                 'internal': ad.internal,
                 'image': image,
+                # Other creatives of the same ad (e.g. the wide banner uses rect on phones).
+                'images': ad.images.get(lang) or {},
                 'alt': localize(ad.alt, lang),
             }
         )
