@@ -81,6 +81,20 @@ class SubmissionTests(APITestCase):
         self.assertEqual(published['category_url_slug'], 'cinema')
         self.assertEqual(published['group_url_slug'], 'visual')
 
+    def test_mine_includes_articles_attached_to_the_writer_profile(self):
+        self.client.force_authenticate(self.user)
+        sent = self.post().data['id']
+        critic = Critic.objects.get(user=self.user)
+        attached = Article.objects.create(
+            title='By editor', slug='by-editor', category=self.category, critic=critic
+        )  # no created_by: added by an editor
+        other = Article.objects.create(
+            title='Other', slug='other', category=self.category, critic=Critic.objects.create(name='Z')
+        )
+        ids = {s['id'] for s in self.client.get('/third_side/submissions/mine').data['results']}
+        self.assertEqual(ids, {sent, attached.pk})
+        self.assertNotIn(other.pk, ids)
+
     def test_writer_profile_hidden_until_published(self):
         self.client.force_authenticate(self.user)
         article_id = self.post().data['id']
