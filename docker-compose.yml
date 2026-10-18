@@ -29,5 +29,17 @@ services:
       - .env
     entrypoint: []
     restart: always
+  celery_beat:
+    build: .
+    container_name: celery_beat
+    command: celery -A config beat --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    entrypoint: []
+    restart: always
 volumes:
   data:
