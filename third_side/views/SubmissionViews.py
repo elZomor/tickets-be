@@ -11,6 +11,7 @@ from third_side.auth import ThirdSideJWTAuthentication
 from third_side.i18n import LOCALE_CHOICES, clean_locale, localize, slugify_name
 from third_side.models import Article, Category, Critic
 from third_side.models.Article import ArticleStatus
+from third_side.services.translations import pick_locale, translation_map
 
 MIN_CONTENT = 100
 MAX_CONTENT = 50_000
@@ -60,6 +61,9 @@ class SubmissionSerializer(serializers.ModelSerializer):
     category_name = serializers.SerializerMethodField()
     language = serializers.CharField(source='original_language')
     status = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
+    category_url_slug = serializers.SerializerMethodField()
+    group_url_slug = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -69,6 +73,9 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'group_name',
             'category_slug',
             'category_name',
+            'category_url_slug',
+            'group_url_slug',
+            'slug',
             'title',
             'language',
             'content',
@@ -93,6 +100,20 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
     def get_status(self, obj) -> str:
         return submission_status(obj.status)
+
+    # With the localized category/group segments, enough to build the
+    # article's public address: /<lang>[/<group>]/<category>/<slug>.
+    def get_slug(self, obj) -> str:
+        translations = translation_map(obj)
+        locale = pick_locale(translations, self._lang(), obj.original_language)
+        return translations[locale]['slug']
+
+    def get_category_url_slug(self, obj) -> str:
+        return localize(obj.category.url_slug, self._lang(), obj.category.slug)
+
+    def get_group_url_slug(self, obj) -> str | None:
+        group = obj.category.group
+        return localize(group.url_slug, self._lang(), group.slug) if group else None
 
 
 def _writer_for(user):
@@ -128,6 +149,7 @@ class SubmissionsView(GenericAPIView):
         articles = (
             Article.objects.filter(created_by=request.user)
             .select_related('category', 'category__group')
+            .prefetch_related('translations')
             .order_by('-created_at', '-id')
         )
         page = self.paginate_queryset(articles)
