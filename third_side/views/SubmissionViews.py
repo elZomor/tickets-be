@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils.text import slugify
 from rest_framework import serializers, status
 from rest_framework.generics import GenericAPIView
@@ -147,9 +148,12 @@ class SubmissionsView(GenericAPIView):
 
     def get(self, request):
         articles = (
-            Article.objects.filter(created_by=request.user)
+            # Articles the reader sent in, plus ones an editor attached to
+            # their writer profile (those have no created_by).
+            Article.objects.filter(Q(created_by=request.user) | Q(critic__user=request.user))
             .select_related('category', 'category__group')
             .prefetch_related('translations')
+            .distinct()
             .order_by('-created_at', '-id')
         )
         page = self.paginate_queryset(articles)
