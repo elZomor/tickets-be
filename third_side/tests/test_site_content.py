@@ -99,6 +99,7 @@ class AdsTests(APITestCase):
         data = self.pick().data
         self.assertEqual(data['id'], live.pk)
         self.assertEqual(data['image'], '/live-en-r.png')
+        self.assertEqual(data['images']['tall'], '/live-en-t.png')
         self.assertEqual(data['alt'], 'English')
 
     def test_exclude_avoids_repeat_unless_only_one(self):
