@@ -86,9 +86,11 @@ def _push_to_payload_on_ready_for_editing(sender, instance, **kwargs):
     if getattr(instance, '_old_status', None) == ArticleStatus.READY_FOR_EDITING:
         return
 
-    from third_side.services.payload_sync import ensure_synced_article
+    from third_side.services.payload_sync import queue_payload_sync
 
+    # Records a pending SyncedArticle and queues the push; Celery retries
+    # while Payload is down (see third_side.tasks).
     try:
-        ensure_synced_article(instance)
+        queue_payload_sync(instance)
     except Exception:
-        logger.exception('Failed to push article %s to Payload', instance.pk)
+        logger.exception('Failed to queue the Payload push for article %s', instance.pk)

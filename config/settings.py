@@ -241,6 +241,13 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULE = {
+    # Safety net for Payload pushes the retry chain lost or gave up on.
+    'sweep-payload-syncs': {
+        'task': 'third_side.tasks.sweep_payload_syncs',
+        'schedule': 600,
+    },
+}
 
 s3_storage = S3Boto3Storage()
 STORAGES = {

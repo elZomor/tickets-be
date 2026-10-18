@@ -163,4 +163,4 @@ class ProfileSerializer(serializers.ModelSerializer):
 class SyncedArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = SyncedArticle
-        fields = '__all__'
+        exclude = ('sync_status', 'sync_attempts', 'sync_error', 'last_attempt_at')

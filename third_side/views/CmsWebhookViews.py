@@ -77,7 +77,7 @@ class SyncedArticleViewSet(
     # actually been published (covers both unlinked legacy rows and ones
     # still mid-review).
     queryset = SyncedArticle.objects.filter(
-        article__status=ArticleStatus.PUBLISHED
+        article__status=ArticleStatus.PUBLISHED, payload_id__isnull=False
     ).order_by('-article__published_at', '-id')
     serializer_class = SyncedArticleSerializer
     permission_classes = [AllowAny]
