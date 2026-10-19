@@ -13,3 +13,5 @@ from .SiteSettings import *  # noqa:F401, F403
 from .CommentLike import *  # noqa:F401, F403
 from .AboutPage import *  # noqa:F401, F403
 from .Ad import *  # noqa:F401, F403
+from .TermsVersion import *  # noqa:F401, F403
+from .TermsAcceptance import *  # noqa:F401, F403

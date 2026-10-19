@@ -25,6 +25,9 @@ from third_side.views import (
     SignupView,
     SubmissionsView,
     SyncedArticleViewSet,
+    TermsDetailView,
+    TermsVersionsView,
+    TermsView,
 )
 
 router = DefaultRouter(trailing_slash=False)
@@ -48,6 +51,9 @@ urlpatterns = [
     path('submissions', SubmissionsView.as_view(), name='submissions'),
     path('submissions/mine', SubmissionsView.as_view(), name='submissions-mine'),
     path('about', AboutView.as_view(), name='about'),
+    path('terms', TermsView.as_view(), name='terms'),
+    path('terms/versions', TermsVersionsView.as_view(), name='terms-versions'),
+    path('terms/<str:version>', TermsDetailView.as_view(), name='terms-detail'),
     path('ads/pick', AdPickView.as_view(), name='ad-pick'),
     path('ads/<int:pk>/impression', AdImpressionView.as_view(), name='ad-impression'),
     path('ads/<int:pk>/click', AdClickView.as_view(), name='ad-click'),

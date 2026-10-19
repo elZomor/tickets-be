@@ -21,6 +21,9 @@ from .SiteViews import (  # noqa:F401
     AdClickView,
     AdImpressionView,
     AdPickView,
+    TermsDetailView,
+    TermsVersionsView,
+    TermsView,
 )
 from .SubmissionViews import SubmissionsView  # noqa:F401
 from .ProfileViews import ProfileMeView  # noqa:F401

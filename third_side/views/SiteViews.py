@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from third_side.i18n import clean_locale, localize, localize_tree
-from third_side.models import AboutPage, Ad
+from third_side.models import AboutPage, Ad, TermsVersion
 
 AD_SIZES = ('tall', 'rect', 'wide')
 
@@ -25,6 +25,66 @@ class AboutView(APIView):
             raise Http404
         return Response(
             localize_tree(page.content, clean_locale(request.query_params.get('lang')))
+        )
+
+
+def _terms_payload(terms, lang):
+    return {
+        'version': terms.version,
+        'effective_date': terms.effective_date.isoformat(),
+        **localize_tree(terms.content, lang),
+    }
+
+
+class TermsView(APIView):
+    """The terms currently in force. Public: signup and social-login clients
+    read it to show the text and to send back `accepted_terms_version`."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    serializer_class = None
+    throttle_scope = 'third_side_read'
+
+    def get(self, request):
+        terms = TermsVersion.current()
+        if terms is None:
+            raise Http404
+        return Response(
+            _terms_payload(terms, clean_locale(request.query_params.get('lang')))
+        )
+
+
+class TermsVersionsView(APIView):
+    """Every published version, newest first."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    serializer_class = None
+    throttle_scope = 'third_side_read'
+
+    def get(self, request):
+        return Response(
+            [
+                {'version': t.version, 'effective_date': t.effective_date.isoformat()}
+                for t in TermsVersion.published()
+            ]
+        )
+
+
+class TermsDetailView(APIView):
+    """One published version (old links, audit)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    serializer_class = None
+    throttle_scope = 'third_side_read'
+
+    def get(self, request, version):
+        terms = TermsVersion.published().filter(version=version).first()
+        if terms is None:
+            raise Http404
+        return Response(
+            _terms_payload(terms, clean_locale(request.query_params.get('lang')))
         )
 
 
