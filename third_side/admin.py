@@ -18,6 +18,8 @@ from third_side.models import (
     Report,
     SyncedArticle,
     Tag,
+    TermsAcceptance,
+    TermsVersion,
     ThirdSideUser,
 )
 from third_side.models.SyncedArticle import PayloadSyncStatus
@@ -183,3 +185,28 @@ class AdAdmin(JsonFieldsAdmin):
     )
     list_filter = ('type', 'is_active')
     readonly_fields = ('impressions', 'clicks')
+
+
+@admin.register(TermsVersion)
+class TermsVersionAdmin(JsonFieldsAdmin):
+    list_display = ('version', 'effective_date', 'is_published', 'created_at')
+    list_filter = ('is_published',)
+
+    def get_readonly_fields(self, request, obj=None):
+        # A published version is what users accepted: publish a new one instead.
+        if obj is not None and obj.is_published:
+            return ('version', 'effective_date', 'is_published', 'content')
+        return ()
+
+    def has_delete_permission(self, request, obj=None):
+        return obj is None or not obj.is_published
+
+
+@admin.register(TermsAcceptance)
+class TermsAcceptanceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'terms', 'accepted_at', 'ip_address')
+    list_filter = ('terms',)
+    readonly_fields = ('user', 'terms', 'accepted_at', 'ip_address')
+
+    def has_add_permission(self, request):
+        return False

@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from config.constants import SEND_EMAIL
 from third_side.auth import issue_tokens, rotate_refresh
-from third_side.models import ThirdSideUser
+from third_side.models import TermsAcceptance, TermsVersion, ThirdSideUser
 from utils.email_utils import send_email
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,24 @@ class SignupSerializer(serializers.Serializer):
     name = serializers.CharField(min_length=2, max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
+    # Required once a version is in force, and must be that version: a stale
+    # form is refused so nobody accepts text they were not shown.
+    accepted_terms_version = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        terms = TermsVersion.current()
+        if terms is not None and (
+            attrs.get('accepted_terms_version', '').strip() != terms.version
+        ):
+            raise serializers.ValidationError(
+                {
+                    'accepted_terms_version': (
+                        f'You must accept the current terms (version {terms.version})'
+                    )
+                }
+            )
+        attrs['terms'] = terms
+        return attrs
 
     def validate_email(self, value):
         value = value.strip().lower()
@@ -87,6 +105,12 @@ class SignupView(PublicAuthView):
         user = ThirdSideUser.objects.create_user(
             email=data['email'], password=data['password'], name=data['name'].strip()
         )
+        if data['terms'] is not None:
+            TermsAcceptance.objects.create(
+                user=user,
+                terms=data['terms'],
+                ip_address=request.META.get('REMOTE_ADDR') or None,
+            )
         return Response(issue_tokens(user), status=status.HTTP_201_CREATED)
 
 

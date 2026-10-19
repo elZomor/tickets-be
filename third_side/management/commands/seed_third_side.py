@@ -16,6 +16,7 @@ from third_side.models import (
     NavGroup,
     SiteSettings,
     Tag,
+    TermsVersion,
 )
 from third_side.models.Article import ArticleStatus
 
@@ -51,6 +52,7 @@ class Command(BaseCommand):
         count = self._articles(home, pages, bodies, languages, categories)
         self._writers(writers, categories)
         self._about(_load(directory, 'about.json'))
+        self._terms(_load(directory, 'terms.json'))
         self._ads(_load(directory, 'ads.json')['ads'])
         self.stdout.write(
             self.style.SUCCESS(
@@ -215,6 +217,21 @@ class Command(BaseCommand):
         page = AboutPage.objects.first() or AboutPage()
         page.content = about
         page.save()
+
+    def _terms(self, terms):
+        # Seeded as published v1; an existing version is left untouched since
+        # published terms are immutable (users accepted that text).
+        TermsVersion.objects.get_or_create(
+            version=terms['version'],
+            defaults={
+                'effective_date': date.fromisoformat(terms['effective_date']),
+                'is_published': True,
+                'content': {
+                    'title': terms['title'],
+                    'sections': terms['sections'],
+                },
+            },
+        )
 
     def _ads(self, ads):
         for raw in ads:
