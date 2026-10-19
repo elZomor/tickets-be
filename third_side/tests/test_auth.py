@@ -6,7 +6,13 @@ from rest_framework.test import APITestCase
 from third_side.models import ThirdSideUser
 
 User = ThirdSideUser
-SIGNUP = {'name': 'Sara Ali', 'email': 'Sara@Example.com', 'password': 'S3cure-pass!'}
+# Migration 0014 publishes terms v1.0, so every signup must accept it.
+SIGNUP = {
+    'name': 'Sara Ali',
+    'email': 'Sara@Example.com',
+    'password': 'S3cure-pass!',
+    'accepted_terms_version': '1.0',
+}
 
 
 class AuthFlowTests(APITestCase):
@@ -104,9 +110,11 @@ class AuthFlowTests(APITestCase):
         from django.test import override_settings
 
         User.objects.create_user('u3@example.com', 'Old-pass-123')
-        with override_settings(THIRD_SIDE_FE_URL='https://fe.test'), mock.patch(
-            'third_side.views.AuthViews.SEND_EMAIL', True
-        ), mock.patch('third_side.views.AuthViews.send_email') as send:
+        with (
+            override_settings(THIRD_SIDE_FE_URL='https://fe.test'),
+            mock.patch('third_side.views.AuthViews.SEND_EMAIL', True),
+            mock.patch('third_side.views.AuthViews.send_email') as send,
+        ):
             for lang, segment in (
                 ('en', 'reset-password'),
                 ('ro', 'parola-noua'),
@@ -139,7 +147,9 @@ class AuthFlowTests(APITestCase):
         self.assertEqual(wrong.status_code, 401)
 
     def test_inactive_user_cannot_log_in(self):
-        ThirdSideUser.objects.create_user('off@example.com', 'Pass-1234-xyz', is_active=False)
+        ThirdSideUser.objects.create_user(
+            'off@example.com', 'Pass-1234-xyz', is_active=False
+        )
         response = self.client.post(
             '/third_side/auth/login',
             {'email': 'off@example.com', 'password': 'Pass-1234-xyz'},
@@ -152,14 +162,18 @@ class AuthFlowTests(APITestCase):
         from django.contrib.auth.models import User as DjangoUser
         from rest_framework_simplejwt.tokens import RefreshToken
 
-        django_user = DjangoUser.objects.create_user('legacy', 'l@example.com', 'pw-12345678')
+        django_user = DjangoUser.objects.create_user(
+            'legacy', 'l@example.com', 'pw-12345678'
+        )
         legacy = str(RefreshToken.for_user(django_user).access_token)
         response = self.client.get(
             '/third_side/profile/me', HTTP_AUTHORIZATION=f'Bearer {legacy}'
         )
         self.assertEqual(response.status_code, 401)
 
-        ours = self.client.post('/third_side/auth/signup', SIGNUP, format='json').data['access']
+        ours = self.client.post('/third_side/auth/signup', SIGNUP, format='json').data[
+            'access'
+        ]
         from rest_framework.test import APIRequestFactory
         from rest_framework_simplejwt.authentication import JWTAuthentication
         from rest_framework_simplejwt.exceptions import InvalidToken
