@@ -24,9 +24,21 @@ def make_terms(version, days_ago=1, published=True):
     )
 
 
+class FirstTermsMigrationTests(APITestCase):
+    def test_v1_is_published_by_migration(self):
+        data = self.client.get('/third_side/terms?lang=en').data
+        self.assertEqual(data['version'], '1.0')
+        self.assertEqual(data['effective_date'], '2026-10-01')
+        self.assertEqual(len(data['sections']), 6)
+        self.assertEqual(
+            self.client.get('/third_side/terms').data['title'][:6], 'الشروط'
+        )
+
+
 class TermsApiTests(APITestCase):
     def setUp(self):
         cache.clear()
+        TermsVersion.objects.all().delete()  # drop the migration's v1.0
 
     def test_no_terms_is_404(self):
         self.assertEqual(self.client.get('/third_side/terms').status_code, 404)
@@ -60,6 +72,7 @@ class TermsApiTests(APITestCase):
 class SignupTermsTests(APITestCase):
     def setUp(self):
         cache.clear()
+        TermsVersion.objects.all().delete()  # drop the migration's v1.0
 
     def test_signup_without_terms_when_none_published(self):
         response = self.client.post('/third_side/auth/signup', SIGNUP, format='json')
