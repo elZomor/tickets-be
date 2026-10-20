@@ -68,6 +68,9 @@ class Article(models.Model):
         related_name='third_side_articles',
     )
     is_hidden = models.BooleanField(default=False)
+    # SEO: keep out of search engines / point search engines at another URL.
+    noindex = models.BooleanField(default=False)
+    canonical_url = models.URLField(max_length=1000, blank=True, default='')
     share_count = models.PositiveIntegerField(default=0)
     read_count = models.PositiveIntegerField(default=0)
     # The language the article was written in; the others are translations.

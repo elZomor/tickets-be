@@ -258,9 +258,16 @@ class ArticleReadSerializer(serializers.ModelSerializer):
 class ArticleDetailSerializer(ArticleReadSerializer):
     body = serializers.SerializerMethodField()
     meta_description = serializers.SerializerMethodField()
+    seo_title = serializers.SerializerMethodField()
 
     class Meta(ArticleReadSerializer.Meta):
-        fields = ArticleReadSerializer.Meta.fields + ['body', 'meta_description']
+        fields = ArticleReadSerializer.Meta.fields + [
+            'body',
+            'meta_description',
+            'seo_title',
+            'noindex',
+            'canonical_url',
+        ]
 
     def get_body(self, obj):
         return self._shown(obj)[1]['content']
@@ -268,6 +275,9 @@ class ArticleDetailSerializer(ArticleReadSerializer):
     def get_meta_description(self, obj) -> str:
         data = self._shown(obj)[1]
         return data['meta_description'] or data['excerpt']
+
+    def get_seo_title(self, obj) -> str:
+        return self._shown(obj)[1]['seo_title']
 
 
 class CriticReadSerializer(serializers.ModelSerializer):

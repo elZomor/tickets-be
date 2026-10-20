@@ -125,6 +125,13 @@ class ArticleViewSet(
                 'cover': to_url(article.cover_url, request) or None,
                 'category': article.category_id,
                 'viaWebsite': article.via_website,
+                'seoTitle': {k: v['seo_title'] for k, v in translations.items()},
+                'metaDescription': {
+                    k: v['meta_description'] for k, v in translations.items()
+                },
+                'noindex': article.noindex,
+                'canonicalUrl': article.canonical_url,
+                'tags': [tag.slug for tag in article.tags.all()],
             }
         )
 
