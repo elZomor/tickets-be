@@ -30,7 +30,14 @@ class PublicArticleApiTests(APITestCase):
 
     def test_list_is_paginated_envelope(self):
         response = self.client.get('/third_side/articles')
-        for key in ('count', 'total_pages', 'current_page', 'next', 'previous', 'results'):
+        for key in (
+            'count',
+            'total_pages',
+            'current_page',
+            'next',
+            'previous',
+            'results',
+        ):
             self.assertIn(key, response.data)
 
     def test_categories_public(self):

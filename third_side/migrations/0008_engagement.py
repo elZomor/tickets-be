@@ -28,27 +28,48 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CommentLike',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.RunPython(dedupe_reports, migrations.RunPython.noop),
         migrations.AddConstraint(
             model_name='report',
-            constraint=models.UniqueConstraint(fields=('reporter', 'content_type', 'object_id'), name='uniq_report_per_reporter_target'),
+            constraint=models.UniqueConstraint(
+                fields=('reporter', 'content_type', 'object_id'),
+                name='uniq_report_per_reporter_target',
+            ),
         ),
         migrations.AddField(
             model_name='commentlike',
             name='comment',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='third_side.comment'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='likes',
+                to='third_side.comment',
+            ),
         ),
         migrations.AddField(
             model_name='commentlike',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='third_side_comment_likes', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='third_side_comment_likes',
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddConstraint(
             model_name='commentlike',
-            constraint=models.UniqueConstraint(fields=('user', 'comment'), name='uniq_like_per_user_comment'),
+            constraint=models.UniqueConstraint(
+                fields=('user', 'comment'), name='uniq_like_per_user_comment'
+            ),
         ),
     ]

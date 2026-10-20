@@ -113,7 +113,9 @@ def enqueue_push(synced_id):
         try:
             push_article_to_payload.delay(synced_id)
         except Exception:
-            logger.exception('Could not queue the Payload push for synced article %s', synced_id)
+            logger.exception(
+                'Could not queue the Payload push for synced article %s', synced_id
+            )
 
     transaction.on_commit(send)
 
@@ -129,7 +131,9 @@ def push_to_payload(synced):
     with transaction.atomic():
         # Payload's webhook can land before we get here and create an
         # unlinked row for the same doc; fold it into this one.
-        SyncedArticle.objects.filter(payload_id=str(doc['id'])).exclude(pk=synced.pk).delete()
+        SyncedArticle.objects.filter(payload_id=str(doc['id'])).exclude(
+            pk=synced.pk
+        ).delete()
         synced.payload_id = str(doc['id'])
         synced.data = doc
         synced.sync_status = PayloadSyncStatus.SYNCED
@@ -142,7 +146,15 @@ def record_failure(synced, exc, *, final=False):
     synced.sync_attempts += 1
     synced.sync_error = f'{type(exc).__name__}: {exc}'[:2000]
     synced.last_attempt_at = timezone.now()
-    synced.sync_status = PayloadSyncStatus.FAILED if final else PayloadSyncStatus.PENDING
+    synced.sync_status = (
+        PayloadSyncStatus.FAILED if final else PayloadSyncStatus.PENDING
+    )
     synced.save(
-        update_fields=['sync_attempts', 'sync_error', 'last_attempt_at', 'sync_status', 'updated_at']
+        update_fields=[
+            'sync_attempts',
+            'sync_error',
+            'last_attempt_at',
+            'sync_status',
+            'updated_at',
+        ]
     )

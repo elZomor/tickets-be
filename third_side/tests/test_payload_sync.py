@@ -16,7 +16,11 @@ def make_article(status=ArticleStatus.DRAFT):
     category, _ = Category.objects.get_or_create(slug='c', defaults={'name': 'C'})
     critic = Critic.objects.create(name='K')
     return Article.objects.create(
-        title='t', slug=f't{Article.objects.count()}', category=category, critic=critic, status=status
+        title='t',
+        slug=f't{Article.objects.count()}',
+        category=category,
+        critic=critic,
+        status=status,
     )
 
 
@@ -45,11 +49,17 @@ class PayloadPushTests(TestCase):
 
     def test_broker_down_does_not_break_the_save(self):
         article = make_article()
-        with mock.patch('third_side.tasks.push_article_to_payload.delay', side_effect=OSError('redis down')):
+        with mock.patch(
+            'third_side.tasks.push_article_to_payload.delay',
+            side_effect=OSError('redis down'),
+        ):
             with self.captureOnCommitCallbacks(execute=True):
                 article.status = ArticleStatus.READY_FOR_EDITING
                 article.save()
-        self.assertEqual(SyncedArticle.objects.get(article=article).sync_status, PayloadSyncStatus.PENDING)
+        self.assertEqual(
+            SyncedArticle.objects.get(article=article).sync_status,
+            PayloadSyncStatus.PENDING,
+        )
 
     def test_task_syncs_row(self):
         article = make_article(ArticleStatus.READY_FOR_EDITING)
@@ -57,14 +67,19 @@ class PayloadPushTests(TestCase):
         with mock.patch(PAYLOAD, return_value={'id': 77}):
             push_article_to_payload.apply(args=[synced.pk]).get()
         synced.refresh_from_db()
-        self.assertEqual((synced.payload_id, synced.sync_status), ('77', PayloadSyncStatus.SYNCED))
+        self.assertEqual(
+            (synced.payload_id, synced.sync_status), ('77', PayloadSyncStatus.SYNCED)
+        )
 
     def test_task_failure_keeps_pending_and_retries(self):
         article = make_article(ArticleStatus.READY_FOR_EDITING)
         synced = SyncedArticle.objects.get(article=article)
-        with mock.patch(PAYLOAD, side_effect=requests.ConnectionError('down')), mock.patch.object(
-            push_article_to_payload, 'retry', side_effect=Retry()
-        ) as retry:
+        with (
+            mock.patch(PAYLOAD, side_effect=requests.ConnectionError('down')),
+            mock.patch.object(
+                push_article_to_payload, 'retry', side_effect=Retry()
+            ) as retry,
+        ):
             push_article_to_payload.apply(args=[synced.pk])
         retry.assert_called_once()
         synced.refresh_from_db()
@@ -83,7 +98,9 @@ class PayloadPushTests(TestCase):
     def test_webhook_row_for_same_doc_is_folded_in(self):
         article = make_article(ArticleStatus.READY_FOR_EDITING)
         synced = SyncedArticle.objects.get(article=article)
-        SyncedArticle.objects.create(payload_id='5', data={'id': 5})  # webhook won the race
+        SyncedArticle.objects.create(
+            payload_id='5', data={'id': 5}
+        )  # webhook won the race
         with mock.patch(PAYLOAD, return_value={'id': 5}):
             push_article_to_payload.apply(args=[synced.pk]).get()
         self.assertEqual(SyncedArticle.objects.filter(payload_id='5').count(), 1)
@@ -95,7 +112,9 @@ class PayloadPushTests(TestCase):
         row.sync_status = PayloadSyncStatus.FAILED
         row.save()
         recent = make_article(ArticleStatus.READY_FOR_EDITING)
-        SyncedArticle.objects.filter(article=recent).update(last_attempt_at=timezone.now())
+        SyncedArticle.objects.filter(article=recent).update(
+            last_attempt_at=timezone.now()
+        )
         orphan = make_article(ArticleStatus.READY_FOR_EDITING)
         SyncedArticle.objects.filter(article=orphan).delete()
         with mock.patch('third_side.tasks.push_article_to_payload.delay') as delay:

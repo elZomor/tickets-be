@@ -23,8 +23,14 @@ SWEEP_MIN_AGE = timedelta(minutes=10)
 @shared_task(bind=True, max_retries=MAX_RETRIES)
 def push_article_to_payload(self, synced_id):
     """Create an article's Payload doc, retrying with backoff while Payload is down."""
-    synced = SyncedArticle.objects.select_related('article').filter(pk=synced_id).first()
-    if synced is None or synced.article is None or synced.sync_status == PayloadSyncStatus.SYNCED:
+    synced = (
+        SyncedArticle.objects.select_related('article').filter(pk=synced_id).first()
+    )
+    if (
+        synced is None
+        or synced.article is None
+        or synced.sync_status == PayloadSyncStatus.SYNCED
+    ):
         return
     try:
         push_to_payload(synced)
@@ -39,8 +45,12 @@ def push_article_to_payload(self, synced_id):
                 exc,
             )
             return
-        logger.warning('Payload push for article %s failed, retrying: %s', synced.article_id, exc)
-        raise self.retry(exc=exc, countdown=min(30 * 2**self.request.retries, MAX_BACKOFF_SECONDS))
+        logger.warning(
+            'Payload push for article %s failed, retrying: %s', synced.article_id, exc
+        )
+        raise self.retry(
+            exc=exc, countdown=min(30 * 2**self.request.retries, MAX_BACKOFF_SECONDS)
+        )
 
 
 @shared_task

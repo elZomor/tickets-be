@@ -12,14 +12,22 @@ class EngagementTests(APITestCase):
         category = Category.objects.create(name='C', slug='c')
         critic = Critic.objects.create(name='K')
         cls.article = Article.objects.create(
-            title='t', slug='t', category=category, critic=critic,
+            title='t',
+            slug='t',
+            category=category,
+            critic=critic,
             status=ArticleStatus.PUBLISHED,
         )
         cls.other = Article.objects.create(
-            title='o', slug='o', category=category, critic=critic,
+            title='o',
+            slug='o',
+            category=category,
+            critic=critic,
             status=ArticleStatus.PUBLISHED,
         )
-        cls.alice = User.objects.create_user('alice@example.com', 'pw-12345678', name='Alice')
+        cls.alice = User.objects.create_user(
+            'alice@example.com', 'pw-12345678', name='Alice'
+        )
         cls.bob = User.objects.create_user('bob@example.com', 'pw-12345678')
 
     def login(self, user):
@@ -52,13 +60,13 @@ class EngagementTests(APITestCase):
         Comment.objects.create(user=self.alice, article=self.article, text='a')
         Comment.objects.create(user=self.alice, article=self.article, text='b')
         Comment.objects.create(user=self.alice, article=self.other, text='c')
-        data = self.client.get(
-            f'/third_side/comments?article={self.article.pk}'
-        ).data
+        data = self.client.get(f'/third_side/comments?article={self.article.pk}').data
         self.assertEqual([c['text'] for c in data['results']], ['b', 'a'])
 
     def test_like_unlike_idempotent_and_liked_by_me(self):
-        comment = Comment.objects.create(user=self.alice, article=self.article, text='a')
+        comment = Comment.objects.create(
+            user=self.alice, article=self.article, text='a'
+        )
         url = f'/third_side/comments/{comment.pk}/like'
         self.assertEqual(self.client.post(url).status_code, 401)
         self.login(self.bob)
@@ -74,9 +82,17 @@ class EngagementTests(APITestCase):
 
     def test_ratings_are_private_and_upsert(self):
         self.login(self.alice)
-        r = self.client.post('/third_side/ratings', {'article': self.article.pk, 'value': 4}, format='json')
+        r = self.client.post(
+            '/third_side/ratings',
+            {'article': self.article.pk, 'value': 4},
+            format='json',
+        )
         self.assertEqual(r.status_code, 201)
-        r = self.client.post('/third_side/ratings', {'article': self.article.pk, 'value': 2}, format='json')
+        r = self.client.post(
+            '/third_side/ratings',
+            {'article': self.article.pk, 'value': 2},
+            format='json',
+        )
         self.assertEqual(r.status_code, 200)
         mine = self.client.get(f'/third_side/ratings?article={self.article.pk}').data
         self.assertEqual([x['value'] for x in mine['results']], [2])
@@ -95,7 +111,11 @@ class EngagementTests(APITestCase):
             )
         for user, value in ((self.alice, 5), (self.bob, 3)):
             self.login(user)
-            self.client.post('/third_side/ratings', {'article': self.article.pk, 'value': value}, format='json')
+            self.client.post(
+                '/third_side/ratings',
+                {'article': self.article.pk, 'value': value},
+                format='json',
+            )
         self.client.force_authenticate(None)
         data = self.client.get('/third_side/articles/by-slug/t').data
         self.assertEqual(data['rating'], {'average': 4.0, 'count': 2})
@@ -103,8 +123,14 @@ class EngagementTests(APITestCase):
     def test_report_is_idempotent_per_reader(self):
         self.login(self.alice)
         body = {'content_type': 'article', 'object_id': self.article.pk}
-        self.assertEqual(self.client.post('/third_side/reports', body, format='json').status_code, 201)
-        self.assertEqual(self.client.post('/third_side/reports', body, format='json').status_code, 200)
+        self.assertEqual(
+            self.client.post('/third_side/reports', body, format='json').status_code,
+            201,
+        )
+        self.assertEqual(
+            self.client.post('/third_side/reports', body, format='json').status_code,
+            200,
+        )
 
     def test_read_counter_throttled_scope_exists(self):
         from django.conf import settings

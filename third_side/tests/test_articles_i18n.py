@@ -32,7 +32,9 @@ class ArticleI18nTests(APITestCase):
         )
         cls.theater = Category.objects.create(name='Theater', slug='theater')
         cls.critic = Critic.objects.create(name='Sara')
-        cls.tag = Tag.objects.create(slug='directors', name={'ar': 'مخرجون', 'en': 'Directors'})
+        cls.tag = Tag.objects.create(
+            slug='directors', name={'ar': 'مخرجون', 'en': 'Directors'}
+        )
         cls.article = Article.objects.create(
             title='شاهين',
             slug='شاهين',
@@ -91,7 +93,9 @@ class ArticleI18nTests(APITestCase):
         self.assertEqual(data['title'], 'شاهين')
 
     def test_unknown_slug_404(self):
-        self.assertEqual(self.client.get('/third_side/articles/by-slug/nope').status_code, 404)
+        self.assertEqual(
+            self.client.get('/third_side/articles/by-slug/nope').status_code, 404
+        )
 
     def test_list_filters(self):
         base = '/third_side/articles'
@@ -153,7 +157,6 @@ class WebhookTranslationSyncTests(APITestCase):
         self.assertEqual(rows['en'].slug, 'title')
         self.assertEqual(rows['en'].content, lexical('en'))
 
-
     def test_webhook_copies_ai_flag_and_keeps_it_when_absent(self):
         from third_side.models import SyncedArticle
 
@@ -181,9 +184,7 @@ class WebhookTranslationSyncTests(APITestCase):
             )
 
         def flags():
-            return {
-                t.locale: t.is_ai_generated for t in article.translations.all()
-            }
+            return {t.locale: t.is_ai_generated for t in article.translations.all()}
 
         push('2026-10-01T00:00:00Z', aiGenerated={'ar': False, 'en': True})
         self.assertEqual(flags(), {'ar': False, 'en': True})
@@ -193,7 +194,6 @@ class WebhookTranslationSyncTests(APITestCase):
         # A human review unticks it.
         push('2026-10-03T00:00:00Z', aiGenerated={'ar': False, 'en': False})
         self.assertEqual(flags(), {'ar': False, 'en': False})
-
 
     def test_webhook_sets_original_language_from_tick(self):
         from third_side.models import SyncedArticle
@@ -252,6 +252,7 @@ class WebhookTranslationSyncTests(APITestCase):
         )
         self.assertEqual(doc_no_text, 'ar')
 
+
 class BackfillCommandTests(APITestCase):
     def test_backfill_creates_translations_from_stored_docs(self):
         from django.core.management import call_command
@@ -261,7 +262,10 @@ class BackfillCommandTests(APITestCase):
         category = Category.objects.create(name='C4', slug='c4')
         critic = Critic.objects.create(name='K4')
         article = Article.objects.create(
-            title='t', slug='t4', category=category, critic=critic,
+            title='t',
+            slug='t4',
+            category=category,
+            critic=critic,
             status=ArticleStatus.PUBLISHED,
         )
         SyncedArticle.objects.create(
