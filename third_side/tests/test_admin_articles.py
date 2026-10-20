@@ -418,3 +418,94 @@ class ArticleSeoTests(APITestCase):
         response = self.client.post('/third_side/articles', body, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertIn('canonical_url', response.data)
+
+
+class PublishedArticleLockTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.category = Category.objects.create(name='Cinema', slug='cinema')
+        cls.critic = Critic.objects.create(name='Writer')
+        cls.editor = ThirdSideUser.objects.create_user(
+            'editor@example.com', 'pw', role=Role.EDITOR
+        )
+
+    def setUp(self):
+        self.client.force_authenticate(self.editor)
+
+    def body(self, status):
+        return {
+            'category': self.category.pk,
+            'critic': self.critic.pk,
+            'status': status,
+            'doc': {
+                'title': {'en': 'Hello'},
+                'content': {'en': lexical('hi')},
+                'isOriginalLanguage': {'en': True},
+            },
+        }
+
+    def publish(self):
+        response = self.client.post(
+            '/third_side/articles', self.body(ArticleStatus.PUBLISHED), format='json'
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        return response.data['id']
+
+    def test_publishing_itself_is_allowed_then_it_is_locked(self):
+        pk = self.publish()
+        self.assertEqual(Article.objects.get(pk=pk).status, ArticleStatus.PUBLISHED)
+        for method in (self.client.put, self.client.patch):
+            response = method(
+                f'/third_side/articles/{pk}',
+                self.body(ArticleStatus.PUBLISHED),
+                format='json',
+            )
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('locked', str(response.data['detail']))
+
+    def test_a_published_article_cannot_change_state_or_text_or_be_deleted(self):
+        pk = self.publish()
+        url = f'/third_side/articles/{pk}'
+        for patch in (
+            {'status': ArticleStatus.DRAFT},
+            {'editor': self.editor.pk},
+            {'doc': {'title': {'en': 'Changed'}}},
+        ):
+            self.assertEqual(
+                self.client.patch(url, patch, format='json').status_code, 400, patch
+            )
+        self.assertEqual(self.client.delete(url).status_code, 400)
+        article = Article.objects.get(pk=pk)
+        self.assertEqual(article.status, ArticleStatus.PUBLISHED)
+        self.assertEqual(article.title, 'Hello')
+        self.assertEqual(article.translations.get(locale='en').title, 'Hello')
+
+    def test_other_states_stay_editable_and_deletable(self):
+        created = self.client.post(
+            '/third_side/articles', self.body(ArticleStatus.DRAFT), format='json'
+        )
+        url = f"/third_side/articles/{created.data['id']}"
+        response = self.client.patch(
+            url, self.body(ArticleStatus.SUBMITTED), format='json'
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(self.client.delete(url).status_code, 204)
+
+    def test_a_scheduled_article_that_came_due_is_locked_once_published(self):
+        created = self.client.post(
+            '/third_side/articles',
+            {
+                **self.body(ArticleStatus.SCHEDULED),
+                'published_at': (timezone.now() + timedelta(hours=1)).isoformat(),
+            },
+            format='json',
+        )
+        self.assertEqual(created.status_code, 201, created.data)
+        pk = created.data['id']
+        Article.objects.filter(pk=pk).update(
+            published_at=timezone.now() - timedelta(minutes=1)
+        )
+        response = self.client.patch(
+            f'/third_side/articles/{pk}', {'editor': self.editor.pk}, format='json'
+        )
+        self.assertEqual(response.status_code, 400)

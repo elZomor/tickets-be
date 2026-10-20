@@ -3,6 +3,7 @@ from django.http import Http404
 from django.utils import timezone
 from rest_framework import mixins
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -98,6 +99,24 @@ class ArticleViewSet(
         if getattr(self.request, 'method', None) == 'GET' or self.action in ('read',):
             return [AllowAny()]
         return [IsAuthenticated(), IsEditor()]
+
+    def _refuse_if_published(self, article):
+        """A published article is final: no edits, no state change, no delete."""
+        if article.status == ArticleStatus.PUBLISHED:
+            raise ValidationError(
+                {
+                    'detail': 'A published article is locked: it cannot be edited, '
+                    'changed to another state or deleted.'
+                }
+            )
+
+    def update(self, request, *args, **kwargs):
+        self._refuse_if_published(self.get_object())
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        self._refuse_if_published(self.get_object())
+        return super().destroy(request, *args, **kwargs)
 
     def save_new(self, serializer):
         serializer.save(created_by=self.request.user)
