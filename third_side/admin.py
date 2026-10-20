@@ -5,6 +5,7 @@ from django_json_widget.widgets import JSONEditorWidget
 
 from third_side.models import (
     AboutPage,
+    ActivityLog,
     Ad,
     Article,
     ArticleTranslation,
@@ -203,3 +204,21 @@ class FestivalPostAdmin(JsonFieldsAdmin):
     date_hierarchy = 'published_at'
     raw_id_fields = ('article',)
     inlines = [FestivalPostMediaInline]
+
+
+@admin.register(ActivityLog)
+class ActivityLogAdmin(admin.ModelAdmin):
+    """Read-only: the log is written by the editor API only."""
+
+    list_display = ('created_at', 'actor_email', 'action', 'object_type', 'object_repr')
+    list_filter = ('action', 'object_type')
+    search_fields = ('object_repr', 'actor_email', 'actor_name')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

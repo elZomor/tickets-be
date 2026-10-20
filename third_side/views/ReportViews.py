@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, status
@@ -9,8 +10,10 @@ from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Article, Comment, Report
+from third_side.models.ActivityLog import ActivityAction, ActivityObject
 from third_side.permissions import IsEditor
 from third_side.serializers import ReportSerializer
+from third_side.services import audit
 
 TARGET_MODELS = {'article': Article, 'comment': Comment}
 
@@ -60,12 +63,28 @@ class ReportViewSet(
     @action(detail=True, methods=['PATCH'])
     def review(self, request, pk=None):
         report = get_object_or_404(Report, pk=pk)
-        report.reviewed_by = request.user
-        report.reviewed_at = timezone.now()
-        report.save(update_fields=['reviewed_by', 'reviewed_at'])
+        with transaction.atomic():
+            report.reviewed_by = request.user
+            report.reviewed_at = timezone.now()
+            report.save(update_fields=['reviewed_by', 'reviewed_at'])
 
-        target = report.content_type.get_object_for_this_type(pk=report.object_id)
-        target.is_hidden = False
-        target.save(update_fields=['is_hidden'])
+            target = report.content_type.get_object_for_this_type(pk=report.object_id)
+            was_hidden = target.is_hidden
+            target.is_hidden = False
+            target.save(update_fields=['is_hidden'])
+            audit.write(
+                request,
+                ActivityAction.REVIEW,
+                ActivityObject.REPORT,
+                report.pk,
+                f'{report.content_type.model} #{report.object_id}',
+                {
+                    'target': {
+                        'before': None,
+                        'after': f'{report.content_type.model} #{report.object_id}',
+                    },
+                    'target_is_hidden': {'before': was_hidden, 'after': False},
+                },
+            )
 
         return Response(self.get_serializer(report).data)

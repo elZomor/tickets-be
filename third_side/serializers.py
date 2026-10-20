@@ -13,6 +13,7 @@ from third_side.services.media_urls import to_key, to_url
 from third_side.services.translations import sync_translations
 
 from third_side.models import (
+    ActivityLog,
     Article,
     Category,
     Comment,
@@ -444,3 +445,32 @@ class FestivalPostWriteSerializer(serializers.ModelSerializer):
         if media is not None:
             self._save_media(post, media)
         return post
+
+
+class ActivityLogListSerializer(serializers.ModelSerializer):
+    """A row of the activity log; the values themselves are in the detail."""
+
+    changed_fields = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ActivityLog
+        fields = [
+            'id',
+            'created_at',
+            'actor',
+            'actor_name',
+            'actor_email',
+            'action',
+            'object_type',
+            'object_id',
+            'object_repr',
+            'changed_fields',
+        ]
+
+    def get_changed_fields(self, obj) -> list:
+        return list(obj.changes)
+
+
+class ActivityLogDetailSerializer(ActivityLogListSerializer):
+    class Meta(ActivityLogListSerializer.Meta):
+        fields = ActivityLogListSerializer.Meta.fields + ['changes', 'ip_address']

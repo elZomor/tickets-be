@@ -3,6 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
+from third_side.views.audit_mixin import AuditedMixin
 from third_side.models import Category, NavGroup, Tag
 from third_side.permissions import IsEditor
 from third_side.read_serializers import (
@@ -14,6 +15,7 @@ from third_side.serializers import CategorySerializer
 
 
 class CategoryViewSet(
+    AuditedMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
