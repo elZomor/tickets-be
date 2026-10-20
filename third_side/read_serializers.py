@@ -178,6 +178,8 @@ class ArticleReadSerializer(serializers.ModelSerializer):
             'tags',
             'status',
             'published_at',
+            'created_at',
+            'via_website',
             'created_by',
             'is_hidden',
             'is_featured',
