@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from third_side.views import (
     AboutView,
+    ActivityLogViewSet,
     AdClickView,
     AdImpressionView,
     AdPickView,
@@ -43,6 +44,7 @@ router.register(r'articles', ArticleViewSet, basename='article-view')
 router.register(r'ratings', RatingViewSet, basename='rating-view')
 router.register(r'comments', CommentViewSet, basename='comment-view')
 router.register(r'reports', ReportViewSet, basename='report-view')
+router.register(r'activity-log', ActivityLogViewSet, basename='activity-log-view')
 
 urlpatterns = [
     path('auth/login', LoginView.as_view(), name='auth-login'),

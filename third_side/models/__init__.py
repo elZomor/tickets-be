@@ -17,3 +17,4 @@ from .TermsVersion import *  # noqa:F401, F403
 from .TermsAcceptance import *  # noqa:F401, F403
 from .Festival import *  # noqa:F401, F403
 from .FestivalPost import *  # noqa:F401, F403
+from .ActivityLog import *  # noqa:F401, F403

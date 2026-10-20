@@ -10,6 +10,7 @@ from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Festival, FestivalPost
 from third_side.models.Article import live_q
 from third_side.models.FestivalPost import FestivalPostType
+from third_side.views.audit_mixin import AuditedMixin
 from third_side.permissions import IsEditor, is_editor
 from third_side.read_serializers import (
     FestivalPostReadSerializer,
@@ -47,6 +48,7 @@ class FestivalViewSet(
 
 
 class FestivalPostViewSet(
+    AuditedMixin,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,

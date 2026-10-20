@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
+from third_side.views.audit_mixin import AuditedMixin
 from third_side.models import Critic
 from third_side.models.Article import live_q
 from third_side.permissions import IsEditor
@@ -15,6 +16,7 @@ from third_side.serializers import CriticSerializer
 
 
 class CriticViewSet(
+    AuditedMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,

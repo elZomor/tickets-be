@@ -5,6 +5,7 @@ from .CategoryViews import (  # noqa:F401
 )
 from .CriticViews import CriticViewSet  # noqa:F401
 from .ArticleViews import ArticleViewSet  # noqa:F401
+from .ActivityLogViews import ActivityLogViewSet  # noqa:F401
 from .EditorViews import EditorListView  # noqa:F401
 from .MediaViews import MediaUploadView  # noqa:F401
 from .RatingViews import RatingViewSet  # noqa:F401

@@ -1,3 +1,4 @@
+from django.db import transaction
 from PIL import Image
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -7,7 +8,9 @@ from rest_framework.views import APIView
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Media
+from third_side.models.ActivityLog import ActivityAction
 from third_side.permissions import IsEditor
+from third_side.services import audit
 
 MAX_BYTES = 10 * 1024 * 1024
 
@@ -54,7 +57,15 @@ class MediaUploadView(APIView):
             filesize=upload.size,
             uploaded_by=request.user,
         )
-        media.save()
+        with transaction.atomic():
+            media.save()
+            audit.record(
+                request,
+                ActivityAction.UPLOAD,
+                media,
+                {},
+                audit.snapshot(media),
+            )
         return Response(
             {
                 'id': media.pk,

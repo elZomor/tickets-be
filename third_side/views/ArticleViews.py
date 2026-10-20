@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
+from third_side.views.audit_mixin import AuditedMixin
 from third_side.models import Article
 from third_side.models.Article import ArticleStatus, live_q
 from third_side.permissions import IsEditor, is_editor
@@ -21,6 +22,7 @@ from third_side.services.translations import translation_map
 
 
 class ArticleViewSet(
+    AuditedMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
@@ -97,7 +99,7 @@ class ArticleViewSet(
             return [AllowAny()]
         return [IsAuthenticated(), IsEditor()]
 
-    def perform_create(self, serializer):
+    def save_new(self, serializer):
         serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['get'])
