@@ -8,7 +8,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Festival, FestivalPost
-from third_side.models.Article import ArticleStatus
+from third_side.models.Article import live_q
 from third_side.models.FestivalPost import FestivalPostType
 from third_side.permissions import IsEditor, is_editor
 from third_side.read_serializers import (
@@ -91,7 +91,7 @@ class FestivalPostViewSet(
             & (
                 Q(article__isnull=True)
                 | Q(article__is_hidden=True)
-                | ~Q(article__status=ArticleStatus.PUBLISHED)
+                | ~live_q('article__')
             )
         )
 

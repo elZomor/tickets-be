@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 
 from third_side.i18n import LOCALES
@@ -8,6 +9,7 @@ from third_side.models.FestivalPost import (
     FestivalPostType,
 )
 from third_side.services.festivals import shown_translation
+from third_side.services.media_urls import to_key, to_url
 from third_side.services.translations import sync_translations
 
 from third_side.models import (
@@ -19,8 +21,10 @@ from third_side.models import (
     FestivalPostMedia,
     Rating,
     Report,
+    Role,
     ThirdSideUser,
 )
+from third_side.models.Article import ArticleStatus
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -43,6 +47,12 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     category_name = serializers.SerializerMethodField()
     critic_name = serializers.SerializerMethodField()
+    editor = serializers.PrimaryKeyRelatedField(
+        queryset=ThirdSideUser.objects.filter(role=Role.EDITOR),
+        allow_null=True,
+        required=False,
+    )
+    editor_name = serializers.SerializerMethodField()
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     doc = serializers.DictField(write_only=True, required=False)
 
@@ -56,6 +66,9 @@ class ArticleSerializer(serializers.ModelSerializer):
             'category_name',
             'critic',
             'critic_name',
+            'editor',
+            'editor_name',
+            'cover_url',
             'content',
             'status',
             'published_at',
@@ -81,6 +94,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             attrs.setdefault('slug', slugs[original])
         elif self.instance is None and not (attrs.get('title') and attrs.get('slug')):
             raise serializers.ValidationError('A title and a slug are required.')
+        self._check_publishing(attrs)
         slug = attrs.get('slug')
         if (
             slug
@@ -90,6 +104,33 @@ class ArticleSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError({'slug': 'This slug is already used.'})
         return attrs
+
+    def validate_cover_url(self, value):
+        return to_key(value)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['cover_url'] = to_url(data['cover_url'], self.context.get('request'))
+        return data
+
+    def _check_publishing(self, attrs):
+        """Publishing stamps the time; scheduling needs a future time."""
+        current = self.instance
+        state = attrs.get('status', current.status if current else None)
+        when = attrs.get('published_at', current.published_at if current else None)
+        if state == ArticleStatus.PUBLISHED and when is None:
+            attrs['published_at'] = timezone.now()
+        elif state == ArticleStatus.SCHEDULED:
+            if when is None:
+                raise serializers.ValidationError(
+                    {'published_at': 'Choose when to publish.'}
+                )
+            was_scheduled = current and current.status == ArticleStatus.SCHEDULED
+            moved = current is None or current.published_at != when
+            if when <= timezone.now() and (moved or not was_scheduled):
+                raise serializers.ValidationError(
+                    {'published_at': 'The scheduled time must be in the future.'}
+                )
 
     @transaction.atomic
     def create(self, validated_data):
@@ -114,6 +155,10 @@ class ArticleSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_critic_name(obj):
         return obj.critic.name if obj.critic else None
+
+    @staticmethod
+    def get_editor_name(obj):
+        return obj.editor.display_name if obj.editor else None
 
 
 class RatingSerializer(serializers.ModelSerializer):
@@ -247,12 +292,16 @@ class FestivalPostMediaWriteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        request = self.context.get('request')
         # Images uploaded through the Django admin have a file, not a URL.
         if not data['image_url'] and instance.image:
-            request = self.context.get('request')
             url = instance.image.url
             data['image_url'] = request.build_absolute_uri(url) if request else url
+        data['image_url'] = to_url(data['image_url'], request)
         return data
+
+    def validate_image_url(self, value):
+        return to_key(value)
 
     def validate_alt_i18n(self, value):
         return _clean_text_map(value, 'alt_i18n')
@@ -287,6 +336,14 @@ class FestivalPostWriteSerializer(serializers.ModelSerializer):
             'poster_url',
             'media',
         ]
+
+    def validate_poster_url(self, value):
+        return to_key(value)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['poster_url'] = to_url(data['poster_url'], self.context.get('request'))
+        return data
 
     def get_article_title(self, obj) -> str | None:
         if not obj.article_id:

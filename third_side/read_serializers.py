@@ -13,6 +13,8 @@ from third_side.models import (
     Tag,
 )
 from third_side.models.FestivalPost import FestivalPostType
+from third_side.permissions import is_editor
+from third_side.services.media_urls import to_url
 from third_side.services.festivals import article_path, shown_translation
 from third_side.services.translations import (
     languages_of,
@@ -31,7 +33,7 @@ def _media_url(serializer, file_field, fallback_url):
         request = serializer.context.get('request')
         url = file_field.url
         return request.build_absolute_uri(url) if request else url
-    return fallback_url or None
+    return to_url(fallback_url, serializer.context.get('request')) or None
 
 
 class NavGroupSerializer(serializers.ModelSerializer):
@@ -156,6 +158,8 @@ class ArticleReadSerializer(serializers.ModelSerializer):
     category_name = serializers.SerializerMethodField()
     critic_name = serializers.SerializerMethodField()
     cover = serializers.SerializerMethodField()
+    editor = serializers.SerializerMethodField()
+    editor_name = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
     rating = serializers.SerializerMethodField()
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -175,6 +179,8 @@ class ArticleReadSerializer(serializers.ModelSerializer):
             'critic',
             'critic_name',
             'cover',
+            'editor',
+            'editor_name',
             'tags',
             'status',
             'published_at',
@@ -194,7 +200,7 @@ class ArticleReadSerializer(serializers.ModelSerializer):
     def _translations(self, obj):
         cache = self.context.setdefault('_translations', {})
         if obj.pk not in cache:
-            cache[obj.pk] = translation_map(obj)
+            cache[obj.pk] = translation_map(obj, self.context.get('request'))
         return cache[obj.pk]
 
     def _shown(self, obj):
@@ -228,6 +234,18 @@ class ArticleReadSerializer(serializers.ModelSerializer):
 
     def get_cover(self, obj) -> str | None:
         return _media_url(self, obj.cover, obj.cover_url)
+
+    def _staff_view(self):
+        request = self.context.get('request')
+        return is_editor(getattr(request, 'user', None))
+
+    def get_editor(self, obj) -> int | None:
+        return obj.editor_id if self._staff_view() else None
+
+    def get_editor_name(self, obj) -> str | None:
+        if not (self._staff_view() and obj.editor_id):
+            return None
+        return obj.editor.display_name
 
     def get_rating(self, obj) -> dict:
         average = getattr(obj, 'rating_avg', None)

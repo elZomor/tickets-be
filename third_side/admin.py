@@ -91,11 +91,13 @@ class ArticleAdmin(admin.ModelAdmin):
         'title',
         'category',
         'critic',
+        'editor',
         'status',
         'is_hidden',
         'published_at',
     )
-    list_filter = ('status', 'category', 'is_hidden', 'original_language')
+    list_editable = ('editor',)
+    list_filter = ('status', 'category', 'editor', 'is_hidden', 'original_language')
     prepopulated_fields = {'slug': ('title',)}
     inlines = [ArticleTranslationInline]
     filter_horizontal = ('tags',)

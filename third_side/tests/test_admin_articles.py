@@ -1,7 +1,9 @@
 import io
+from datetime import timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from third_side.models import Article, Category, Critic, Media, Role, ThirdSideUser
@@ -144,3 +146,158 @@ class MediaUploadTests(APITestCase):
         self.assertIn(self.upload().status_code, (401, 403))
         self.client.force_authenticate(self.reader)
         self.assertEqual(self.upload().status_code, 403)
+
+
+class PublishingAndEditorTests(APITestCase):
+    """Cover, editor assignment, publishing and scheduling on the editor API."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.category = Category.objects.create(name='Cinema', slug='cinema')
+        cls.critic = Critic.objects.create(name='Writer')
+        cls.editor = ThirdSideUser.objects.create_user(
+            'editor@example.com', 'pw', name='Ed', role=Role.EDITOR
+        )
+        cls.reader = ThirdSideUser.objects.create_user(
+            'reader@example.com', 'pw', role=Role.READER
+        )
+
+    def body(self, **extra):
+        return {
+            'category': self.category.pk,
+            'critic': self.critic.pk,
+            'doc': {
+                'title': {'en': 'Hello'},
+                'slug': {'en': 'hello'},
+                'content': {'en': lexical('hi')},
+                'isOriginalLanguage': {'en': True},
+            },
+            **extra,
+        }
+
+    def create(self, **extra):
+        self.client.force_authenticate(self.editor)
+        response = self.client.post(
+            '/third_side/articles', self.body(**extra), format='json'
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        return Article.objects.get(pk=response.data['id'])
+
+    def test_cover_and_editor_round_trip(self):
+        article = self.create(
+            cover_url='http://x/' + 'a' * 600 + '.png', editor=self.editor.pk
+        )
+        self.assertEqual(article.editor, self.editor)
+        doc = self.client.get(f'/third_side/articles/{article.pk}/doc').data
+        self.assertEqual(doc['editor'], self.editor.pk)
+        self.assertEqual(doc['cover'], article.cover_url)
+
+    def test_editor_must_be_an_editor_user(self):
+        self.client.force_authenticate(self.editor)
+        response = self.client.post(
+            '/third_side/articles', self.body(editor=self.reader.pk), format='json'
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_editor_can_be_unassigned_inline(self):
+        article = self.create(editor=self.editor.pk)
+        response = self.client.patch(
+            f'/third_side/articles/{article.pk}', {'editor': None}, format='json'
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        article.refresh_from_db()
+        self.assertIsNone(article.editor)
+
+    def test_editors_list_and_filter(self):
+        article = self.create(editor=self.editor.pk)
+        self.create_other = Article.objects.create(
+            title='o', slug='o', category=self.category, critic=self.critic
+        )
+        listed = self.client.get('/third_side/editors').data
+        self.assertEqual(listed, [{'id': self.editor.pk, 'name': 'Ed'}])
+        rows = self.client.get(f'/third_side/articles?editor={self.editor.pk}').data
+        self.assertEqual([r['id'] for r in rows['results']], [article.pk])
+        self.assertEqual(rows['results'][0]['editor_name'], 'Ed')
+        self.client.force_authenticate(self.reader)
+        self.assertEqual(self.client.get('/third_side/editors').status_code, 403)
+
+    def test_public_never_sees_the_editor(self):
+        article = self.create(editor=self.editor.pk, status=ArticleStatus.PUBLISHED)
+        self.client.force_authenticate(None)
+        data = self.client.get(f'/third_side/articles/{article.pk}').data
+        self.assertIsNone(data['editor'])
+        self.assertIsNone(data['editor_name'])
+
+    def test_publishing_stamps_the_time(self):
+        article = self.create(status=ArticleStatus.PUBLISHED)
+        self.assertIsNotNone(article.published_at)
+
+    def test_scheduled_needs_a_future_time(self):
+        self.client.force_authenticate(self.editor)
+        for extra in (
+            {},
+            {'published_at': (timezone.now() - timedelta(hours=1)).isoformat()},
+        ):
+            response = self.client.post(
+                '/third_side/articles',
+                self.body(status=ArticleStatus.SCHEDULED, **extra),
+                format='json',
+            )
+            self.assertEqual(response.status_code, 400)
+
+    def test_scheduled_goes_live_when_due(self):
+        when = timezone.now() + timedelta(hours=1)
+        article = self.create(
+            status=ArticleStatus.SCHEDULED, published_at=when.isoformat()
+        )
+        self.client.force_authenticate(None)
+        self.assertEqual(
+            self.client.get(f'/third_side/articles/{article.pk}').status_code, 404
+        )
+        Article.objects.filter(pk=article.pk).update(
+            published_at=timezone.now() - timedelta(minutes=1)
+        )
+        self.assertEqual(
+            self.client.get(f'/third_side/articles/{article.pk}').status_code, 200
+        )
+        self.client.force_authenticate(self.editor)
+        self.client.get('/third_side/articles')
+        article.refresh_from_db()
+        self.assertEqual(article.status, ArticleStatus.PUBLISHED)
+
+
+class StoredKeyTests(PublishingAndEditorTests):
+    """Uploaded images are stored by key, not by their (possibly signed) URL."""
+
+    def signed(self, key='third_side/media/a.png'):
+        return f'https://bucket.s3.amazonaws.com/{key}?X-Amz-Signature=' + 'x' * 800
+
+    def test_cover_is_stored_as_a_key(self):
+        article = self.create(cover_url=self.signed())
+        self.assertEqual(article.cover_url, 'third_side/media/a.png')
+
+    def test_external_cover_is_kept(self):
+        article = self.create(cover_url='https://cdn.example.com/c.jpg')
+        self.assertEqual(article.cover_url, 'https://cdn.example.com/c.jpg')
+
+    def test_body_images_keep_the_key_and_read_back_a_url(self):
+        content = {
+            'root': {
+                'type': 'root',
+                'children': [
+                    {'type': 'upload', 'value': {'id': 1, 'url': self.signed()}}
+                ],
+            }
+        }
+        body = self.body()
+        body['doc']['content'] = {'en': content}
+        self.client.force_authenticate(self.editor)
+        created = self.client.post('/third_side/articles', body, format='json')
+        article = Article.objects.get(pk=created.data['id'])
+        stored = article.translations.get(locale='en').content
+        self.assertEqual(
+            stored['root']['children'][0]['value']['url'], 'third_side/media/a.png'
+        )
+        doc = self.client.get(f'/third_side/articles/{article.pk}/doc').data
+        url = doc['content']['en']['root']['children'][0]['value']['url']
+        self.assertTrue(url.endswith('/media/third_side/media/a.png'), url)
