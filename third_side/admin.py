@@ -12,6 +12,9 @@ from third_side.models import (
     Comment,
     CommentLike,
     Critic,
+    Festival,
+    FestivalPost,
+    FestivalPostMedia,
     NavGroup,
     SiteSettings,
     Rating,
@@ -210,3 +213,24 @@ class TermsAcceptanceAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(Festival)
+class FestivalAdmin(JsonFieldsAdmin):
+    list_display = ('slug', 'starts_on', 'ends_on')
+    search_fields = ('slug',)
+
+
+class FestivalPostMediaInline(admin.StackedInline):
+    model = FestivalPostMedia
+    extra = 0
+    formfield_overrides = {models.JSONField: {'widget': JSONEditorWidget}}
+
+
+@admin.register(FestivalPost)
+class FestivalPostAdmin(JsonFieldsAdmin):
+    list_display = ('id', 'festival', 'type', 'published_at', 'is_published')
+    list_filter = ('festival', 'type', 'is_published')
+    date_hierarchy = 'published_at'
+    raw_id_fields = ('article',)
+    inlines = [FestivalPostMediaInline]

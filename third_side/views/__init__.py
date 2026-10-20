@@ -28,3 +28,4 @@ from .SiteViews import (  # noqa:F401
 from .SubmissionViews import SubmissionsView  # noqa:F401
 from .ProfileViews import ProfileMeView  # noqa:F401
 from .CmsWebhookViews import CmsWebhookView, SyncedArticleViewSet  # noqa:F401
+from .FestivalViews import FestivalPostViewSet, FestivalViewSet  # noqa:F401
