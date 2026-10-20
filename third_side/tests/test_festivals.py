@@ -223,6 +223,7 @@ class FestivalApiTests(APITestCase):
 
     def test_read_only_for_everyone(self):
         self.assertEqual(self.client.post('/third_side/festivals', {}).status_code, 405)
-        self.assertEqual(
-            self.client.post('/third_side/festival-posts', {}).status_code, 405
+        # Posts are written by editors only (see test_festival_post_admin).
+        self.assertIn(
+            self.client.post('/third_side/festival-posts', {}).status_code, (401, 403)
         )
