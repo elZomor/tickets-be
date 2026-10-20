@@ -15,6 +15,7 @@ class ActivityObject(models.TextChoices):
     CATEGORY = 'category', 'Category'
     CRITIC = 'critic', 'Critic'
     MEDIA = 'media', 'Media'
+    TAG = 'tag', 'Tag'
     REPORT = 'report', 'Report'
 
 

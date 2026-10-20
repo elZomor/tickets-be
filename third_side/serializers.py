@@ -474,3 +474,49 @@ class ActivityLogListSerializer(serializers.ModelSerializer):
 class ActivityLogDetailSerializer(ActivityLogListSerializer):
     class Meta(ActivityLogListSerializer.Meta):
         fields = ActivityLogListSerializer.Meta.fields + ['changes', 'ip_address']
+
+
+class TagWriteSerializer(serializers.ModelSerializer):
+    """A new tag from the editor: only its names; the slugs follow from them.
+
+    `name` is {ar, en, ro}; at least one is needed and a missing language
+    reuses the first given one. The tag's slug comes from the English name
+    (which is the Arabic one when no English was given).
+    """
+
+    class Meta:
+        model = Tag
+        fields = ['slug', 'name', 'url_slug']
+        read_only_fields = ['slug', 'url_slug']
+
+    def validate_name(self, value):
+        if not isinstance(value, dict) or not set(value) <= set(LOCALES):
+            raise serializers.ValidationError(
+                'Give the name per language: ' + ', '.join(LOCALES) + '.'
+            )
+        names = {
+            lang: str(value[lang]).strip()
+            for lang in LOCALES
+            if str(value.get(lang) or '').strip()
+        }
+        if not names:
+            raise serializers.ValidationError(
+                'A tag needs a name in at least one language.'
+            )
+        first = next(names[lang] for lang in LOCALES if lang in names)
+        return {lang: names.get(lang, first) for lang in LOCALES}
+
+    def create(self, validated_data):
+        names = validated_data['name']
+        slug = slug_from_title(names['en'])
+        if not slug:
+            raise serializers.ValidationError({'name': 'A tag name needs letters.'})
+        if Tag.objects.filter(slug=slug).exists():
+            raise serializers.ValidationError(
+                {'name': 'A tag with this name already exists.'}
+            )
+        return Tag.objects.create(
+            slug=slug,
+            name=names,
+            url_slug={lang: slug_from_title(names[lang]) or slug for lang in LOCALES},
+        )
