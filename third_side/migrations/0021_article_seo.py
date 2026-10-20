@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('third_side', '0019_article_editor_schedule_long_urls'),
+        ('third_side', '0020_ascii_upload_names'),
     ]
 
     operations = [

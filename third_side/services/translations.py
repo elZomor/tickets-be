@@ -102,7 +102,10 @@ def sync_translations(article, doc):
         if locale in ai_flags:
             defaults['is_ai_generated'] = bool(ai_flags[locale])
         # SEO text is only touched when the editor sent it for this language.
-        for key, field in (('seoTitle', 'seo_title'), ('metaDescription', 'meta_description')):
+        for key, field in (
+            ('seoTitle', 'seo_title'),
+            ('metaDescription', 'meta_description'),
+        ):
             values = doc.get(key)
             if isinstance(values, dict) and locale in values:
                 defaults[field] = (values[locale] or '').strip()
