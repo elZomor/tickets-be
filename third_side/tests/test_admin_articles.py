@@ -6,7 +6,7 @@ from PIL import Image
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from third_side.models import Article, Category, Critic, Media, Role, ThirdSideUser
+from third_side.models import Article, Category, Critic, Media, Role, Tag, ThirdSideUser
 from third_side.models.Article import ArticleStatus
 
 
@@ -301,3 +301,87 @@ class StoredKeyTests(PublishingAndEditorTests):
         doc = self.client.get(f'/third_side/articles/{article.pk}/doc').data
         url = doc['content']['en']['root']['children'][0]['value']['url']
         self.assertTrue(url.endswith('/media/third_side/media/a.png'), url)
+
+
+class ArticleSeoTests(APITestCase):
+    """SEO fields the editor saves: per-language title/description, tags, indexing."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.category = Category.objects.create(name='Cinema', slug='cinema')
+        cls.critic = Critic.objects.create(name='Writer')
+        cls.editor = ThirdSideUser.objects.create_user(
+            'editor@example.com', 'pw', role=Role.EDITOR
+        )
+        Tag.objects.create(slug='drama', name={'en': 'Drama'})
+
+    def body(self):
+        return {
+            'category': self.category.pk,
+            'critic': self.critic.pk,
+            'status': ArticleStatus.DRAFT,
+            'doc': {
+                'title': {'en': 'Hello', 'ar': 'مرحبا'},
+                'slug': {'en': 'hello', 'ar': 'مرحبا'},
+                'content': {'en': lexical('hi'), 'ar': lexical('اهلا')},
+                'isOriginalLanguage': {'en': True},
+            },
+        }
+
+    def seo_body(self):
+        body = self.body()
+        body['doc']['seoTitle'] = {'en': ' Search title ', 'ar': 'عنوان البحث'}
+        body['doc']['metaDescription'] = {'en': 'A description'}
+        body['noindex'] = True
+        body['canonical_url'] = 'https://example.com/original'
+        body['tags'] = ['drama']
+        return body
+
+    def test_seo_round_trips_through_save_doc_and_public_detail(self):
+        self.client.force_authenticate(self.editor)
+        response = self.client.post('/third_side/articles', self.seo_body(), format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        article = Article.objects.get(pk=response.data['id'])
+        self.assertTrue(article.noindex)
+        self.assertEqual(list(article.tags.values_list('slug', flat=True)), ['drama'])
+        en = article.translations.get(locale='en')
+        self.assertEqual((en.seo_title, en.meta_description), ('Search title', 'A description'))
+
+        doc = self.client.get(f'/third_side/articles/{article.pk}/doc').data
+        self.assertEqual(doc['seoTitle']['ar'], 'عنوان البحث')
+        self.assertEqual(doc['metaDescription']['en'], 'A description')
+        self.assertEqual(doc['tags'], ['drama'])
+        self.assertTrue(doc['noindex'])
+        self.assertEqual(doc['canonicalUrl'], 'https://example.com/original')
+
+        article.status = ArticleStatus.PUBLISHED
+        article.published_at = timezone.now()
+        article.save()
+        self.client.force_authenticate(None)
+        detail = self.client.get('/third_side/articles/by-slug/hello?lang=en').data
+        self.assertEqual(detail['seo_title'], 'Search title')
+        self.assertEqual(detail['meta_description'], 'A description')
+        self.assertTrue(detail['noindex'])
+        self.assertEqual(detail['canonical_url'], 'https://example.com/original')
+
+    def test_saving_without_seo_keys_keeps_the_stored_text(self):
+        self.client.force_authenticate(self.editor)
+        response = self.client.post('/third_side/articles', self.seo_body(), format='json')
+        pk = response.data['id']
+        response = self.client.patch(f'/third_side/articles/{pk}', self.body(), format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(
+            Article.objects.get(pk=pk).translations.get(locale='en').seo_title, 'Search title'
+        )
+
+    def test_unknown_tag_and_bad_canonical_are_rejected(self):
+        self.client.force_authenticate(self.editor)
+        body = self.seo_body()
+        body['tags'] = ['missing']
+        response = self.client.post('/third_side/articles', body, format='json')
+        self.assertEqual(response.status_code, 400)
+        body['tags'] = []
+        body['canonical_url'] = 'not a url'
+        response = self.client.post('/third_side/articles', body, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('canonical_url', response.data)
