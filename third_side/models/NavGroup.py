@@ -1,5 +1,7 @@
 from django.db import models
 
+from third_side.utils import AsciiUploadTo
+
 
 class NavGroup(models.Model):
     """A header group of categories, e.g. Visual Arts / Written Arts.
@@ -13,7 +15,9 @@ class NavGroup(models.Model):
     label = models.JSONField(default=dict, blank=True)
     tagline = models.JSONField(default=dict, blank=True)
     description = models.JSONField(default=dict, blank=True)
-    image = models.ImageField(upload_to='third_side/groups', null=True, blank=True)
+    image = models.ImageField(
+        upload_to=AsciiUploadTo('third_side/groups'), null=True, blank=True
+    )
     image_url = models.CharField(max_length=300, blank=True, default='')
 
     class Meta:
