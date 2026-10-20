@@ -109,6 +109,14 @@ def sync_translations(article, doc):
         }
         if locale in ai_flags:
             defaults['is_ai_generated'] = bool(ai_flags[locale])
+        # SEO text is only touched when the editor sent it for this language.
+        for key, field in (
+            ('seoTitle', 'seo_title'),
+            ('metaDescription', 'meta_description'),
+        ):
+            values = doc.get(key)
+            if isinstance(values, dict) and locale in values:
+                defaults[field] = (values[locale] or '').strip()
         try:
             with transaction.atomic():
                 ArticleTranslation.objects.update_or_create(
@@ -136,6 +144,7 @@ def translation_map(article, request=None):
             'slug': t.slug,
             'excerpt': t.excerpt,
             'meta_description': t.meta_description,
+            'seo_title': t.seo_title,
             'content': content_to_urls(t.content, request),
             'is_ai_generated': t.is_ai_generated,
         }
@@ -148,6 +157,7 @@ def translation_map(article, request=None):
             'slug': article.slug,
             'excerpt': '',
             'meta_description': '',
+            'seo_title': '',
             'content': text_to_lexical(article.content) if article.content else None,
             'is_ai_generated': False,
         }

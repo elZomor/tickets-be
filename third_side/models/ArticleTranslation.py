@@ -6,8 +6,8 @@ from third_side.i18n import LOCALE_CHOICES
 class ArticleTranslation(models.Model):
     """One language's version of an Article.
 
-    title/slug/content are written from the admin editor (one row per language);
-    excerpt and meta_description are maintained Django-side.
+    title/slug/content (and the SEO title / meta description) are written from the
+    admin editor (one row per language); excerpt is maintained Django-side.
     """
 
     article = models.ForeignKey(
@@ -17,6 +17,8 @@ class ArticleTranslation(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=280, allow_unicode=True)
     excerpt = models.TextField(blank=True, default='')
+    # <title> for search engines; the article title is used when blank.
+    seo_title = models.CharField(max_length=255, blank=True, default='')
     meta_description = models.TextField(blank=True, default='')
     # Lexical JSON ({"root": {...}}) as produced by the admin editor.
     content = models.JSONField(null=True, blank=True)

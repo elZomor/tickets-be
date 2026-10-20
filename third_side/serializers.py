@@ -22,6 +22,7 @@ from third_side.models import (
     Rating,
     Report,
     Role,
+    Tag,
     ThirdSideUser,
 )
 from third_side.models.Article import ArticleStatus
@@ -55,6 +56,9 @@ class ArticleSerializer(serializers.ModelSerializer):
     editor_name = serializers.SerializerMethodField()
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     doc = serializers.DictField(write_only=True, required=False)
+    tags = serializers.SlugRelatedField(
+        many=True, slug_field='slug', queryset=Tag.objects.all(), required=False
+    )
 
     class Meta:
         model = Article
@@ -74,6 +78,9 @@ class ArticleSerializer(serializers.ModelSerializer):
             'published_at',
             'created_by',
             'is_hidden',
+            'noindex',
+            'canonical_url',
+            'tags',
             'share_count',
             'doc',
         ]
