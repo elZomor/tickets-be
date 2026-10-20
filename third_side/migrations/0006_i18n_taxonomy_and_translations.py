@@ -14,14 +14,27 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='NavGroup',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('slug', models.SlugField(max_length=60, unique=True)),
                 ('order', models.PositiveIntegerField(default=0)),
                 ('url_slug', models.JSONField(blank=True, default=dict)),
                 ('label', models.JSONField(blank=True, default=dict)),
                 ('tagline', models.JSONField(blank=True, default=dict)),
                 ('description', models.JSONField(blank=True, default=dict)),
-                ('image', models.ImageField(blank=True, null=True, upload_to='third_side/groups')),
+                (
+                    'image',
+                    models.ImageField(
+                        blank=True, null=True, upload_to='third_side/groups'
+                    ),
+                ),
                 ('image_url', models.CharField(blank=True, default='', max_length=300)),
             ],
             options={
@@ -31,8 +44,19 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Tag',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('slug', models.SlugField(allow_unicode=True, max_length=120, unique=True)),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'slug',
+                    models.SlugField(allow_unicode=True, max_length=120, unique=True),
+                ),
                 ('url_slug', models.JSONField(blank=True, default=dict)),
                 ('name', models.JSONField(blank=True, default=dict)),
             ],
@@ -43,7 +67,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article',
             name='cover',
-            field=models.ImageField(blank=True, null=True, upload_to='third_side/covers'),
+            field=models.ImageField(
+                blank=True, null=True, upload_to='third_side/covers'
+            ),
         ),
         migrations.AddField(
             model_name='article',
@@ -63,7 +89,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article',
             name='original_language',
-            field=models.CharField(choices=[('ar', 'ar'), ('en', 'en'), ('ro', 'ro')], default='ar', max_length=2),
+            field=models.CharField(
+                choices=[('ar', 'ar'), ('en', 'en'), ('ro', 'ro')],
+                default='ar',
+                max_length=2,
+            ),
         ),
         migrations.AddField(
             model_name='article',
@@ -93,7 +123,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='category',
             name='image',
-            field=models.ImageField(blank=True, null=True, upload_to='third_side/categories'),
+            field=models.ImageField(
+                blank=True, null=True, upload_to='third_side/categories'
+            ),
         ),
         migrations.AddField(
             model_name='category',
@@ -123,29 +155,65 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='category',
             name='group',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='categories', to='third_side.navgroup'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='categories',
+                to='third_side.navgroup',
+            ),
         ),
         migrations.AddField(
             model_name='article',
             name='tags',
-            field=models.ManyToManyField(blank=True, related_name='articles', to='third_side.tag'),
+            field=models.ManyToManyField(
+                blank=True, related_name='articles', to='third_side.tag'
+            ),
         ),
         migrations.CreateModel(
             name='ArticleTranslation',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('locale', models.CharField(choices=[('ar', 'ar'), ('en', 'en'), ('ro', 'ro')], max_length=2)),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'locale',
+                    models.CharField(
+                        choices=[('ar', 'ar'), ('en', 'en'), ('ro', 'ro')], max_length=2
+                    ),
+                ),
                 ('title', models.CharField(max_length=255)),
                 ('slug', models.SlugField(allow_unicode=True, max_length=280)),
                 ('excerpt', models.TextField(blank=True, default='')),
                 ('meta_description', models.TextField(blank=True, default='')),
                 ('content', models.JSONField(blank=True, null=True)),
                 ('is_ai_generated', models.BooleanField(default=False)),
-                ('article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='translations', to='third_side.article')),
+                (
+                    'article',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='translations',
+                        to='third_side.article',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['article_id', 'locale'],
-                'constraints': [models.UniqueConstraint(fields=('article', 'locale'), name='uniq_translation_per_locale'), models.UniqueConstraint(fields=('locale', 'slug'), name='uniq_translation_slug_per_locale')],
+                'constraints': [
+                    models.UniqueConstraint(
+                        fields=('article', 'locale'), name='uniq_translation_per_locale'
+                    ),
+                    models.UniqueConstraint(
+                        fields=('locale', 'slug'),
+                        name='uniq_translation_slug_per_locale',
+                    ),
+                ],
             },
         ),
     ]

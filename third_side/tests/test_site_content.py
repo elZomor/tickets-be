@@ -19,7 +19,9 @@ def ad(name, **kwargs):
         ends_at=today + timedelta(days=1),
         weight=1,
         alt=LOC,
-        images={k: {'tall': f'/{name}-{k}-t.png', 'rect': f'/{name}-{k}-r.png'} for k in LOC},
+        images={
+            k: {'tall': f'/{name}-{k}-t.png', 'rect': f'/{name}-{k}-r.png'} for k in LOC
+        },
     )
     defaults.update(kwargs)
     return Ad.objects.create(**defaults)
@@ -37,10 +39,15 @@ class WritersTests(APITestCase):
             main_category=category,
         )
         Article.objects.create(
-            title='a', slug='a', category=category, critic=cls.critic,
+            title='a',
+            slug='a',
+            category=category,
+            critic=cls.critic,
             status=ArticleStatus.PUBLISHED,
         )
-        Article.objects.create(title='b', slug='b', category=category, critic=cls.critic)
+        Article.objects.create(
+            title='b', slug='b', category=category, critic=cls.critic
+        )
 
     def test_list_is_localized_with_published_count(self):
         data = self.client.get('/third_side/critics?lang=ar').data['results'][0]
@@ -59,7 +66,9 @@ class WritersTests(APITestCase):
             response = self.client.get(f'/third_side/critics/by-slug/{slug}?lang=en')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.data['id'], self.critic.pk)
-        self.assertEqual(self.client.get('/third_side/critics/by-slug/nope').status_code, 404)
+        self.assertEqual(
+            self.client.get('/third_side/critics/by-slug/nope').status_code, 404
+        )
 
     def test_articles_of_critic(self):
         data = self.client.get(f'/third_side/articles?critic={self.critic.pk}').data
@@ -72,7 +81,10 @@ class AboutTests(APITestCase):
         AboutPage.objects.create(
             content={
                 'hero': {'title': LOC, 'body': [LOC], 'image': '/x.jpg'},
-                'journey': {'title': LOC, 'items': [{'year': '2020', 'title': LOC, 'text': LOC}]},
+                'journey': {
+                    'title': LOC,
+                    'items': [{'year': '2020', 'title': LOC, 'text': LOC}],
+                },
             }
         )
         data = self.client.get('/third_side/about?lang=en').data
@@ -107,7 +119,9 @@ class AdsTests(APITestCase):
         for _ in range(10):
             self.assertEqual(self.pick(f'&exclude={first.pk}').data['id'], second.pk)
         only = ad('solo', locales=['ro'])
-        response = self.client.get(f'/third_side/ads/pick?size=tall&lang=ro&exclude={only.pk}')
+        response = self.client.get(
+            f'/third_side/ads/pick?size=tall&lang=ro&exclude={only.pk}'
+        )
         self.assertEqual(response.data['id'], only.pk)
 
     def test_weight_zero_never_picked(self):

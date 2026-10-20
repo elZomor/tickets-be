@@ -14,7 +14,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TermsVersion',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('version', models.CharField(max_length=20, unique=True)),
                 ('effective_date', models.DateField()),
                 ('is_published', models.BooleanField(default=False)),
@@ -28,14 +36,41 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TermsAcceptance',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('accepted_at', models.DateTimeField(auto_now_add=True)),
                 ('ip_address', models.GenericIPAddressField(blank=True, null=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='terms_acceptances', to='third_side.thirdsideuser')),
-                ('terms', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='acceptances', to='third_side.termsversion')),
+                (
+                    'user',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='terms_acceptances',
+                        to='third_side.thirdsideuser',
+                    ),
+                ),
+                (
+                    'terms',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name='acceptances',
+                        to='third_side.termsversion',
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(fields=('user', 'terms'), name='third_side_unique_terms_acceptance')],
+                'constraints': [
+                    models.UniqueConstraint(
+                        fields=('user', 'terms'),
+                        name='third_side_unique_terms_acceptance',
+                    )
+                ],
             },
         ),
     ]

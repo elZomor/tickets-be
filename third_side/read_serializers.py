@@ -3,7 +3,17 @@
 from rest_framework import serializers
 
 from third_side.i18n import LOCALES, clean_locale, localize
-from third_side.models import Article, Category, Critic, NavGroup, Tag
+from third_side.models import (
+    Article,
+    Category,
+    Critic,
+    Festival,
+    FestivalPost,
+    NavGroup,
+    Tag,
+)
+from third_side.models.FestivalPost import FestivalPostType
+from third_side.services.festivals import article_path, shown_translation
 from third_side.services.translations import (
     languages_of,
     pick_locale,
@@ -276,3 +286,113 @@ class CriticReadSerializer(serializers.ModelSerializer):
 
     def get_slugs(self, obj) -> dict:
         return {code: localize(obj.slug_i18n, code, str(obj.pk)) for code in LOCALES}
+
+
+class FestivalReadSerializer(serializers.ModelSerializer):
+    slug = serializers.SerializerMethodField()
+    slugs = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    cover = serializers.SerializerMethodField()
+    posts_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Festival
+        fields = [
+            'id',
+            'slug',
+            'slugs',
+            'name',
+            'description',
+            'location',
+            'cover',
+            'starts_on',
+            'ends_on',
+            'posts_count',
+        ]
+
+    def get_slug(self, obj) -> str:
+        return localize(obj.slug_i18n, _lang(self), obj.slug)
+
+    def get_slugs(self, obj) -> dict:
+        return {code: localize(obj.slug_i18n, code, obj.slug) for code in LOCALES}
+
+    def get_name(self, obj) -> str:
+        return localize(obj.name_i18n, _lang(self), obj.slug)
+
+    def get_description(self, obj) -> str:
+        return localize(obj.description_i18n, _lang(self))
+
+    def get_location(self, obj) -> str:
+        return localize(obj.location_i18n, _lang(self))
+
+    def get_cover(self, obj) -> str | None:
+        return _media_url(self, obj.cover, obj.cover_url)
+
+
+class FestivalPostReadSerializer(serializers.ModelSerializer):
+    """A feed post. Only the keys that apply to its `type` are present."""
+
+    class Meta:
+        model = FestivalPost
+        fields = ['id', 'type', 'published_at']
+
+    def to_representation(self, obj):
+        lang = _lang(self)
+        data = super().to_representation(obj)
+        festival = obj.festival
+        data['festival'] = {
+            'id': festival.id,
+            'name': localize(festival.name_i18n, lang, festival.slug),
+            'slug': localize(festival.slug_i18n, lang, festival.slug),
+        }
+        kind = obj.type
+        shown = []
+        if kind == FestivalPostType.TITLED_TEXT:
+            data['title'] = self._text(obj.title_i18n, lang, shown)
+        if kind in (FestivalPostType.TEXT, FestivalPostType.TITLED_TEXT):
+            data['body'] = self._text(obj.body_i18n, lang, shown)
+        if kind in (FestivalPostType.IMAGE_CAPTION, FestivalPostType.VIDEO_CAPTION):
+            data['caption'] = self._text(obj.caption_i18n, lang, shown)
+        if kind in (FestivalPostType.IMAGE, FestivalPostType.IMAGE_CAPTION):
+            data['media'] = [
+                {
+                    'url': _media_url(self, item.image, item.image_url),
+                    'alt': localize(item.alt_i18n, lang),
+                }
+                for item in obj.media.all()
+            ]
+        if kind in (FestivalPostType.VIDEO, FestivalPostType.VIDEO_CAPTION):
+            video_file = obj.video_file
+            data['video'] = {
+                'kind': obj.video_kind,
+                'url': _media_url(self, video_file, obj.video_url),
+                'poster': _media_url(self, obj.poster, obj.poster_url),
+            }
+        if kind == FestivalPostType.ARTICLE and obj.article:
+            article = obj.article
+            translation = shown_translation(article, lang)
+            data['article'] = {
+                'title': translation.title if translation else article.title,
+                'excerpt': translation.excerpt if translation else '',
+                'cover': _media_url(self, article.cover, article.cover_url),
+                'path': article_path(article, lang, translation),
+            }
+            shown.append(translation.locale if translation else lang)
+        # Text shown in another language than requested (no translation yet).
+        content_locale = next((code for code in shown if code != lang), None)
+        if content_locale:
+            data['content_locale'] = content_locale
+        return data
+
+    @staticmethod
+    def _text(values, lang, shown):
+        """`lang`'s text, else the default locale's, noting which locale it is."""
+        if not isinstance(values, dict):
+            return ''
+        for code in (lang, 'ar', *LOCALES):
+            if values.get(code):
+                shown.append(code)
+                return values[code]
+        return ''

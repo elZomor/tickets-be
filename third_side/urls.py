@@ -10,6 +10,8 @@ from third_side.views import (
     CategoryViewSet,
     CategoryPageView,
     CmsWebhookView,
+    FestivalPostViewSet,
+    FestivalViewSet,
     ForgotPasswordView,
     LoginView,
     RefreshView,
@@ -35,6 +37,8 @@ router.register(r'categories', CategoryViewSet, basename='category-view')
 router.register(r'nav-groups', NavGroupViewSet, basename='nav-group-view')
 router.register(r'tags', TagViewSet, basename='tag-view')
 router.register(r'critics', CriticViewSet, basename='critic-view')
+router.register(r'festivals', FestivalViewSet, basename='festival-view')
+router.register(r'festival-posts', FestivalPostViewSet, basename='festival-post-view')
 router.register(r'articles', ArticleViewSet, basename='article-view')
 router.register(r'ratings', RatingViewSet, basename='rating-view')
 router.register(r'comments', CommentViewSet, basename='comment-view')

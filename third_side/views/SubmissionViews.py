@@ -150,7 +150,9 @@ class SubmissionsView(GenericAPIView):
         articles = (
             # Articles the reader sent in, plus ones an editor attached to
             # their writer profile (those have no created_by).
-            Article.objects.filter(Q(created_by=request.user) | Q(critic__user=request.user))
+            Article.objects.filter(
+                Q(created_by=request.user) | Q(critic__user=request.user)
+            )
             .select_related('category', 'category__group')
             .prefetch_related('translations')
             .distinct()

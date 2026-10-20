@@ -34,7 +34,9 @@ def copy_users(apps, schema_editor):
     roles = dict(Profile.objects.values_list('user_id', 'role'))
     taken = set()
     for user in AuthUser.objects.filter(pk__in=refs).order_by('pk'):
-        email = (user.email or '').strip().lower() or f'user{user.pk}@third-side.invalid'
+        email = (
+            user.email or ''
+        ).strip().lower() or f'user{user.pk}@third-side.invalid'
         if email in taken:
             email = f'dup{user.pk}.{email}'
         taken.add(email)
@@ -70,12 +72,32 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ThirdSideUser',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('password', models.CharField(max_length=128, verbose_name='password')),
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
+                (
+                    'last_login',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name='last login'
+                    ),
+                ),
                 ('email', models.EmailField(max_length=254, unique=True)),
                 ('name', models.CharField(blank=True, default='', max_length=150)),
-                ('role', models.CharField(choices=[('EDITOR', 'Editor'), ('READER', 'Reader')], default='READER', max_length=10)),
+                (
+                    'role',
+                    models.CharField(
+                        choices=[('EDITOR', 'Editor'), ('READER', 'Reader')],
+                        default='READER',
+                        max_length=10,
+                    ),
+                ),
                 ('is_active', models.BooleanField(default=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
             ],
@@ -87,37 +109,71 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='article',
             name='created_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='third_side_articles', to='third_side.thirdsideuser'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='third_side_articles',
+                to='third_side.thirdsideuser',
+            ),
         ),
         migrations.AlterField(
             model_name='comment',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='third_side_comments', to='third_side.thirdsideuser'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='third_side_comments',
+                to='third_side.thirdsideuser',
+            ),
         ),
         migrations.AlterField(
             model_name='commentlike',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='third_side_comment_likes', to='third_side.thirdsideuser'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='third_side_comment_likes',
+                to='third_side.thirdsideuser',
+            ),
         ),
         migrations.AlterField(
             model_name='critic',
             name='user',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='third_side_critic', to='third_side.thirdsideuser'),
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='third_side_critic',
+                to='third_side.thirdsideuser',
+            ),
         ),
         migrations.AlterField(
             model_name='rating',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='third_side_ratings', to='third_side.thirdsideuser'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='third_side_ratings',
+                to='third_side.thirdsideuser',
+            ),
         ),
         migrations.AlterField(
             model_name='report',
             name='reporter',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='third_side_reports', to='third_side.thirdsideuser'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='third_side_reports',
+                to='third_side.thirdsideuser',
+            ),
         ),
         migrations.AlterField(
             model_name='report',
             name='reviewed_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='third_side_reviewed_reports', to='third_side.thirdsideuser'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='third_side_reviewed_reports',
+                to='third_side.thirdsideuser',
+            ),
         ),
         migrations.RunPython(reset_sequence, migrations.RunPython.noop),
         migrations.DeleteModel(
