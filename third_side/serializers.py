@@ -2,7 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
-from third_side.i18n import LOCALES
+from third_side.i18n import LOCALES, slug_from_title, unique_slug
 from third_side.models.FestivalPost import (
     IMAGE_TYPES,
     VIDEO_TYPES,
@@ -82,16 +82,27 @@ class ArticleSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         doc = attrs.get('doc')
         if doc is not None:
-            titles, slugs = doc.get('title') or {}, doc.get('slug') or {}
-            ready = [lang for lang in LOCALES if titles.get(lang) and slugs.get(lang)]
+            titles = doc.get('title') or {}
+            # The slug follows the title; whatever the client sent is ignored.
+            slugs = {lang: slug_from_title(titles.get(lang)) for lang in LOCALES}
+            doc['slug'] = slugs
+            ready = [lang for lang in LOCALES if titles.get(lang) and slugs[lang]]
             if not ready:
                 raise serializers.ValidationError(
-                    {'doc': 'At least one language needs a title and a slug.'}
+                    {'doc': 'At least one language needs a title with letters in it.'}
                 )
             ticks = doc.get('isOriginalLanguage') or {}
             original = next((lang for lang in ready if ticks.get(lang)), ready[0])
             attrs.setdefault('title', titles[original])
-            attrs.setdefault('slug', slugs[original])
+            attrs.setdefault(
+                'slug',
+                unique_slug(
+                    slugs[original],
+                    lambda slug: Article.objects.filter(slug=slug)
+                    .exclude(pk=getattr(self.instance, 'pk', None))
+                    .exists(),
+                ),
+            )
         elif self.instance is None and not (attrs.get('title') and attrs.get('slug')):
             raise serializers.ValidationError('A title and a slug are required.')
         self._check_publishing(attrs)

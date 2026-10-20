@@ -4,8 +4,10 @@ from datetime import timedelta
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from django.utils import timezone
+from django.test import SimpleTestCase
 from rest_framework.test import APITestCase
 
+from third_side.i18n import slug_from_title
 from third_side.models import Article, Category, Critic, Media, Role, ThirdSideUser
 from third_side.models.Article import ArticleStatus
 
@@ -83,16 +85,34 @@ class AdminArticleTests(APITestCase):
         self.assertEqual(data['aiGenerated'], {'en': False, 'ar': True})
         self.assertEqual(data['critic'], self.critic.pk)
 
-    def test_duplicate_slug_is_a_validation_error(self):
+    def test_same_title_gets_a_numbered_slug(self):
         self.client.force_authenticate(self.editor)
         self.client.post('/third_side/articles', self.body(), format='json')
         response = self.client.post('/third_side/articles', self.body(), format='json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['slug'], 'hello-2')
+        article = Article.objects.get(pk=response.data['id'])
+        self.assertEqual(article.translations.get(locale='ar').slug, 'مرحبا-2')
 
-    def test_doc_without_any_title_and_slug_is_rejected(self):
+    def test_slug_follows_the_title_not_the_client(self):
         self.client.force_authenticate(self.editor)
         body = self.body()
-        body['doc'] = {'title': {'en': 'Only a title'}, 'slug': {}}
+        body['doc']['slug'] = {'en': 'something-else'}
+        created = self.client.post('/third_side/articles', body, format='json')
+        self.assertEqual(created.data['slug'], 'hello')
+        body['doc']['title']['en'] = 'Hello, again! (2026)'
+        response = self.client.patch(
+            f"/third_side/articles/{created.data['id']}", body, format='json'
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        article = Article.objects.get(pk=created.data['id'])
+        self.assertEqual(article.slug, 'hello-again-2026')
+        self.assertEqual(article.translations.get(locale='en').slug, 'hello-again-2026')
+
+    def test_title_without_letters_is_rejected(self):
+        self.client.force_authenticate(self.editor)
+        body = self.body()
+        body['doc'] = {'title': {'en': '؟! ...'}}
         response = self.client.post('/third_side/articles', body, format='json')
         self.assertEqual(response.status_code, 400)
 
@@ -301,3 +321,16 @@ class StoredKeyTests(PublishingAndEditorTests):
         doc = self.client.get(f'/third_side/articles/{article.pk}/doc').data
         url = doc['content']['en']['root']['children'][0]['value']['url']
         self.assertTrue(url.endswith('/media/third_side/media/a.png'), url)
+
+
+class SlugFromTitleTests(SimpleTestCase):
+    def test_keeps_letters_and_digits_and_hyphenates_words(self):
+        cases = {
+            'Hello, World! (2026)': 'hello-world-2026',
+            'هل هذا لير؟': 'هل-هذا-لير',
+            'مَرْحَبَاً ـــ بالعالم، يا صديقي': 'مرحبا-بالعالم-يا-صديقي',
+            'ما-بعد_الكولونيالية: قراءة': 'ما-بعد-الكولونيالية-قراءة',
+            '  ؟؟؟  ': '',
+        }
+        for title, slug in cases.items():
+            self.assertEqual(slug_from_title(title), slug, title)
