@@ -1,6 +1,7 @@
 """Locale helpers for the Third Side content (ar is the default and RTL)."""
 
 import re
+import unicodedata
 
 LOCALES = ('ar', 'en', 'ro')
 DEFAULT_LOCALE = 'ar'
@@ -39,3 +40,31 @@ def localize_tree(value, lang):
 def slugify_name(name):
     """Lower-case, drop punctuation, hyphenate: the frontend's writerSlug rule."""
     return re.sub(r'\s+', '-', re.sub(r'[^\w\s-]', '', name.strip().lower()))
+
+
+_WORD_BREAKS = re.compile(r'[\s_/\u2013\u2014-]+')
+
+
+def slug_from_title(title):
+    """The article slug for a title: its letters and digits, hyphen-separated.
+
+    Punctuation, Arabic marks (tashkeel, ؟ ، ؛) and tatweel are dropped; spaces,
+    hyphens and underscores separate words. Latin is lower-cased, Arabic kept.
+    """
+    words = []
+    for word in _WORD_BREAKS.split(title or ''):
+        kept = ''.join(
+            ch for ch in word if unicodedata.category(ch)[0] in 'LN' and ch != '\u0640'
+        )
+        if kept:
+            words.append(kept.lower())
+    return '-'.join(words)[:200].strip('-')
+
+
+def unique_slug(base, taken):
+    """`base`, or `base-2`, `base-3`... the first one `taken(slug)` says is free."""
+    slug, n = base, 2
+    while taken(slug):
+        slug = f'{base}-{n}'
+        n += 1
+    return slug

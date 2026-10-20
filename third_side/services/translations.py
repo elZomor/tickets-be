@@ -2,7 +2,7 @@ import logging
 
 from django.db import IntegrityError, transaction
 
-from third_side.i18n import LOCALES
+from third_side.i18n import LOCALES, unique_slug
 from third_side.models import ArticleTranslation
 from third_side.services.media_urls import content_to_keys, content_to_urls
 
@@ -94,6 +94,14 @@ def sync_translations(article, doc):
         title, slug = titles.get(locale), slugs.get(locale)
         if not title or not slug:
             continue
+        slug = unique_slug(
+            slug,
+            lambda candidate: ArticleTranslation.objects.filter(
+                locale=locale, slug=candidate
+            )
+            .exclude(article=article)
+            .exists(),
+        )
         defaults = {
             'title': title,
             'slug': slug,
