@@ -14,7 +14,7 @@ from third_side.models import (
 )
 from third_side.models.FestivalPost import FestivalPostType
 from third_side.permissions import is_editor
-from third_side.services.media_urls import to_url
+from third_side.services.media_urls import storage_url, to_url
 from third_side.services.festivals import article_path, shown_translation
 from third_side.services.translations import (
     languages_of,
@@ -30,9 +30,7 @@ def _lang(serializer):
 
 def _media_url(serializer, file_field, fallback_url):
     if file_field:
-        request = serializer.context.get('request')
-        url = file_field.url
-        return request.build_absolute_uri(url) if request else url
+        return storage_url(file_field.name, serializer.context.get('request'))
     return to_url(fallback_url, serializer.context.get('request')) or None
 
 

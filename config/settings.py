@@ -21,6 +21,12 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 env = environ.Env()
 
 environment = env.str('ENVIRONMENT', default='local')
+# Public origin of the Cloudflare media worker in front of the S3 bucket.
+# Empty (local) keeps storage URLs.
+MEDIA_PROXY_URL = env.str(
+    'MEDIA_PROXY_URL',
+    default='https://media.play-cast.com' if environment == 'production' else '',
+).rstrip('/')
 
 REQUIRE_RESERVATION_HASH = os.environ.get('REQUIRE_RESERVATION_HASH', 'True') == 'True'
 
