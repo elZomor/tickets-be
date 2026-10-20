@@ -15,7 +15,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AboutPage',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('content', models.JSONField(blank=True, default=dict)),
             ],
             options={
@@ -25,8 +33,22 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Ad',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('type', models.CharField(choices=[('event', 'Event'), ('sponsor', 'Sponsor')], max_length=10)),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'type',
+                    models.CharField(
+                        choices=[('event', 'Event'), ('sponsor', 'Sponsor')],
+                        max_length=10,
+                    ),
+                ),
                 ('name', models.CharField(max_length=150)),
                 ('url', models.CharField(max_length=500)),
                 ('internal', models.BooleanField(default=False)),
@@ -52,7 +74,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='critic',
             name='main_category',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='main_critics', to='third_side.category'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='main_critics',
+                to='third_side.category',
+            ),
         ),
         migrations.AddField(
             model_name='critic',

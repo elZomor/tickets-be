@@ -19,7 +19,9 @@ def ad(name, **kwargs):
         ends_at=today + timedelta(days=1),
         weight=1,
         alt=LOC,
-        images={k: {'tall': f'/{name}-{k}-t.png', 'rect': f'/{name}-{k}-r.png'} for k in LOC},
+        images={
+            k: {'tall': f'/{name}-{k}-t.png', 'rect': f'/{name}-{k}-r.png'} for k in LOC
+        },
     )
     defaults.update(kwargs)
     return Ad.objects.create(**defaults)
@@ -37,10 +39,15 @@ class WritersTests(APITestCase):
             main_category=category,
         )
         Article.objects.create(
-            title='a', slug='a', category=category, critic=cls.critic,
+            title='a',
+            slug='a',
+            category=category,
+            critic=cls.critic,
             status=ArticleStatus.PUBLISHED,
         )
-        Article.objects.create(title='b', slug='b', category=category, critic=cls.critic)
+        Article.objects.create(
+            title='b', slug='b', category=category, critic=cls.critic
+        )
 
     def test_list_is_localized_with_published_count(self):
         data = self.client.get('/third_side/critics?lang=ar').data['results'][0]
@@ -59,7 +66,9 @@ class WritersTests(APITestCase):
             response = self.client.get(f'/third_side/critics/by-slug/{slug}?lang=en')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.data['id'], self.critic.pk)
-        self.assertEqual(self.client.get('/third_side/critics/by-slug/nope').status_code, 404)
+        self.assertEqual(
+            self.client.get('/third_side/critics/by-slug/nope').status_code, 404
+        )
 
     def test_articles_of_critic(self):
         data = self.client.get(f'/third_side/articles?critic={self.critic.pk}').data
@@ -71,17 +80,18 @@ class AboutTests(APITestCase):
         self.assertEqual(self.client.get('/third_side/about').status_code, 404)
         AboutPage.objects.create(
             content={
-                'title': LOC,
-                'sections': [{'lead': LOC, 'body': [LOC]}],
-                'values': [{'id': 'v', 'title': LOC, 'text': LOC}],
-                'hero_image': '/x.jpg',
+                'hero': {'title': LOC, 'body': [LOC], 'image': '/x.jpg'},
+                'journey': {
+                    'title': LOC,
+                    'items': [{'year': '2020', 'title': LOC, 'text': LOC}],
+                },
             }
         )
         data = self.client.get('/third_side/about?lang=en').data
-        self.assertEqual(data['title'], 'English')
-        self.assertEqual(data['sections'][0]['body'], ['English'])
-        self.assertEqual(data['values'][0]['id'], 'v')
-        self.assertEqual(data['hero_image'], '/x.jpg')
+        self.assertEqual(data['hero']['title'], 'English')
+        self.assertEqual(data['hero']['body'], ['English'])
+        self.assertEqual(data['journey']['items'][0]['year'], '2020')
+        self.assertEqual(data['hero']['image'], '/x.jpg')
 
 
 class AdsTests(APITestCase):
@@ -101,6 +111,7 @@ class AdsTests(APITestCase):
         data = self.pick().data
         self.assertEqual(data['id'], live.pk)
         self.assertEqual(data['image'], '/live-en-r.png')
+        self.assertEqual(data['images']['tall'], '/live-en-t.png')
         self.assertEqual(data['alt'], 'English')
 
     def test_exclude_avoids_repeat_unless_only_one(self):
@@ -108,12 +119,23 @@ class AdsTests(APITestCase):
         for _ in range(10):
             self.assertEqual(self.pick(f'&exclude={first.pk}').data['id'], second.pk)
         only = ad('solo', locales=['ro'])
-        response = self.client.get(f'/third_side/ads/pick?size=tall&lang=ro&exclude={only.pk}')
+        response = self.client.get(
+            f'/third_side/ads/pick?size=tall&lang=ro&exclude={only.pk}'
+        )
         self.assertEqual(response.data['id'], only.pk)
 
     def test_weight_zero_never_picked(self):
         ad('zero', weight=0)
         self.assertEqual(self.pick().status_code, 204)
+
+    def test_wide_only_picks_ads_with_a_wide_image(self):
+        ad('no-wide')
+        url = '/third_side/ads/pick?size=wide&lang=en'
+        self.assertEqual(self.client.get(url).status_code, 204)
+        banner = ad('banner')
+        banner.images['en']['wide'] = '/banner-en-w.png'
+        banner.save()
+        self.assertEqual(self.client.get(url).data['image'], '/banner-en-w.png')
 
     def test_size_required(self):
         self.assertEqual(self.client.get('/third_side/ads/pick').status_code, 400)

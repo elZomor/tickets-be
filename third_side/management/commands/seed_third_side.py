@@ -13,9 +13,13 @@ from third_side.models import (
     ArticleTranslation,
     Category,
     Critic,
+    Festival,
+    FestivalPost,
+    FestivalPostMedia,
     NavGroup,
     SiteSettings,
     Tag,
+    TermsVersion,
 )
 from third_side.models.Article import ArticleStatus
 
@@ -51,11 +55,13 @@ class Command(BaseCommand):
         count = self._articles(home, pages, bodies, languages, categories)
         self._writers(writers, categories)
         self._about(_load(directory, 'about.json'))
+        self._terms(_load(directory, 'terms.json'))
         self._ads(_load(directory, 'ads.json')['ads'])
+        festivals = self._festivals(_load(directory, 'festivals.json'), home)
         self.stdout.write(
             self.style.SUCCESS(
                 f'Seeded {len(groups)} groups, {len(categories)} categories, '
-                f'{count} articles from {directory}'
+                f'{count} articles, {festivals} festivals from {directory}'
             )
         )
 
@@ -211,17 +217,25 @@ class Command(BaseCommand):
             critic.save()
 
     def _about(self, about):
+        # The page content is stored exactly as the frontend mock shapes it.
         page = AboutPage.objects.first() or AboutPage()
-        page.content = {
-            'eyebrow': about['eyebrow'],
-            'title': about['title'],
-            'hero_image': about['heroImage'],
-            'hero_alt': about['heroAlt'],
-            'sections': about['sections'],
-            'gallery': about['gallery'],
-            'values': about['values'],
-        }
+        page.content = about
         page.save()
+
+    def _terms(self, terms):
+        # Seeded as published v1; an existing version is left untouched since
+        # published terms are immutable (users accepted that text).
+        TermsVersion.objects.get_or_create(
+            version=terms['version'],
+            defaults={
+                'effective_date': date.fromisoformat(terms['effective_date']),
+                'is_published': True,
+                'content': {
+                    'title': terms['title'],
+                    'sections': terms['sections'],
+                },
+            },
+        )
 
     def _ads(self, ads):
         for raw in ads:
@@ -239,6 +253,71 @@ class Command(BaseCommand):
                     'images': raw['images'],
                 },
             )
+
+    def _festivals(self, data, home):
+        """Festivals and their feed posts. Posts of type `article` point at the
+        seeded article whose mock id they carry (home.json latestArticles)."""
+        slugs_of = {
+            raw['id']: raw['slug'] for raw in home['latestArticles'] if 'id' in raw
+        }
+        by_mock = {}
+        for raw in data['festivals']:
+            festival, _ = Festival.objects.update_or_create(
+                mock_id=raw['id'],
+                defaults={
+                    'slug': raw['slug']['en'],
+                    'slug_i18n': raw['slug'],
+                    'name_i18n': raw['name'],
+                    'description_i18n': raw['description'],
+                    'location_i18n': raw['location'],
+                    'cover_url': raw.get('cover', ''),
+                    'starts_on': raw['startsOn'],
+                    'ends_on': raw['endsOn'],
+                },
+            )
+            by_mock[raw['id']] = festival
+        for raw in data['posts']:
+            video = raw.get('video') or {}
+            post, _ = FestivalPost.objects.update_or_create(
+                mock_id=raw['id'],
+                defaults={
+                    'festival': by_mock[raw['festivalId']],
+                    'type': raw['type'],
+                    'published_at': timezone.datetime.fromisoformat(
+                        raw['publishedAt'].replace('Z', '+00:00')
+                    ),
+                    'title_i18n': raw.get('title', {}),
+                    'body_i18n': raw.get('body', {}),
+                    'caption_i18n': raw.get('caption', {}),
+                    'article': self._mock_article(slugs_of.get(raw.get('articleId'))),
+                    'video_kind': video.get('kind', 'embed'),
+                    'video_url': video.get('url', ''),
+                    'poster_url': video.get('poster', ''),
+                },
+            )
+            post.media.all().delete()
+            for order, item in enumerate(raw.get('media', [])):
+                FestivalPostMedia.objects.create(
+                    post=post, image_url=item['url'], alt_i18n=item['alt'], order=order
+                )
+        return len(by_mock)
+
+    @staticmethod
+    @staticmethod
+    def _mock_article(slugs):
+        """The seeded article with one of these per-locale slugs (an article
+        keeps its original language's slug when a locale is missing)."""
+        if not slugs:
+            return None
+        values = list(slugs.values())
+        translation = (
+            ArticleTranslation.objects.filter(slug__in=values)
+            .select_related('article')
+            .first()
+        )
+        if translation:
+            return translation.article
+        return Article.objects.filter(slug__in=values).first()
 
 
 writer_slug = slugify_name

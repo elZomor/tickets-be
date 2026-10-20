@@ -12,12 +12,16 @@ from third_side.models import (
     Comment,
     CommentLike,
     Critic,
+    Festival,
+    FestivalPost,
+    FestivalPostMedia,
     NavGroup,
     SiteSettings,
     Rating,
     Report,
-    SyncedArticle,
     Tag,
+    TermsAcceptance,
+    TermsVersion,
     ThirdSideUser,
 )
 
@@ -87,11 +91,13 @@ class ArticleAdmin(admin.ModelAdmin):
         'title',
         'category',
         'critic',
+        'editor',
         'status',
         'is_hidden',
         'published_at',
     )
-    list_filter = ('status', 'category', 'is_hidden', 'original_language')
+    list_editable = ('editor',)
+    list_filter = ('status', 'category', 'editor', 'is_hidden', 'original_language')
     prepopulated_fields = {'slug': ('title',)}
     inlines = [ArticleTranslationInline]
     filter_horizontal = ('tags',)
@@ -120,14 +126,6 @@ class ReportAdmin(admin.ModelAdmin):
     )
     list_filter = ('content_type',)
     readonly_fields = ('created_at',)
-
-
-@admin.register(SyncedArticle)
-class SyncedArticleAdmin(admin.ModelAdmin):
-    list_display = ('payload_id', 'article', 'updated_at')
-    formfield_overrides = {
-        models.JSONField: {'widget': JSONEditorWidget},
-    }
 
 
 @admin.register(SiteSettings)
@@ -159,3 +157,49 @@ class AdAdmin(JsonFieldsAdmin):
     )
     list_filter = ('type', 'is_active')
     readonly_fields = ('impressions', 'clicks')
+
+
+@admin.register(TermsVersion)
+class TermsVersionAdmin(JsonFieldsAdmin):
+    list_display = ('version', 'effective_date', 'is_published', 'created_at')
+    list_filter = ('is_published',)
+
+    def get_readonly_fields(self, request, obj=None):
+        # A published version is what users accepted: publish a new one instead.
+        if obj is not None and obj.is_published:
+            return ('version', 'effective_date', 'is_published', 'content')
+        return ()
+
+    def has_delete_permission(self, request, obj=None):
+        return obj is None or not obj.is_published
+
+
+@admin.register(TermsAcceptance)
+class TermsAcceptanceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'terms', 'accepted_at', 'ip_address')
+    list_filter = ('terms',)
+    readonly_fields = ('user', 'terms', 'accepted_at', 'ip_address')
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(Festival)
+class FestivalAdmin(JsonFieldsAdmin):
+    list_display = ('slug', 'starts_on', 'ends_on')
+    search_fields = ('slug',)
+
+
+class FestivalPostMediaInline(admin.StackedInline):
+    model = FestivalPostMedia
+    extra = 0
+    formfield_overrides = {models.JSONField: {'widget': JSONEditorWidget}}
+
+
+@admin.register(FestivalPost)
+class FestivalPostAdmin(JsonFieldsAdmin):
+    list_display = ('id', 'festival', 'type', 'published_at', 'is_published')
+    list_filter = ('festival', 'type', 'is_published')
+    date_hierarchy = 'published_at'
+    raw_id_fields = ('article',)
+    inlines = [FestivalPostMediaInline]

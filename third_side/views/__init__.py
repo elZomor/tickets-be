@@ -5,6 +5,8 @@ from .CategoryViews import (  # noqa:F401
 )
 from .CriticViews import CriticViewSet  # noqa:F401
 from .ArticleViews import ArticleViewSet  # noqa:F401
+from .EditorViews import EditorListView  # noqa:F401
+from .MediaViews import MediaUploadView  # noqa:F401
 from .RatingViews import RatingViewSet  # noqa:F401
 from .CommentViews import CommentViewSet  # noqa:F401
 from .ReportViews import ReportViewSet  # noqa:F401
@@ -21,7 +23,10 @@ from .SiteViews import (  # noqa:F401
     AdClickView,
     AdImpressionView,
     AdPickView,
+    TermsDetailView,
+    TermsVersionsView,
+    TermsView,
 )
 from .SubmissionViews import SubmissionsView  # noqa:F401
 from .ProfileViews import ProfileMeView  # noqa:F401
-from .CmsWebhookViews import CmsWebhookView, SyncedArticleViewSet  # noqa:F401
+from .FestivalViews import FestivalPostViewSet, FestivalViewSet  # noqa:F401

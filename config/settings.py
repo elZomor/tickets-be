@@ -21,6 +21,12 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 env = environ.Env()
 
 environment = env.str('ENVIRONMENT', default='local')
+# Public origin of the Cloudflare media worker in front of the S3 bucket.
+# Empty (local) keeps storage URLs.
+MEDIA_PROXY_URL = env.str(
+    'MEDIA_PROXY_URL',
+    default='https://media.play-cast.com' if environment == 'production' else '',
+).rstrip('/')
 
 REQUIRE_RESERVATION_HASH = os.environ.get('REQUIRE_RESERVATION_HASH', 'True') == 'True'
 
@@ -183,11 +189,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-PAYLOAD_CMS_WEBHOOK_SECRET = env.str('PAYLOAD_CMS_WEBHOOK_SECRET')
-# Django -> Payload direction: create the article in Payload via its REST
-# API when it reaches READY_FOR_EDITING (see services/payload_sync.py).
-PAYLOAD_API_URL = env.str('PAYLOAD_API_URL', default='')
-PAYLOAD_API_KEY = env.str('PAYLOAD_API_KEY', default='')
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'config.pagination.CustomPagination',
@@ -241,6 +242,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULE = {}
 
 s3_storage = S3Boto3Storage()
 STORAGES = {

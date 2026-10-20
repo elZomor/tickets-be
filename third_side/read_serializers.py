@@ -3,7 +3,19 @@
 from rest_framework import serializers
 
 from third_side.i18n import LOCALES, clean_locale, localize
-from third_side.models import Article, Category, Critic, NavGroup, Tag
+from third_side.models import (
+    Article,
+    Category,
+    Critic,
+    Festival,
+    FestivalPost,
+    NavGroup,
+    Tag,
+)
+from third_side.models.FestivalPost import FestivalPostType
+from third_side.permissions import is_editor
+from third_side.services.media_urls import storage_url, to_url
+from third_side.services.festivals import article_path, shown_translation
 from third_side.services.translations import (
     languages_of,
     pick_locale,
@@ -18,10 +30,8 @@ def _lang(serializer):
 
 def _media_url(serializer, file_field, fallback_url):
     if file_field:
-        request = serializer.context.get('request')
-        url = file_field.url
-        return request.build_absolute_uri(url) if request else url
-    return fallback_url or None
+        return storage_url(file_field.name, serializer.context.get('request'))
+    return to_url(fallback_url, serializer.context.get('request')) or None
 
 
 class NavGroupSerializer(serializers.ModelSerializer):
@@ -146,6 +156,8 @@ class ArticleReadSerializer(serializers.ModelSerializer):
     category_name = serializers.SerializerMethodField()
     critic_name = serializers.SerializerMethodField()
     cover = serializers.SerializerMethodField()
+    editor = serializers.SerializerMethodField()
+    editor_name = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
     rating = serializers.SerializerMethodField()
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -165,9 +177,13 @@ class ArticleReadSerializer(serializers.ModelSerializer):
             'critic',
             'critic_name',
             'cover',
+            'editor',
+            'editor_name',
             'tags',
             'status',
             'published_at',
+            'created_at',
+            'via_website',
             'created_by',
             'is_hidden',
             'is_featured',
@@ -182,7 +198,7 @@ class ArticleReadSerializer(serializers.ModelSerializer):
     def _translations(self, obj):
         cache = self.context.setdefault('_translations', {})
         if obj.pk not in cache:
-            cache[obj.pk] = translation_map(obj)
+            cache[obj.pk] = translation_map(obj, self.context.get('request'))
         return cache[obj.pk]
 
     def _shown(self, obj):
@@ -216,6 +232,18 @@ class ArticleReadSerializer(serializers.ModelSerializer):
 
     def get_cover(self, obj) -> str | None:
         return _media_url(self, obj.cover, obj.cover_url)
+
+    def _staff_view(self):
+        request = self.context.get('request')
+        return is_editor(getattr(request, 'user', None))
+
+    def get_editor(self, obj) -> int | None:
+        return obj.editor_id if self._staff_view() else None
+
+    def get_editor_name(self, obj) -> str | None:
+        if not (self._staff_view() and obj.editor_id):
+            return None
+        return obj.editor.display_name
 
     def get_rating(self, obj) -> dict:
         average = getattr(obj, 'rating_avg', None)
@@ -276,3 +304,131 @@ class CriticReadSerializer(serializers.ModelSerializer):
 
     def get_slugs(self, obj) -> dict:
         return {code: localize(obj.slug_i18n, code, str(obj.pk)) for code in LOCALES}
+
+
+class FestivalReadSerializer(serializers.ModelSerializer):
+    slug = serializers.SerializerMethodField()
+    slugs = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    cover = serializers.SerializerMethodField()
+    posts_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Festival
+        fields = [
+            'id',
+            'slug',
+            'slugs',
+            'name',
+            'description',
+            'location',
+            'cover',
+            'starts_on',
+            'ends_on',
+            'posts_count',
+        ]
+
+    def get_slug(self, obj) -> str:
+        return localize(obj.slug_i18n, _lang(self), obj.slug)
+
+    def get_slugs(self, obj) -> dict:
+        return {code: localize(obj.slug_i18n, code, obj.slug) for code in LOCALES}
+
+    def get_name(self, obj) -> str:
+        return localize(obj.name_i18n, _lang(self), obj.slug)
+
+    def get_description(self, obj) -> str:
+        return localize(obj.description_i18n, _lang(self))
+
+    def get_location(self, obj) -> str:
+        return localize(obj.location_i18n, _lang(self))
+
+    def get_cover(self, obj) -> str | None:
+        return _media_url(self, obj.cover, obj.cover_url)
+
+
+class FestivalPostReadSerializer(serializers.ModelSerializer):
+    """A feed post. Only the keys that apply to its `type` are present."""
+
+    class Meta:
+        model = FestivalPost
+        fields = ['id', 'type', 'published_at']
+
+    def to_representation(self, obj):
+        lang = _lang(self)
+        data = super().to_representation(obj)
+        festival = obj.festival
+        data['is_published'] = obj.is_published
+        data['festival'] = {
+            'id': festival.id,
+            'name': localize(festival.name_i18n, lang, festival.slug),
+            'slug': localize(festival.slug_i18n, lang, festival.slug),
+        }
+        kind = obj.type
+        shown = []
+        if kind == FestivalPostType.TITLED_TEXT:
+            data['title'] = self._text(obj.title_i18n, lang, shown)
+        if kind in (FestivalPostType.TEXT, FestivalPostType.TITLED_TEXT):
+            data['body'] = self._text(obj.body_i18n, lang, shown)
+        if kind in (FestivalPostType.IMAGE_CAPTION, FestivalPostType.VIDEO_CAPTION):
+            data['caption'] = self._text(obj.caption_i18n, lang, shown)
+        if kind in (FestivalPostType.IMAGE, FestivalPostType.IMAGE_CAPTION):
+            data['media'] = [
+                {
+                    'url': _media_url(self, item.image, item.image_url),
+                    'alt': localize(item.alt_i18n, lang),
+                }
+                for item in obj.media.all()
+            ]
+        if kind in (FestivalPostType.VIDEO, FestivalPostType.VIDEO_CAPTION):
+            video_file = obj.video_file
+            data['video'] = {
+                'kind': obj.video_kind,
+                'url': _media_url(self, video_file, obj.video_url),
+                'poster': _media_url(self, obj.poster, obj.poster_url),
+            }
+        if kind == FestivalPostType.ARTICLE and obj.article:
+            article = obj.article
+            translation = shown_translation(article, lang)
+            data['article'] = {
+                'title': translation.title if translation else article.title,
+                'excerpt': translation.excerpt if translation else '',
+                'cover': _media_url(self, article.cover, article.cover_url),
+                'path': article_path(article, lang, translation),
+            }
+            shown.append(translation.locale if translation else lang)
+        data['locales'] = self._locales(obj)
+        # Text shown in another language than requested (no translation yet).
+        content_locale = next((code for code in shown if code != lang), None)
+        if content_locale:
+            data['content_locale'] = content_locale
+        return data
+
+    @staticmethod
+    def _locales(obj):
+        """Languages the post has text in (an article post: its article's)."""
+        if obj.type == FestivalPostType.ARTICLE and obj.article:
+            have = {t.locale for t in obj.article.translations.all()}
+        else:
+            maps = (obj.title_i18n, obj.body_i18n, obj.caption_i18n)
+            have = {
+                code
+                for values in maps
+                if isinstance(values, dict)
+                for code in values
+                if values[code]
+            }
+        return [code for code in LOCALES if code in have]
+
+    @staticmethod
+    def _text(values, lang, shown):
+        """`lang`'s text, else the default locale's, noting which locale it is."""
+        if not isinstance(values, dict):
+            return ''
+        for code in (lang, 'ar', *LOCALES):
+            if values.get(code):
+                shown.append(code)
+                return values[code]
+        return ''

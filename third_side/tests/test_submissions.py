@@ -11,9 +11,14 @@ BODY = 'x' * 120
 class SubmissionTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        group = NavGroup.objects.create(slug='visual', label={'ar': 'فنون', 'en': 'Visual'})
+        group = NavGroup.objects.create(
+            slug='visual', label={'ar': 'فنون', 'en': 'Visual'}
+        )
         cls.category = Category.objects.create(
-            name='Cinema', slug='cinema', group=group, name_i18n={'ar': 'سينما', 'en': 'Cinema'}
+            name='Cinema',
+            slug='cinema',
+            group=group,
+            name_i18n={'ar': 'سينما', 'en': 'Cinema'},
         )
         cls.user = User.objects.create_user('u@example.com', 'pw-12345678', name='Ali')
         cls.other = User.objects.create_user('o@example.com', 'pw-12345678')
@@ -23,18 +28,25 @@ class SubmissionTests(APITestCase):
 
     def payload(self, **kwargs):
         data = dict(
-            category_slug='cinema', title='My piece', language='en', content=BODY,
+            category_slug='cinema',
+            title='My piece',
+            language='en',
+            content=BODY,
             allow_translation=False,
         )
         data.update(kwargs)
         return data
 
     def post(self, **kwargs):
-        return self.client.post('/third_side/submissions', self.payload(**kwargs), format='json')
+        return self.client.post(
+            '/third_side/submissions', self.payload(**kwargs), format='json'
+        )
 
     def test_requires_login(self):
         self.assertEqual(self.post().status_code, 401)
-        self.assertEqual(self.client.get('/third_side/submissions/mine').status_code, 401)
+        self.assertEqual(
+            self.client.get('/third_side/submissions/mine').status_code, 401
+        )
 
     def test_create_is_pending_and_hidden_from_public(self):
         self.client.force_authenticate(self.user)
@@ -76,6 +88,30 @@ class SubmissionTests(APITestCase):
         self.assertEqual(by_id[ids[2]]['status'], 'pending')
         self.assertEqual(by_id[ids[2]]['category_name'], 'سينما')
         self.assertEqual(by_id[ids[2]]['group_name'], 'فنون')
+        published = by_id[ids[0]]
+        self.assertEqual(published['slug'], Article.objects.get(pk=ids[0]).slug)
+        self.assertEqual(published['category_url_slug'], 'cinema')
+        self.assertEqual(published['group_url_slug'], 'visual')
+
+    def test_mine_includes_articles_attached_to_the_writer_profile(self):
+        self.client.force_authenticate(self.user)
+        sent = self.post().data['id']
+        critic = Critic.objects.get(user=self.user)
+        attached = Article.objects.create(
+            title='By editor', slug='by-editor', category=self.category, critic=critic
+        )  # no created_by: added by an editor
+        other = Article.objects.create(
+            title='Other',
+            slug='other',
+            category=self.category,
+            critic=Critic.objects.create(name='Z'),
+        )
+        ids = {
+            s['id']
+            for s in self.client.get('/third_side/submissions/mine').data['results']
+        }
+        self.assertEqual(ids, {sent, attached.pk})
+        self.assertNotIn(other.pk, ids)
 
     def test_writer_profile_hidden_until_published(self):
         self.client.force_authenticate(self.user)
@@ -90,4 +126,6 @@ class SubmissionTests(APITestCase):
     def test_same_title_gets_unique_slugs(self):
         self.client.force_authenticate(self.user)
         a, b = self.post().data['id'], self.post().data['id']
-        self.assertNotEqual(Article.objects.get(pk=a).slug, Article.objects.get(pk=b).slug)
+        self.assertNotEqual(
+            Article.objects.get(pk=a).slug, Article.objects.get(pk=b).slug
+        )

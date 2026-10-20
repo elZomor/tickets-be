@@ -21,11 +21,31 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='critic',
             name='user',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='third_side_critic', to=settings.AUTH_USER_MODEL),
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='third_side_critic',
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
             model_name='article',
             name='status',
-            field=models.CharField(choices=[('DRAFT', 'Draft'), ('SUBMITTED', 'Submitted'), ('UNDER_REVIEW', 'Under Review'), ('READY_FOR_EDITING', 'Ready for Editing'), ('READY_FOR_PUBLISHING', 'Ready for Publishing'), ('PUBLISHED', 'Published'), ('ARCHIVED', 'Archived'), ('REJECTED', 'Rejected'), ('REPORTED', 'Reported')], default='DRAFT', max_length=24),
+            field=models.CharField(
+                choices=[
+                    ('DRAFT', 'Draft'),
+                    ('SUBMITTED', 'Submitted'),
+                    ('UNDER_REVIEW', 'Under Review'),
+                    ('READY_FOR_EDITING', 'Ready for Editing'),
+                    ('READY_FOR_PUBLISHING', 'Ready for Publishing'),
+                    ('PUBLISHED', 'Published'),
+                    ('ARCHIVED', 'Archived'),
+                    ('REJECTED', 'Rejected'),
+                    ('REPORTED', 'Reported'),
+                ],
+                default='DRAFT',
+                max_length=24,
+            ),
         ),
     ]

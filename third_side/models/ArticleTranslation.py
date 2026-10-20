@@ -6,8 +6,8 @@ from third_side.i18n import LOCALE_CHOICES
 class ArticleTranslation(models.Model):
     """One language's version of an Article.
 
-    title/slug/content are synced from Payload (per-locale fields); excerpt,
-    meta_description and is_ai_generated are maintained Django-side.
+    title/slug/content are written from the admin editor (one row per language);
+    excerpt and meta_description are maintained Django-side.
     """
 
     article = models.ForeignKey(
@@ -18,7 +18,7 @@ class ArticleTranslation(models.Model):
     slug = models.SlugField(max_length=280, allow_unicode=True)
     excerpt = models.TextField(blank=True, default='')
     meta_description = models.TextField(blank=True, default='')
-    # Lexical JSON ({"root": {...}}) as produced by Payload.
+    # Lexical JSON ({"root": {...}}) as produced by the admin editor.
     content = models.JSONField(null=True, blank=True)
     is_ai_generated = models.BooleanField(default=False)
 

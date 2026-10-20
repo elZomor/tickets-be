@@ -1,4 +1,3 @@
-from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -11,6 +10,7 @@ from third_side.models import (
     Tag,
 )
 from third_side.models.Article import ArticleStatus
+from third_side.services.translations import sync_translations
 
 
 def lexical(text):
@@ -32,7 +32,9 @@ class ArticleI18nTests(APITestCase):
         )
         cls.theater = Category.objects.create(name='Theater', slug='theater')
         cls.critic = Critic.objects.create(name='Sara')
-        cls.tag = Tag.objects.create(slug='directors', name={'ar': 'مخرجون', 'en': 'Directors'})
+        cls.tag = Tag.objects.create(
+            slug='directors', name={'ar': 'مخرجون', 'en': 'Directors'}
+        )
         cls.article = Article.objects.create(
             title='شاهين',
             slug='شاهين',
@@ -91,7 +93,9 @@ class ArticleI18nTests(APITestCase):
         self.assertEqual(data['title'], 'شاهين')
 
     def test_unknown_slug_404(self):
-        self.assertEqual(self.client.get('/third_side/articles/by-slug/nope').status_code, 404)
+        self.assertEqual(
+            self.client.get('/third_side/articles/by-slug/nope').status_code, 404
+        )
 
     def test_list_filters(self):
         base = '/third_side/articles'
@@ -122,162 +126,105 @@ class ArticleI18nTests(APITestCase):
         self.assertEqual(data[0]['categories'], ['cinema'])
 
 
-@override_settings(PAYLOAD_CMS_WEBHOOK_SECRET='s3cret')
-class WebhookTranslationSyncTests(APITestCase):
-    def test_webhook_upserts_translations(self):
-        from third_side.models import SyncedArticle
+class TranslationSaveTests(APITestCase):
+    """sync_translations: how an editor doc becomes ArticleTranslation rows."""
 
-        category = Category.objects.create(name='C', slug='c')
-        critic = Critic.objects.create(name='K')
-        article = Article.objects.create(
-            title='t', slug='t', category=category, critic=critic
+    def make_article(self, key):
+        category = Category.objects.create(name=f'C{key}', slug=f'c{key}')
+        critic = Critic.objects.create(name=f'K{key}')
+        return Article.objects.create(
+            title='t', slug=f't{key}', category=category, critic=critic
         )
-        SyncedArticle.objects.create(payload_id='9', data={}, article=article)
-        doc = {
-            'id': 9,
-            'updatedAt': '2026-10-01T00:00:00Z',
-            'status': 'ready_for_review',
-            'title': {'ar': 'عنوان', 'en': 'Title'},
-            'slug': {'ar': 'عنوان', 'en': 'title'},
-            'content': {'ar': lexical('ar'), 'en': lexical('en')},
-        }
-        response = self.client.post(
-            '/third_side/cms-articles/webhook',
-            {'operation': 'update', 'doc': doc},
-            format='json',
-            HTTP_X_WEBHOOK_SECRET='s3cret',
+
+    def test_upserts_translations(self):
+        article = self.make_article('1')
+        sync_translations(
+            article,
+            {
+                'title': {'ar': 'عنوان', 'en': 'Title'},
+                'slug': {'ar': 'عنوان', 'en': 'title'},
+                'content': {'ar': lexical('ar'), 'en': lexical('en')},
+            },
         )
-        self.assertEqual(response.status_code, 200)
         rows = {t.locale: t for t in article.translations.all()}
         self.assertEqual(set(rows), {'ar', 'en'})
         self.assertEqual(rows['en'].slug, 'title')
         self.assertEqual(rows['en'].content, lexical('en'))
 
+    def test_copies_ai_flag_and_keeps_it_when_absent(self):
+        article = self.make_article('2')
 
-    def test_webhook_copies_ai_flag_and_keeps_it_when_absent(self):
-        from third_side.models import SyncedArticle
-
-        category = Category.objects.create(name='C2', slug='c2')
-        critic = Critic.objects.create(name='K2')
-        article = Article.objects.create(
-            title='t', slug='t2', category=category, critic=critic
-        )
-        SyncedArticle.objects.create(payload_id='11', data={}, article=article)
-
-        def push(updated_at, **extra):
-            doc = {
-                'id': 11,
-                'updatedAt': updated_at,
-                'title': {'ar': 'عنوان', 'en': 'Title'},
-                'slug': {'ar': 'عنوان-2', 'en': 'title-2'},
-                'content': {'ar': lexical('ar'), 'en': lexical('en')},
-                **extra,
-            }
-            return self.client.post(
-                '/third_side/cms-articles/webhook',
-                {'operation': 'update', 'doc': doc},
-                format='json',
-                HTTP_X_WEBHOOK_SECRET='s3cret',
+        def save(**extra):
+            sync_translations(
+                article,
+                {
+                    'title': {'ar': 'عنوان', 'en': 'Title'},
+                    'slug': {'ar': 'عنوان-2', 'en': 'title-2'},
+                    'content': {'ar': lexical('ar'), 'en': lexical('en')},
+                    **extra,
+                },
             )
 
         def flags():
-            return {
-                t.locale: t.is_ai_generated for t in article.translations.all()
-            }
+            return {t.locale: t.is_ai_generated for t in article.translations.all()}
 
-        push('2026-10-01T00:00:00Z', aiGenerated={'ar': False, 'en': True})
+        save(aiGenerated={'ar': False, 'en': True})
         self.assertEqual(flags(), {'ar': False, 'en': True})
-        # An older Payload doc (no field) must not clear the flag.
-        push('2026-10-02T00:00:00Z')
+        # A doc without the field must not clear the flag.
+        save()
         self.assertEqual(flags(), {'ar': False, 'en': True})
         # A human review unticks it.
-        push('2026-10-03T00:00:00Z', aiGenerated={'ar': False, 'en': False})
+        save(aiGenerated={'ar': False, 'en': False})
         self.assertEqual(flags(), {'ar': False, 'en': False})
 
+    def test_sets_original_language_from_tick(self):
+        article = self.make_article('3')
 
-    def test_webhook_sets_original_language_from_tick(self):
-        from third_side.models import SyncedArticle
-
-        category = Category.objects.create(name='C3', slug='c3')
-        critic = Critic.objects.create(name='K3')
-        article = Article.objects.create(
-            title='t', slug='t3', category=category, critic=critic
-        )
-        SyncedArticle.objects.create(payload_id='12', data={}, article=article)
-
-        def push(updated_at, **extra):
-            doc = {
-                'id': 12,
-                'updatedAt': updated_at,
-                'title': {'ar': 'عنوان', 'en': 'Title', 'ro': 'Titlu'},
-                'slug': {'ar': 'عنوان-3', 'en': 'title-3', 'ro': 'titlu-3'},
-                'content': {'ar': lexical('ar'), 'en': lexical('en')},
-                **extra,
-            }
-            self.client.post(
-                '/third_side/cms-articles/webhook',
-                {'operation': 'update', 'doc': doc},
-                format='json',
-                HTTP_X_WEBHOOK_SECRET='s3cret',
+        def save(**extra):
+            sync_translations(
+                article,
+                {
+                    'title': {'ar': 'عنوان', 'en': 'Title', 'ro': 'Titlu'},
+                    'slug': {'ar': 'عنوان-3', 'en': 'title-3', 'ro': 'titlu-3'},
+                    'content': {'ar': lexical('ar'), 'en': lexical('en')},
+                    **extra,
+                },
             )
             article.refresh_from_db()
             return article.original_language
 
         self.assertEqual(article.original_language, 'ar')
-        self.assertEqual(
-            push('2026-10-01T00:00:00Z', isOriginalLanguage={'en': True}), 'en'
-        )
+        self.assertEqual(save(isOriginalLanguage={'en': True}), 'en')
         # No field: unchanged.
-        self.assertEqual(push('2026-10-02T00:00:00Z'), 'en')
+        self.assertEqual(save(), 'en')
         # Nothing ticked: unchanged.
-        self.assertEqual(
-            push('2026-10-03T00:00:00Z', isOriginalLanguage={'ar': False}), 'en'
-        )
+        self.assertEqual(save(isOriginalLanguage={'ar': False}), 'en')
         # Several ticked: keep the current one if still ticked.
-        self.assertEqual(
-            push('2026-10-04T00:00:00Z', isOriginalLanguage={'ar': True, 'en': True}),
-            'en',
-        )
+        self.assertEqual(save(isOriginalLanguage={'ar': True, 'en': True}), 'en')
         # Several ticked and the current one is not among them: first in order.
+        self.assertEqual(save(isOriginalLanguage={'ar': True, 'ro': True}), 'ar')
+        # A language without text cannot be the original.
         self.assertEqual(
-            push('2026-10-05T00:00:00Z', isOriginalLanguage={'ar': True, 'ro': True}),
+            save(
+                isOriginalLanguage={'ro': True},
+                title={'ar': 'عنوان'},
+                slug={'ar': 'عنوان-3'},
+            ),
             'ar',
         )
-        # A language without text cannot be the original.
-        doc_no_text = push(
-            '2026-10-06T00:00:00Z',
-            isOriginalLanguage={'ro': True},
-            title={'ar': 'عنوان'},
-            slug={'ar': 'عنوان-3'},
-        )
-        self.assertEqual(doc_no_text, 'ar')
 
-class BackfillCommandTests(APITestCase):
-    def test_backfill_creates_translations_from_stored_docs(self):
-        from django.core.management import call_command
-
-        from third_side.models import SyncedArticle
-
-        category = Category.objects.create(name='C4', slug='c4')
-        critic = Critic.objects.create(name='K4')
-        article = Article.objects.create(
-            title='t', slug='t4', category=category, critic=critic,
-            status=ArticleStatus.PUBLISHED,
-        )
-        SyncedArticle.objects.create(
-            payload_id='13',
-            article=article,
-            data={
-                'id': 13,
+    def test_public_read_uses_saved_translations(self):
+        article = self.make_article('4')
+        article.status = ArticleStatus.PUBLISHED
+        article.save()
+        sync_translations(
+            article,
+            {
                 'title': {'ar': 'عنوان', 'en': 'Title'},
                 'slug': {'ar': 'عنوان-4', 'en': 'title-4'},
                 'content': {'ar': lexical('ar'), 'en': lexical('en')},
             },
         )
-        SyncedArticle.objects.create(payload_id='14', data={'id': 14})  # unlinked
-        for _ in range(2):  # idempotent
-            call_command('sync_cms_translations', verbosity=0)
-        self.assertEqual(article.translations.count(), 2)
         data = self.client.get('/third_side/articles/by-slug/title-4?lang=en').data
         self.assertEqual(data['body'], lexical('en'))
         self.assertEqual(data['languages']['missing'], ['ro'])
