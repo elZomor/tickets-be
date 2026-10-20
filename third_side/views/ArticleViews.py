@@ -15,6 +15,7 @@ from third_side.read_serializers import (
     ArticleReadSerializer,
 )
 from third_side.serializers import ArticleSerializer
+from third_side.services.translations import translation_map
 
 
 class ArticleViewSet(
@@ -81,12 +82,40 @@ class ArticleViewSet(
         return queryset
 
     def get_permissions(self):
+        if self.action == 'doc':
+            return [IsAuthenticated(), IsEditor()]
         if getattr(self.request, 'method', None) == 'GET' or self.action in ('read',):
             return [AllowAny()]
         return [IsAuthenticated(), IsEditor()]
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    @action(detail=True, methods=['get'])
+    def doc(self, request, pk=None):
+        """Editor-only: every language's text in the shape the admin editor saves."""
+        article = self.get_object()
+        translations = translation_map(article)
+        original = article.original_language
+        return Response(
+            {
+                'id': article.pk,
+                'title': {k: v['title'] for k, v in translations.items()},
+                'slug': {k: v['slug'] for k, v in translations.items()},
+                'content': {k: v['content'] for k, v in translations.items()},
+                'isOriginalLanguage': {k: k == original for k in translations},
+                'aiGenerated': {
+                    k: bool(v['is_ai_generated']) and k != original
+                    for k, v in translations.items()
+                },
+                'status': article.status,
+                'publishedAt': article.published_at,
+                'submittedAt': article.created_at,
+                'critic': article.critic_id,
+                'category': article.category_id,
+                'viaWebsite': article.via_website,
+            }
+        )
 
     @action(detail=False, methods=['get'], url_path=r'by-slug/(?P<slug>[^/]+)')
     def by_slug(self, request, slug=None):

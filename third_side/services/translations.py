@@ -4,13 +4,55 @@ from django.db import IntegrityError, transaction
 
 from third_side.i18n import LOCALES
 from third_side.models import ArticleTranslation
-from third_side.services.payload_sync import text_to_lexical
 
 logger = logging.getLogger(__name__)
 
 
+def _text_node(text):
+    return {
+        'mode': 'normal',
+        'text': text,
+        'type': 'text',
+        'style': '',
+        'detail': 0,
+        'format': 0,
+        'version': 1,
+    }
+
+
+def _paragraph_node(text):
+    return {
+        'type': 'paragraph',
+        'format': '',
+        'indent': 0,
+        'version': 1,
+        'children': [_text_node(text)] if text else [],
+        'direction': None,
+        'textStyle': '',
+        'textFormat': 0,
+    }
+
+
+def text_to_lexical(text):
+    """Wrap a plain-text Article.content into Lexical rich-text JSON.
+
+    A single paragraph holding the whole string, matching the shape the
+    admin editor itself produces (this only needs the plain-paragraph subset).
+    """
+    return {
+        'root': {
+            'type': 'root',
+            'format': '',
+            'indent': 0,
+            'version': 1,
+            'children': [_paragraph_node(text or '')],
+            'direction': None,
+        }
+    }
+
+
 def _sync_original_language(article, ticks, titles, slugs):
-    """Set Article.original_language from Payload's per-locale tick.
+    """Set Article.original_language from the editor's per-locale tick.
 
     Exactly one ticked locale wins. With several ticked, keep the current
     original if it is among them, else the first in ar/en/ro order. With none
@@ -35,11 +77,11 @@ def _sync_original_language(article, ticks, titles, slugs):
 
 
 def sync_translations(article, doc):
-    """Upsert ArticleTranslation rows from a Payload doc (locale: 'all' maps)."""
+    """Upsert ArticleTranslation rows from an editor doc ({field: {locale: value}} maps)."""
     titles = doc.get('title') or {}
     slugs = doc.get('slug') or {}
     contents = doc.get('content') or {}
-    # Per-locale "machine-translated" tick from Payload. An older doc without
+    # Per-locale "machine-translated" tick from the editor. A doc without
     # the field leaves the Django-side flag untouched.
     ai_flags = doc.get('aiGenerated')
     if not isinstance(ai_flags, dict):

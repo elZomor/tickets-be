@@ -1,4 +1,8 @@
+from django.db import transaction
 from rest_framework import serializers
+
+from third_side.i18n import LOCALES
+from third_side.services.translations import sync_translations
 
 from third_side.models import (
     Article,
@@ -7,7 +11,6 @@ from third_side.models import (
     Critic,
     Rating,
     Report,
-    SyncedArticle,
     ThirdSideUser,
 )
 
@@ -25,9 +28,15 @@ class CriticSerializer(serializers.ModelSerializer):
 
 
 class ArticleSerializer(serializers.ModelSerializer):
+    """Editor writes. `doc` carries the per-language text in the shape the admin
+    editor produces ({title, slug, content, isOriginalLanguage, aiGenerated}, each
+    keyed by locale); it is upserted into ArticleTranslation, and the article's own
+    title/slug follow its original language."""
+
     category_name = serializers.SerializerMethodField()
     critic_name = serializers.SerializerMethodField()
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    doc = serializers.DictField(write_only=True, required=False)
 
     class Meta:
         model = Article
@@ -45,7 +54,50 @@ class ArticleSerializer(serializers.ModelSerializer):
             'created_by',
             'is_hidden',
             'share_count',
+            'doc',
         ]
+        extra_kwargs = {'title': {'required': False}, 'slug': {'required': False}}
+
+    def validate(self, attrs):
+        doc = attrs.get('doc')
+        if doc is not None:
+            titles, slugs = doc.get('title') or {}, doc.get('slug') or {}
+            ready = [lang for lang in LOCALES if titles.get(lang) and slugs.get(lang)]
+            if not ready:
+                raise serializers.ValidationError(
+                    {'doc': 'At least one language needs a title and a slug.'}
+                )
+            ticks = doc.get('isOriginalLanguage') or {}
+            original = next((lang for lang in ready if ticks.get(lang)), ready[0])
+            attrs.setdefault('title', titles[original])
+            attrs.setdefault('slug', slugs[original])
+        elif self.instance is None and not (attrs.get('title') and attrs.get('slug')):
+            raise serializers.ValidationError('A title and a slug are required.')
+        slug = attrs.get('slug')
+        if (
+            slug
+            and Article.objects.filter(slug=slug)
+            .exclude(pk=getattr(self.instance, 'pk', None))
+            .exists()
+        ):
+            raise serializers.ValidationError({'slug': 'This slug is already used.'})
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        doc = validated_data.pop('doc', None)
+        article = super().create(validated_data)
+        if doc:
+            sync_translations(article, doc)
+        return article
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        doc = validated_data.pop('doc', None)
+        article = super().update(instance, validated_data)
+        if doc:
+            sync_translations(article, doc)
+        return article
 
     @staticmethod
     def get_category_name(obj):
@@ -158,9 +210,3 @@ class ProfileSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_name(obj) -> str:
         return obj.display_name
-
-
-class SyncedArticleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SyncedArticle
-        exclude = ('sync_status', 'sync_attempts', 'sync_error', 'last_attempt_at')

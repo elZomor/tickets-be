@@ -183,11 +183,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-PAYLOAD_CMS_WEBHOOK_SECRET = env.str('PAYLOAD_CMS_WEBHOOK_SECRET')
-# Django -> Payload direction: create the article in Payload via its REST
-# API when it reaches READY_FOR_EDITING (see services/payload_sync.py).
-PAYLOAD_API_URL = env.str('PAYLOAD_API_URL', default='')
-PAYLOAD_API_KEY = env.str('PAYLOAD_API_KEY', default='')
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'config.pagination.CustomPagination',
@@ -241,13 +236,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = 'UTC'
-CELERY_BEAT_SCHEDULE = {
-    # Safety net for Payload pushes the retry chain lost or gave up on.
-    'sweep-payload-syncs': {
-        'task': 'third_side.tasks.sweep_payload_syncs',
-        'schedule': 600,
-    },
-}
+CELERY_BEAT_SCHEDULE = {}
 
 s3_storage = S3Boto3Storage()
 STORAGES = {

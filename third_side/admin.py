@@ -19,13 +19,11 @@ from third_side.models import (
     SiteSettings,
     Rating,
     Report,
-    SyncedArticle,
     Tag,
     TermsAcceptance,
     TermsVersion,
     ThirdSideUser,
 )
-from third_side.models.SyncedArticle import PayloadSyncStatus
 
 
 class JsonFieldsAdmin(admin.ModelAdmin):
@@ -126,37 +124,6 @@ class ReportAdmin(admin.ModelAdmin):
     )
     list_filter = ('content_type',)
     readonly_fields = ('created_at',)
-
-
-@admin.register(SyncedArticle)
-class SyncedArticleAdmin(admin.ModelAdmin):
-    list_display = (
-        'payload_id',
-        'article',
-        'sync_status',
-        'sync_attempts',
-        'last_attempt_at',
-        'updated_at',
-    )
-    list_filter = ('sync_status',)
-    readonly_fields = ('sync_attempts', 'sync_error', 'last_attempt_at')
-    actions = ['retry_push_to_payload']
-    formfield_overrides = {
-        models.JSONField: {'widget': JSONEditorWidget},
-    }
-
-    @admin.action(description='Retry push to Payload')
-    def retry_push_to_payload(self, request, queryset):
-        from third_side.services.payload_sync import enqueue_push
-
-        pending = queryset.exclude(sync_status=PayloadSyncStatus.SYNCED).filter(
-            article__isnull=False
-        )
-        for synced in pending:
-            synced.sync_status = PayloadSyncStatus.PENDING
-            synced.save(update_fields=['sync_status', 'updated_at'])
-            enqueue_push(synced.pk)
-        self.message_user(request, f'Queued {pending.count()} article(s) for Payload.')
 
 
 @admin.register(SiteSettings)

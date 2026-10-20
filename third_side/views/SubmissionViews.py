@@ -179,6 +179,7 @@ class SubmissionsView(GenericAPIView):
                 original_language=data['language'],
                 allow_translation=data['allow_translation'],
                 created_by=request.user,
+                via_website=True,
             )
         return Response(
             SubmissionSerializer(article, context={'request': request}).data,

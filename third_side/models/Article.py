@@ -1,15 +1,9 @@
-import logging
-
 from django.db import models
-from django.db.models.signals import post_save, pre_save
-from django.dispatch import receiver
 
 from third_side.i18n import DEFAULT_LOCALE, LOCALE_CHOICES
 from third_side.models.Category import Category
 from third_side.models.Critic import Critic
 from third_side.models.Tag import Tag
-
-logger = logging.getLogger(__name__)
 
 
 class ArticleStatus(models.TextChoices):
@@ -59,38 +53,11 @@ class Article(models.Model):
     allow_translation = models.BooleanField(default=True)
     # Highlighted on its category page.
     is_featured = models.BooleanField(default=False)
+    # True when a reader submitted it on the website; False when it was created
+    # by an editor in the admin.
+    via_website = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return self.title
-
-
-@receiver(pre_save, sender=Article)
-def _cache_old_status(sender, instance, **kwargs):
-    instance._old_status = (
-        sender.objects.filter(pk=instance.pk).values_list('status', flat=True).first()
-        if instance.pk
-        else None
-    )
-
-
-@receiver(post_save, sender=Article)
-def _push_to_payload_on_ready_for_editing(sender, instance, **kwargs):
-    # Editors approve the article internally up to READY_FOR_EDITING, then it
-    # moves into Payload for the writer-facing editing/review loop. Only the
-    # transition into that state (not every save while already in it) should
-    # create the Payload-side article.
-    if instance.status != ArticleStatus.READY_FOR_EDITING:
-        return
-    if getattr(instance, '_old_status', None) == ArticleStatus.READY_FOR_EDITING:
-        return
-
-    from third_side.services.payload_sync import queue_payload_sync
-
-    # Records a pending SyncedArticle and queues the push; Celery retries
-    # while Payload is down (see third_side.tasks).
-    try:
-        queue_payload_sync(instance)
-    except Exception:
-        logger.exception('Failed to queue the Payload push for article %s', instance.pk)
