@@ -8,7 +8,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Critic
-from third_side.models.Article import ArticleStatus
+from third_side.models.Article import live_q
 from third_side.permissions import IsEditor
 from third_side.read_serializers import CriticReadSerializer
 from third_side.serializers import CriticSerializer
@@ -38,10 +38,7 @@ class CriticViewSet(
             .annotate(
                 article_count=Count(
                     'articles',
-                    filter=Q(
-                        articles__is_hidden=False,
-                        articles__status=ArticleStatus.PUBLISHED,
-                    ),
+                    filter=live_q('articles__') & Q(articles__is_hidden=False),
                 )
             )
             .order_by('name', 'id')

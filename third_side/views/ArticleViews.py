@@ -1,5 +1,6 @@
 from django.db.models import Avg, Case, Count, F, IntegerField, Q, Value, When
 from django.http import Http404
+from django.utils import timezone
 from rest_framework import mixins
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -8,13 +9,14 @@ from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Article
-from third_side.models.Article import ArticleStatus
+from third_side.models.Article import ArticleStatus, live_q
 from third_side.permissions import IsEditor, is_editor
 from third_side.read_serializers import (
     ArticleDetailSerializer,
     ArticleReadSerializer,
 )
 from third_side.serializers import ArticleSerializer
+from third_side.services.media_urls import to_url
 from third_side.services.translations import translation_map
 
 
@@ -29,7 +31,7 @@ class ArticleViewSet(
     """Public reads are localized with ?lang=ar|en|ro.
 
     List filters: ?category=<slug> ?group=<slug> ?tag=<slug> ?critic=<id>
-    ?featured=true ?search=<text>. Editors write with the plain serializer.
+    ?featured=true ?search=<text>; editors also get ?editor=<user id>. Editors write with the plain serializer.
     """
 
     authentication_classes = [ThirdSideJWTAuthentication]
@@ -50,8 +52,13 @@ class ArticleViewSet(
         return bool(is_editor(self.request.user))
 
     def get_queryset(self):
+        if self._is_editor():
+            # Show scheduled articles whose time has come as published.
+            Article.objects.filter(
+                status=ArticleStatus.SCHEDULED, published_at__lte=timezone.now()
+            ).update(status=ArticleStatus.PUBLISHED)
         queryset = (
-            Article.objects.select_related('category', 'critic')
+            Article.objects.select_related('category', 'critic', 'editor')
             .prefetch_related('translations', 'tags')
             .annotate(
                 rating_avg=Avg('ratings__value'),
@@ -60,7 +67,7 @@ class ArticleViewSet(
             .order_by('-published_at', '-id')
         )
         if not self._is_editor():
-            queryset = queryset.filter(is_hidden=False, status=ArticleStatus.PUBLISHED)
+            queryset = queryset.filter(live_q(), is_hidden=False)
         if self.action != 'list':
             return queryset
         params = self.request.query_params
@@ -72,6 +79,8 @@ class ArticleViewSet(
             queryset = queryset.filter(tags__slug=params['tag'])
         if params.get('critic'):
             queryset = queryset.filter(critic_id=params['critic'])
+        if params.get('editor') and self._is_editor():
+            queryset = queryset.filter(editor_id=params['editor'])
         if params.get('featured') in ('1', 'true'):
             queryset = queryset.filter(is_featured=True)
         if params.get('search'):
@@ -95,7 +104,7 @@ class ArticleViewSet(
     def doc(self, request, pk=None):
         """Editor-only: every language's text in the shape the admin editor saves."""
         article = self.get_object()
-        translations = translation_map(article)
+        translations = translation_map(article, request)
         original = article.original_language
         return Response(
             {
@@ -112,6 +121,8 @@ class ArticleViewSet(
                 'publishedAt': article.published_at,
                 'submittedAt': article.created_at,
                 'critic': article.critic_id,
+                'editor': article.editor_id,
+                'cover': to_url(article.cover_url, request) or None,
                 'category': article.category_id,
                 'viaWebsite': article.via_website,
             }

@@ -51,14 +51,14 @@ class FestivalPost(models.Model):
         max_length=10, choices=VideoKind.choices, default=VideoKind.EMBED
     )
     # Watch URL (embed: YouTube/Vimeo) or, for `file`, used when no upload is set.
-    video_url = models.CharField(max_length=500, blank=True, default='')
+    video_url = models.CharField(max_length=1000, blank=True, default='')
     video_file = models.FileField(
         upload_to='third_side/festival-videos', null=True, blank=True
     )
     poster = models.ImageField(
         upload_to='third_side/festival-posters', null=True, blank=True
     )
-    poster_url = models.CharField(max_length=300, blank=True, default='')
+    poster_url = models.CharField(max_length=1000, blank=True, default='')
     # Key of the frontend mock record this row was seeded from.
     mock_id = models.PositiveIntegerField(null=True, blank=True, unique=True)
 
@@ -94,7 +94,7 @@ class FestivalPostMedia(models.Model):
     image = models.ImageField(
         upload_to='third_side/festival-posts', null=True, blank=True
     )
-    image_url = models.CharField(max_length=300, blank=True, default='')
+    image_url = models.CharField(max_length=1000, blank=True, default='')
     alt_i18n = models.JSONField(default=dict, blank=True)
     order = models.PositiveIntegerField(default=0)
 

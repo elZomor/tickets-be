@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from third_side.i18n import LOCALES, clean_locale, localize
 from third_side.models import Article, Category, NavGroup, SiteSettings
-from third_side.models.Article import ArticleStatus
+from third_side.models.Article import live_q
 from third_side.read_serializers import (
     ArticleReadSerializer,
     CategoryReadSerializer,
@@ -17,7 +17,7 @@ HOME_LATEST_COUNT = 6
 
 def _published_articles():
     return (
-        Article.objects.filter(is_hidden=False, status=ArticleStatus.PUBLISHED)
+        Article.objects.filter(live_q(), is_hidden=False)
         .select_related('category', 'critic')
         .prefetch_related('translations', 'tags')
         .order_by('-published_at', '-id')

@@ -58,6 +58,7 @@ class MediaUploadView(APIView):
         return Response(
             {
                 'id': media.pk,
+                'key': media.file.name,
                 'url': request.build_absolute_uri(media.file.url),
                 'alt': media.alt,
                 'width': media.width,
