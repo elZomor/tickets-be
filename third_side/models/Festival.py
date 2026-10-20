@@ -1,5 +1,7 @@
 from django.db import models
 
+from third_side.utils import AsciiUploadTo
+
 
 class Festival(models.Model):
     """A festival shown as a card on the Festivals page; its posts form the feed.
@@ -13,7 +15,9 @@ class Festival(models.Model):
     name_i18n = models.JSONField(default=dict, blank=True)
     description_i18n = models.JSONField(default=dict, blank=True)
     location_i18n = models.JSONField(default=dict, blank=True)
-    cover = models.ImageField(upload_to='third_side/festivals', null=True, blank=True)
+    cover = models.ImageField(
+        upload_to=AsciiUploadTo('third_side/festivals'), null=True, blank=True
+    )
     cover_url = models.CharField(max_length=300, blank=True, default='')
     starts_on = models.DateField()
     ends_on = models.DateField()

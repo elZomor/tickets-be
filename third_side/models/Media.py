@@ -1,11 +1,15 @@
 from django.db import models
 
+from third_side.utils import AsciiUploadTo
+
 
 class Media(models.Model):
     """An image uploaded from the admin editor, embedded in article bodies."""
 
     file = models.ImageField(
-        upload_to='third_side/media', width_field='width', height_field='height'
+        upload_to=AsciiUploadTo('third_side/media'),
+        width_field='width',
+        height_field='height',
     )
     alt = models.CharField(max_length=255, blank=True, default='')
     width = models.PositiveIntegerField(null=True, blank=True)

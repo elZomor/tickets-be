@@ -1,4 +1,6 @@
 from django.db import models
+
+from third_side.utils import AsciiUploadTo
 from django.db.models import Q
 from django.utils import timezone
 
@@ -75,7 +77,9 @@ class Article(models.Model):
     original_language = models.CharField(
         max_length=2, choices=LOCALE_CHOICES, default=DEFAULT_LOCALE
     )
-    cover = models.ImageField(upload_to='third_side/covers', null=True, blank=True)
+    cover = models.ImageField(
+        upload_to=AsciiUploadTo('third_side/covers'), null=True, blank=True
+    )
     cover_url = models.CharField(max_length=1000, blank=True, default='')
     tags = models.ManyToManyField(Tag, blank=True, related_name='articles')
     # A reader submission: the author lets us machine-translate it.

@@ -1,5 +1,7 @@
 from django.db import models
 
+from third_side.utils import AsciiUploadTo
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -21,7 +23,9 @@ class Category(models.Model):
     name_i18n = models.JSONField(default=dict, blank=True)
     tagline = models.JSONField(default=dict, blank=True)
     description = models.JSONField(default=dict, blank=True)
-    image = models.ImageField(upload_to='third_side/categories', null=True, blank=True)
+    image = models.ImageField(
+        upload_to=AsciiUploadTo('third_side/categories'), null=True, blank=True
+    )
     image_url = models.CharField(max_length=300, blank=True, default='')
     hero_image_url = models.CharField(max_length=300, blank=True, default='')
 
