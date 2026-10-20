@@ -344,6 +344,7 @@ class FestivalPostReadSerializer(serializers.ModelSerializer):
         lang = _lang(self)
         data = super().to_representation(obj)
         festival = obj.festival
+        data['is_published'] = obj.is_published
         data['festival'] = {
             'id': festival.id,
             'name': localize(festival.name_i18n, lang, festival.slug),
@@ -382,11 +383,28 @@ class FestivalPostReadSerializer(serializers.ModelSerializer):
                 'path': article_path(article, lang, translation),
             }
             shown.append(translation.locale if translation else lang)
+        data['locales'] = self._locales(obj)
         # Text shown in another language than requested (no translation yet).
         content_locale = next((code for code in shown if code != lang), None)
         if content_locale:
             data['content_locale'] = content_locale
         return data
+
+    @staticmethod
+    def _locales(obj):
+        """Languages the post has text in (an article post: its article's)."""
+        if obj.type == FestivalPostType.ARTICLE and obj.article:
+            have = {t.locale for t in obj.article.translations.all()}
+        else:
+            maps = (obj.title_i18n, obj.body_i18n, obj.caption_i18n)
+            have = {
+                code
+                for values in maps
+                if isinstance(values, dict)
+                for code in values
+                if values[code]
+            }
+        return [code for code in LOCALES if code in have]
 
     @staticmethod
     def _text(values, lang, shown):
