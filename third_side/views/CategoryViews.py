@@ -11,7 +11,7 @@ from third_side.read_serializers import (
     NavGroupSerializer,
     TagSerializer,
 )
-from third_side.serializers import CategorySerializer
+from third_side.serializers import CategorySerializer, TagWriteSerializer
 
 
 class CategoryViewSet(
@@ -52,6 +52,22 @@ class NavGroupViewSet(_PublicReadViewSet):
     queryset = NavGroup.objects.prefetch_related('categories').order_by('order', 'id')
 
 
-class TagViewSet(_PublicReadViewSet):
-    serializer_class = TagSerializer
+class TagViewSet(AuditedMixin, mixins.CreateModelMixin, _PublicReadViewSet):
+    """Anyone reads the tags; editors create new ones (POST {name: {ar, en, ro}})."""
+
     queryset = Tag.objects.order_by('slug')
+
+    def get_serializer_class(self):
+        if getattr(self.request, 'method', None) == 'GET':
+            return TagSerializer
+        return TagWriteSerializer
+
+    def get_authenticators(self):
+        if getattr(self.request, 'method', None) == 'GET':
+            return []
+        return [ThirdSideJWTAuthentication()]
+
+    def get_permissions(self):
+        if getattr(self.request, 'method', None) == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated(), IsEditor()]

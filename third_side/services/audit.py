@@ -19,6 +19,7 @@ from third_side.models import (
     FestivalPost,
     Media,
     Report,
+    Tag,
 )
 from third_side.models.ActivityLog import ActivityAction, ActivityObject
 
@@ -28,6 +29,7 @@ OBJECT_TYPES = {
     Category: ActivityObject.CATEGORY,
     Critic: ActivityObject.CRITIC,
     Media: ActivityObject.MEDIA,
+    Tag: ActivityObject.TAG,
     Report: ActivityObject.REPORT,
 }
 
@@ -115,6 +117,8 @@ def _whole(values, side):
 def object_repr(instance):
     for name in ('title', 'name'):
         text = getattr(instance, name, '')
+        if isinstance(text, dict):  # a per-language name (tags)
+            text = text.get('en') or next((v for v in text.values() if v), '')
         if text:
             return str(text)[:255]
     return f'{type(instance).__name__} #{instance.pk}'[:255]

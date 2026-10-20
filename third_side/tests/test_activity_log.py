@@ -276,3 +276,55 @@ class FestivalPostSnapshotTests(APITestCase):
         )
         post = FestivalPost.objects.create(festival=festival, type='text')
         self.assertEqual(audit.snapshot(post)['media'], [])
+
+
+class TagCreateTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.editor = ThirdSideUser.objects.create_user(
+            'editor@example.com', 'pw', role=Role.EDITOR
+        )
+        cls.reader = ThirdSideUser.objects.create_user(
+            'reader@example.com', 'pw', role=Role.READER
+        )
+
+    def post(self, name):
+        return self.client.post('/third_side/tags', {'name': name}, format='json')
+
+    def test_editor_creates_a_tag_and_it_is_logged(self):
+        self.client.force_authenticate(self.editor)
+        response = self.post({'ar': 'مسرح الشارع', 'en': 'Street Theatre'})
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['slug'], 'street-theatre')
+        self.assertEqual(response.data['name']['ro'], 'مسرح الشارع')
+        self.assertEqual(
+            response.data['url_slug'],
+            {'ar': 'مسرح-الشارع', 'en': 'street-theatre', 'ro': 'مسرح-الشارع'},
+        )
+        row = ActivityLog.objects.get()
+        self.assertEqual((row.action, row.object_type), ('create', 'tag'))
+        self.assertEqual(row.object_repr, 'Street Theatre')
+
+    def test_one_language_is_enough_and_the_slug_follows_it(self):
+        self.client.force_authenticate(self.editor)
+        response = self.post({'ar': 'نقد'})
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['slug'], 'نقد')
+        self.assertEqual(response.data['name'], {'ar': 'نقد', 'en': 'نقد', 'ro': 'نقد'})
+
+    def test_bad_names_are_rejected(self):
+        self.client.force_authenticate(self.editor)
+        for bad in ({}, {'ar': '  '}, {'ar': '؟!'}, {'fr': 'x'}, 'text'):
+            self.assertEqual(self.post(bad).status_code, 400, bad)
+
+    def test_existing_tag_is_not_created_twice(self):
+        self.client.force_authenticate(self.editor)
+        self.post({'en': 'Dance'})
+        self.assertEqual(self.post({'en': 'dance!'}).status_code, 400)
+
+    def test_only_editors_create_but_anyone_lists(self):
+        self.assertEqual(self.post({'en': 'X'}).status_code, 401)
+        self.client.force_authenticate(self.reader)
+        self.assertEqual(self.post({'en': 'X'}).status_code, 403)
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.get('/third_side/tags').status_code, 200)
