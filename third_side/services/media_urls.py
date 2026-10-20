@@ -6,8 +6,9 @@ storage for a fresh URL. External or already-absolute URLs pass through.
 """
 
 import copy
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
+from django.conf import settings
 from django.core.files.storage import default_storage
 
 KEY_ROOT = 'third_side/'
@@ -25,14 +26,23 @@ def to_key(value):
     return path[start + 1 :] if start != -1 else value
 
 
+def storage_url(key, request=None):
+    """Public URL of a stored file. Through the media worker when configured
+    (stable, cached, no bucket access from browsers); else the storage's URL."""
+    proxy = getattr(settings, 'MEDIA_PROXY_URL', '')
+    if proxy:
+        return f'{proxy}/{quote(key.lstrip("/"), safe="/")}'
+    url = default_storage.url(key)
+    if url.startswith('/') and request is not None:
+        return request.build_absolute_uri(url)
+    return url
+
+
 def to_url(value, request=None):
     """A usable URL for a stored key (or the value itself when it is a URL)."""
     if not isinstance(value, str) or not value or value.startswith(_ABSOLUTE):
         return value
-    url = default_storage.url(value)
-    if url.startswith('/') and request is not None:
-        return request.build_absolute_uri(url)
-    return url
+    return storage_url(value, request)
 
 
 def _walk(node, fn):
