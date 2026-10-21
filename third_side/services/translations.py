@@ -34,11 +34,33 @@ def _paragraph_node(text):
     }
 
 
-def text_to_lexical(text):
+def _upload_node(media):
+    """An image block as the admin editor writes it; `url` holds the storage key."""
+    return {
+        'type': 'upload',
+        'version': 3,
+        'format': '',
+        'id': f'media-{media.pk}',
+        'relationTo': 'media',
+        'value': {
+            'id': media.pk,
+            'url': media.file.name,
+            'alt': media.alt,
+            'width': media.width,
+            'height': media.height,
+            'mimeType': media.mime_type,
+            'filesize': media.filesize,
+        },
+        'fields': None,
+    }
+
+
+def text_to_lexical(text, media=()):
     """Wrap a plain-text Article.content into Lexical rich-text JSON.
 
     A single paragraph holding the whole string, matching the shape the
-    admin editor itself produces (this only needs the plain-paragraph subset).
+    admin editor itself produces (this only needs the plain-paragraph subset),
+    followed by one image block per attached `media`.
     """
     return {
         'root': {
@@ -46,7 +68,8 @@ def text_to_lexical(text):
             'format': '',
             'indent': 0,
             'version': 1,
-            'children': [_paragraph_node(text or '')],
+            'children': [_paragraph_node(text or '')]
+            + [_upload_node(item) for item in media],
             'direction': None,
         }
     }
@@ -131,6 +154,13 @@ def sync_translations(article, doc):
             )
 
 
+def _submitted_media(article):
+    # Only website submissions carry attachments; skip the query otherwise.
+    if not article.via_website:
+        return []
+    return list(article.submitted_media.order_by('id'))
+
+
 def translation_map(article, request=None):
     """{locale: view} for every language the article exists in.
 
@@ -158,7 +188,14 @@ def translation_map(article, request=None):
             'excerpt': '',
             'meta_description': '',
             'seo_title': '',
-            'content': text_to_lexical(article.content) if article.content else None,
+            'content': (
+                content_to_urls(
+                    text_to_lexical(article.content, _submitted_media(article)),
+                    request,
+                )
+                if article.content
+                else None
+            ),
             'is_ai_generated': False,
         }
     return result

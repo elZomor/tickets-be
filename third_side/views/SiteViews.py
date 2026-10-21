@@ -1,15 +1,26 @@
 import random
 from datetime import date
 
+from django.db import transaction
 from django.db.models import F
 from django.http import Http404
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from third_side.auth import ThirdSideJWTAuthentication
 from third_side.i18n import clean_locale, localize, localize_tree
-from third_side.models import AboutPage, Ad, TermsVersion
+from third_side.models import AboutPage, Ad, SiteSettings, TermsVersion
+from third_side.models.ActivityLog import ActivityAction
+from third_side.permissions import IsEditor
+from third_side.services import audit
+from third_side.site_serializers import (
+    AboutSerializer,
+    FooterSerializer,
+    about_to_urls,
+    footer_payload,
+)
 
 AD_SIZES = ('tall', 'rect', 'wide')
 
@@ -23,9 +34,74 @@ class AboutView(APIView):
         page = AboutPage.load()
         if not page.content:
             raise Http404
-        return Response(
-            localize_tree(page.content, clean_locale(request.query_params.get('lang')))
+        lang = clean_locale(request.query_params.get('lang'))
+        return Response(localize_tree(about_to_urls(page.content, request), lang))
+
+
+def _save_audited(request, instance, apply, repr_):
+    """Run `apply()` (which saves `instance`) and log the change."""
+    with transaction.atomic():
+        before = audit.snapshot(instance) if instance.pk else {}
+        apply()
+        audit.record(
+            request,
+            ActivityAction.UPDATE if before else ActivityAction.CREATE,
+            instance,
+            before,
+            audit.snapshot(instance),
+            repr_=repr_,
         )
+
+
+class _EditorView(APIView):
+    authentication_classes = [ThirdSideJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsEditor]
+    throttle_scope = 'third_side_write'
+
+
+class AboutDocView(_EditorView):
+    """GET/PUT about/doc: the whole About page with every locale, for the admin.
+
+    `content` has the shape documented on AboutPage; images are URLs from
+    POST /media (stored as keys).
+    """
+
+    serializer_class = AboutSerializer
+
+    def _payload(self, page, request):
+        return {'content': about_to_urls(page.content or {}, request)}
+
+    def get(self, request):
+        return Response(self._payload(AboutPage.load(), request))
+
+    def put(self, request):
+        serializer = AboutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        page = AboutPage.load()
+
+        def apply():
+            page.content = serializer.validated_data['content']
+            page.save()
+
+        _save_audited(request, page, apply, 'About page')
+        return Response(self._payload(page, request))
+
+
+class FooterView(_EditorView):
+    """GET/PUT footer: contact details, social links and sponsors (SiteSettings),
+    every locale. The home hero in the same settings is left as it is."""
+
+    serializer_class = FooterSerializer
+
+    def get(self, request):
+        return Response(footer_payload(SiteSettings.load(), request))
+
+    def put(self, request):
+        serializer = FooterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        site = SiteSettings.load()
+        _save_audited(request, site, lambda: serializer.save_to(site), 'Footer')
+        return Response(footer_payload(site, request))
 
 
 def _terms_payload(terms, lang):

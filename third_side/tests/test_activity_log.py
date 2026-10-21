@@ -152,7 +152,9 @@ class ActivityLogTests(APITestCase):
 
     def test_category_and_critic_writes_are_logged(self):
         self.client.post(
-            '/third_side/categories', {'name': 'Dance', 'slug': 'dance'}, format='json'
+            '/third_side/categories',
+            {'name_i18n': {'en': 'Dance'}, 'slug': 'dance'},
+            format='json',
         )
         self.client.post('/third_side/critics', {'name': 'New'}, format='json')
         kinds = set(ActivityLog.objects.values_list('object_type', flat=True))

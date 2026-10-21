@@ -17,6 +17,9 @@ class ActivityObject(models.TextChoices):
     MEDIA = 'media', 'Media'
     TAG = 'tag', 'Tag'
     REPORT = 'report', 'Report'
+    NAV_GROUP = 'nav_group', 'Nav group'
+    ABOUT = 'about', 'About page'
+    SITE_SETTINGS = 'site_settings', 'Site settings'
 
 
 class ActivityLog(models.Model):
