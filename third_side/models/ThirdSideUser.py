@@ -2,6 +2,8 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 
+from third_side.utils import AsciiUploadTo
+
 
 class Role(models.TextChoices):
     EDITOR = 'EDITOR', 'Editor'
@@ -30,6 +32,10 @@ class ThirdSideUser(AbstractBaseUser):
     name = models.CharField(max_length=150, blank=True, default='')
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.READER)
     is_active = models.BooleanField(default=True)
+    # Profile photo the reader uploads (POST /profile/me/avatar).
+    avatar = models.ImageField(
+        upload_to=AsciiUploadTo('third_side/avatars'), null=True, blank=True
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     objects = ThirdSideUserManager()

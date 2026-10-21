@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from third_side.views import (
+    AboutDocView,
     AboutView,
     ActivityLogViewSet,
     AdClickView,
@@ -13,6 +14,7 @@ from third_side.views import (
     EditorListView,
     FestivalPostViewSet,
     FestivalViewSet,
+    FooterView,
     ForgotPasswordView,
     LoginView,
     RefreshView,
@@ -22,6 +24,7 @@ from third_side.views import (
     NavGroupViewSet,
     TagViewSet,
     CriticViewSet,
+    ProfileAvatarView,
     ProfileMeView,
     RatingViewSet,
     ReportViewSet,
@@ -58,6 +61,8 @@ urlpatterns = [
     path('submissions', SubmissionsView.as_view(), name='submissions'),
     path('submissions/mine', SubmissionsView.as_view(), name='submissions-mine'),
     path('about', AboutView.as_view(), name='about'),
+    path('about/doc', AboutDocView.as_view(), name='about-doc'),
+    path('footer', FooterView.as_view(), name='footer'),
     path('terms', TermsView.as_view(), name='terms'),
     path('terms/versions', TermsVersionsView.as_view(), name='terms-versions'),
     path('terms/<str:version>', TermsDetailView.as_view(), name='terms-detail'),
@@ -66,4 +71,5 @@ urlpatterns = [
     path('ads/<int:pk>/click', AdClickView.as_view(), name='ad-click'),
     path('category-pages/<str:slug>', CategoryPageView.as_view(), name='category-page'),
     path('profile/me', ProfileMeView.as_view(), name='profile-me'),
+    path('profile/me/avatar', ProfileAvatarView.as_view(), name='profile-avatar'),
 ] + router.urls

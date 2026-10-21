@@ -309,7 +309,11 @@ class CriticReadSerializer(serializers.ModelSerializer):
         return localize(obj.bio_i18n, _lang(self), obj.bio or '')
 
     def get_photo(self, obj) -> str | None:
-        return _media_url(self, obj.photo, obj.photo_url)
+        photo = _media_url(self, obj.photo, obj.photo_url)
+        # A reader-writer without an editor-set photo shows their own avatar.
+        if photo is None and obj.user_id and obj.user.avatar:
+            return _media_url(self, obj.user.avatar, '')
+        return photo
 
     def get_slug(self, obj) -> str:
         return localize(obj.slug_i18n, _lang(self), str(obj.pk))

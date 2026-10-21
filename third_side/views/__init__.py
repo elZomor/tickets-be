@@ -20,14 +20,16 @@ from .AuthViews import (  # noqa:F401
 )
 from .HomeViews import CategoryPageView, HomeView  # noqa:F401
 from .SiteViews import (  # noqa:F401
+    AboutDocView,
     AboutView,
     AdClickView,
     AdImpressionView,
     AdPickView,
+    FooterView,
     TermsDetailView,
     TermsVersionsView,
     TermsView,
 )
 from .SubmissionViews import SubmissionsView  # noqa:F401
-from .ProfileViews import ProfileMeView  # noqa:F401
+from .ProfileViews import ProfileAvatarView, ProfileMeView  # noqa:F401
 from .FestivalViews import FestivalPostViewSet, FestivalViewSet  # noqa:F401

@@ -11,6 +11,7 @@ from decimal import Decimal
 from django.db.models.fields.files import FieldFile
 
 from third_side.models import (
+    AboutPage,
     ActivityLog,
     Article,
     ArticleTranslation,
@@ -18,7 +19,9 @@ from third_side.models import (
     Critic,
     FestivalPost,
     Media,
+    NavGroup,
     Report,
+    SiteSettings,
     Tag,
 )
 from third_side.models.ActivityLog import ActivityAction, ActivityObject
@@ -31,6 +34,9 @@ OBJECT_TYPES = {
     Media: ActivityObject.MEDIA,
     Tag: ActivityObject.TAG,
     Report: ActivityObject.REPORT,
+    NavGroup: ActivityObject.NAV_GROUP,
+    AboutPage: ActivityObject.ABOUT,
+    SiteSettings: ActivityObject.SITE_SETTINGS,
 }
 
 # Bookkeeping and counters: they change without an editor doing anything.
@@ -115,7 +121,7 @@ def _whole(values, side):
 
 
 def object_repr(instance):
-    for name in ('title', 'name'):
+    for name in ('title', 'name', 'label'):
         text = getattr(instance, name, '')
         if isinstance(text, dict):  # a per-language name (tags)
             text = text.get('en') or next((v for v in text.values() if v), '')

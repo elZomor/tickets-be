@@ -89,6 +89,11 @@ class Article(models.Model):
     # True when a reader submitted it on the website; False when it was created
     # by an editor in the admin.
     via_website = models.BooleanField(default=False)
+    # Images a reader attached to a website submission; the editor finds them
+    # appended to the body when the article is first opened in the admin.
+    submitted_media = models.ManyToManyField(
+        'third_side.Media', blank=True, related_name='submissions'
+    )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 

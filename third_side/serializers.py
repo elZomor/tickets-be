@@ -15,7 +15,6 @@ from third_side.services.translations import sync_translations
 from third_side.models import (
     ActivityLog,
     Article,
-    Category,
     Comment,
     Critic,
     FestivalPost,
@@ -27,12 +26,6 @@ from third_side.models import (
     ThirdSideUser,
 )
 from third_side.models.Article import ArticleStatus
-
-
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ['id', 'name', 'slug', 'order']
 
 
 class CriticSerializer(serializers.ModelSerializer):
@@ -273,15 +266,23 @@ class ProfileSerializer(serializers.ModelSerializer):
     """The signed-in reader: GET /profile/me."""
 
     name = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = ThirdSideUser
-        fields = ['id', 'name', 'email', 'role']
+        fields = ['id', 'name', 'email', 'role', 'avatar']
         read_only_fields = fields
 
     @staticmethod
     def get_name(obj) -> str:
         return obj.display_name
+
+    def get_avatar(self, obj) -> str | None:
+        if not obj.avatar:
+            return None
+        request = self.context.get('request')
+        url = obj.avatar.url
+        return request.build_absolute_uri(url) if request else url
 
 
 def _clean_text_map(value, field):

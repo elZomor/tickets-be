@@ -10,12 +10,13 @@ from rest_framework.response import Response
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.i18n import LOCALE_CHOICES, clean_locale, localize, slugify_name
-from third_side.models import Article, Category, Critic
+from third_side.models import Article, Category, Critic, Media
 from third_side.models.Article import ArticleStatus
 from third_side.services.translations import pick_locale, translation_map
 
 MIN_CONTENT = 100
 MAX_CONTENT = 50_000
+MAX_IMAGES = 10
 
 # What the reader sees: the editorial workflow collapses to three states.
 SUBMISSION_STATUS = {
@@ -35,6 +36,21 @@ class SubmissionCreateSerializer(serializers.Serializer):
     language = serializers.ChoiceField(choices=LOCALE_CHOICES)
     content = serializers.CharField(min_length=MIN_CONTENT, max_length=MAX_CONTENT)
     allow_translation = serializers.BooleanField(default=True)
+    # Ids from POST /media, uploaded by the same reader.
+    images = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        max_length=MAX_IMAGES,
+        required=False,
+        default=list,
+    )
+
+    def validate_images(self, value):
+        ids = list(dict.fromkeys(value))
+        user = self.context['request'].user
+        found = Media.objects.filter(pk__in=ids, uploaded_by=user)
+        if found.count() != len(ids):
+            raise serializers.ValidationError('Unknown image')
+        return ids
 
     def validate_title(self, value):
         return value.strip()
@@ -65,6 +81,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     slug = serializers.SerializerMethodField()
     category_url_slug = serializers.SerializerMethodField()
     group_url_slug = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -81,6 +98,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'language',
             'content',
             'allow_translation',
+            'images',
             'status',
             'created_at',
         ]
@@ -98,6 +116,12 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
     def get_category_name(self, obj) -> str:
         return localize(obj.category.name_i18n, self._lang(), obj.category.name)
+
+    def get_images(self, obj) -> list[str]:
+        request = self.context.get('request')
+        media = sorted(obj.submitted_media.all(), key=lambda item: item.pk)
+        urls = [item.file.url for item in media]
+        return [request.build_absolute_uri(url) if request else url for url in urls]
 
     def get_status(self, obj) -> str:
         return submission_status(obj.status)
@@ -154,7 +178,7 @@ class SubmissionsView(GenericAPIView):
                 Q(created_by=request.user) | Q(critic__user=request.user)
             )
             .select_related('category', 'category__group')
-            .prefetch_related('translations')
+            .prefetch_related('translations', 'submitted_media')
             .distinct()
             .order_by('-created_at', '-id')
         )
@@ -163,7 +187,9 @@ class SubmissionsView(GenericAPIView):
         return self.get_paginated_response(data)
 
     def post(self, request):
-        serializer = SubmissionCreateSerializer(data=request.data)
+        serializer = SubmissionCreateSerializer(
+            data=request.data, context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         category = serializer.context['category']
@@ -181,6 +207,7 @@ class SubmissionsView(GenericAPIView):
                 created_by=request.user,
                 via_website=True,
             )
+            article.submitted_media.set(data['images'])
         return Response(
             SubmissionSerializer(article, context={'request': request}).data,
             status=status.HTTP_201_CREATED,

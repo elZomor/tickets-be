@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from third_side.i18n import LOCALES, clean_locale, localize
 from third_side.models import Article, Category, NavGroup, SiteSettings
 from third_side.models.Article import live_q
+from third_side.services.media_urls import to_url
 from third_side.read_serializers import (
     ArticleReadSerializer,
     CategoryReadSerializer,
@@ -24,7 +25,7 @@ def _published_articles():
     )
 
 
-def _localized_site(site, lang):
+def _localized_site(site, lang, request=None):
     hero = site.hero or {}
     contact = site.contact or {}
     return {
@@ -46,7 +47,7 @@ def _localized_site(site, lang):
                     'id': s.get('id'),
                     'name': localize(s.get('name'), lang),
                     'url': s.get('url', ''),
-                    'logo': s.get('logo'),
+                    'logo': to_url(s.get('logo'), request),
                 }
                 for s in (site.sponsors or [])
             ],
@@ -69,7 +70,7 @@ class HomeView(APIView):
         latest = _published_articles()[:HOME_LATEST_COUNT]
         return Response(
             {
-                **_localized_site(SiteSettings.load(), lang),
+                **_localized_site(SiteSettings.load(), lang, request),
                 'categories': CategoryReadSerializer(
                     categories, many=True, context=ctx
                 ).data,

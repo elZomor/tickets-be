@@ -162,10 +162,15 @@ class MediaUploadTests(APITestCase):
         response = self.upload('a.png', b'not really a png', 'image/png')
         self.assertEqual(response.status_code, 400)
 
-    def test_readers_and_anonymous_cannot_upload(self):
+    def test_anonymous_cannot_upload(self):
         self.assertIn(self.upload().status_code, (401, 403))
+
+    def test_readers_upload_for_their_submissions(self):
         self.client.force_authenticate(self.reader)
-        self.assertEqual(self.upload().status_code, 403)
+        response = self.upload()
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(Media.objects.get().uploaded_by, self.reader)
+        Media.objects.get().file.delete(save=False)
 
 
 class PublishingAndEditorTests(APITestCase):

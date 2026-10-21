@@ -36,7 +36,7 @@ class CriticViewSet(
 
     def get_queryset(self):
         return (
-            Critic.objects.select_related('main_category')
+            Critic.objects.select_related('main_category', 'user')
             .annotate(
                 article_count=Count(
                     'articles',
