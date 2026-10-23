@@ -11,6 +11,7 @@ from third_side.models.ActivityLog import ActivityAction
 from third_side.permissions import is_editor
 from third_side.services import audit
 from third_side.services.images import image_error
+from third_side.services.media_urls import file_url
 
 MAX_BYTES = 10 * 1024 * 1024
 
@@ -20,7 +21,7 @@ def media_payload(media, request):
     return {
         'id': media.pk,
         'key': media.file.name,
-        'url': request.build_absolute_uri(media.file.url),
+        'url': file_url(media.file.name, request),
         'alt': media.alt,
         'width': media.width,
         'height': media.height,

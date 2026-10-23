@@ -9,7 +9,7 @@ from third_side.models.FestivalPost import (
     FestivalPostType,
 )
 from third_side.services.festivals import shown_translation
-from third_side.services.media_urls import to_key, to_url
+from third_side.services.media_urls import file_url, to_key, to_url
 from third_side.services.translations import sync_translations
 
 from third_side.models import (
@@ -280,9 +280,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_avatar(self, obj) -> str | None:
         if not obj.avatar:
             return None
-        request = self.context.get('request')
-        url = obj.avatar.url
-        return request.build_absolute_uri(url) if request else url
+        return file_url(obj.avatar.name, self.context.get('request'))
 
 
 def _clean_text_map(value, field):
@@ -315,8 +313,7 @@ class FestivalPostMediaWriteSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         # Images uploaded through the Django admin have a file, not a URL.
         if not data['image_url'] and instance.image:
-            url = instance.image.url
-            data['image_url'] = request.build_absolute_uri(url) if request else url
+            data['image_url'] = instance.image.name
         data['image_url'] = to_url(data['image_url'], request)
         return data
 
