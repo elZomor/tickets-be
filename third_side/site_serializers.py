@@ -60,8 +60,26 @@ def _image_out(file_field, url, request):
     return ''
 
 
+def _image_key(value, model, field):
+    """The storage key to save for a picked image.
+
+    The admin sends the URL that POST media returned; a signed S3 URL is often
+    longer than the column, but only its key is saved, so the input field has
+    no length limit and the column's limit applies to the key.
+    """
+    key = to_key(value.strip())
+    limit = model._meta.get_field(field).max_length
+    if len(key) > limit:
+        raise serializers.ValidationError(
+            f'Ensure this field has no more than {limit} characters.'
+        )
+    return key
+
+
 class _SectionWriteSerializer(serializers.ModelSerializer):
     """Shared by header groups and categories."""
+
+    image_url = serializers.CharField(required=False, allow_blank=True)
 
     def validate_url_slug(self, value):
         cleaned = clean_url_slugs(value)
@@ -75,7 +93,7 @@ class _SectionWriteSerializer(serializers.ModelSerializer):
         return _clean_text_map(value, 'description')
 
     def validate_image_url(self, value):
-        return to_key(value.strip())
+        return _image_key(value, self.Meta.model, 'image_url')
 
     def create(self, validated_data):
         # Without an explicit position a new section goes last.
@@ -145,6 +163,7 @@ class CategoryWriteSerializer(_SectionWriteSerializer):
         required=False,
     )
     name = serializers.CharField(read_only=True)
+    hero_image_url = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Category
@@ -179,7 +198,7 @@ class CategoryWriteSerializer(_SectionWriteSerializer):
         return cleaned
 
     def validate_hero_image_url(self, value):
-        return to_key(value.strip())
+        return _image_key(value, Category, 'hero_image_url')
 
     def validate(self, attrs):
         names = attrs.get('name_i18n')
