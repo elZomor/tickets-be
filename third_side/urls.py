@@ -8,6 +8,7 @@ from third_side.views import (
     AdClickView,
     AdImpressionView,
     AdPickView,
+    AdViewSet,
     ArticleViewSet,
     CategoryViewSet,
     CategoryPageView,
@@ -48,6 +49,7 @@ router.register(r'ratings', RatingViewSet, basename='rating-view')
 router.register(r'comments', CommentViewSet, basename='comment-view')
 router.register(r'reports', ReportViewSet, basename='report-view')
 router.register(r'activity-log', ActivityLogViewSet, basename='activity-log-view')
+router.register(r'ads', AdViewSet, basename='ad-view')
 
 urlpatterns = [
     path('auth/login', LoginView.as_view(), name='auth-login'),

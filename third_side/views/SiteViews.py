@@ -8,21 +8,24 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.i18n import clean_locale, localize, localize_tree
 from third_side.models import AboutPage, Ad, SiteSettings, TermsVersion
+from third_side.models.Ad import AD_SIZES
 from third_side.models.ActivityLog import ActivityAction
 from third_side.permissions import IsEditor
 from third_side.services import audit
+from third_side.views.audit_mixin import AuditedMixin
 from third_side.site_serializers import (
+    AdSerializer,
+    ad_images,
     AboutSerializer,
     FooterSerializer,
     about_to_urls,
     footer_payload,
 )
-
-AD_SIZES = ('tall', 'rect', 'wide')
 
 
 class AboutView(APIView):
@@ -206,7 +209,8 @@ class AdPickView(APIView):
         if not weighted:
             return Response(status=status.HTTP_204_NO_CONTENT)
         ad = random.choices(weighted, weights=[a.weight for a in weighted])[0]
-        image = (ad.images.get(lang) or {}).get(size) or ''
+        images = ad_images({lang: ad.images.get(lang) or {}}, request)[lang]
+        image = images.get(size) or ''
         return Response(
             {
                 'id': ad.pk,
@@ -216,7 +220,7 @@ class AdPickView(APIView):
                 'internal': ad.internal,
                 'image': image,
                 # Other creatives of the same ad (e.g. the wide banner uses rect on phones).
-                'images': ad.images.get(lang) or {},
+                'images': images,
                 'alt': localize(ad.alt, lang),
             }
         )
@@ -246,3 +250,15 @@ class AdImpressionView(AdEventView):
 
 class AdClickView(AdEventView):
     field = 'clicks'
+
+
+class AdViewSet(AuditedMixin, ModelViewSet):
+    """Editors manage the ads (all of them, with their counters):
+    GET/POST ads, GET/PATCH/DELETE ads/<id>. Readers only see ads/pick."""
+
+    queryset = Ad.objects.all()
+    serializer_class = AdSerializer
+    authentication_classes = [ThirdSideJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsEditor]
+    # ads/pick and ads/<id>/impression|click are separate public routes.
+    lookup_value_regex = r'\d+'

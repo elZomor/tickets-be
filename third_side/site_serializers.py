@@ -10,7 +10,8 @@ from django.db.models import Max
 from rest_framework import serializers
 
 from third_side.i18n import LOCALES
-from third_side.models import Category, NavGroup
+from third_side.models import Ad, Category, NavGroup
+from third_side.models.Ad import AD_SIZES
 from third_side.serializers import _clean_text_map
 from third_side.services.media_urls import file_url, to_key, to_url
 
@@ -338,3 +339,89 @@ class AboutSerializer(serializers.Serializer):
         if len(str(value).encode()) > MAX_ABOUT_BYTES:
             raise serializers.ValidationError('The page is too large.')
         return about_to_keys(value)
+
+
+# ---- Ads ----
+
+
+class AdSerializer(serializers.ModelSerializer):
+    """An ad as the admin edits it: every locale's alt text and creatives,
+    plus its first-party counters (read-only).
+
+    images: {locale: {tall|rect|wide: url}}; uploads are stored by key.
+    """
+
+    class Meta:
+        model = Ad
+        fields = [
+            'id',
+            'type',
+            'name',
+            'url',
+            'internal',
+            'locales',
+            'starts_at',
+            'ends_at',
+            'weight',
+            'alt',
+            'images',
+            'is_active',
+            'impressions',
+            'clicks',
+        ]
+        read_only_fields = ['impressions', 'clicks']
+
+    def validate_alt(self, value):
+        return _clean_text_map(value, 'alt')
+
+    def validate_locales(self, value):
+        if not isinstance(value, list) or any(code not in LOCALES for code in value):
+            raise serializers.ValidationError('Expected a list of ar, en, ro.')
+        if not value:
+            raise serializers.ValidationError('Pick at least one language.')
+        return [code for code in LOCALES if code in value]
+
+    def validate_images(self, value):
+        if value in (None, ''):
+            return {}
+        if not isinstance(value, dict):
+            raise serializers.ValidationError('Expected {locale: {size: url}}.')
+        cleaned = {}
+        for locale, sizes in value.items():
+            if locale not in LOCALES:
+                raise serializers.ValidationError(f'Unknown language "{locale}".')
+            if not isinstance(sizes, dict):
+                raise serializers.ValidationError('Expected {locale: {size: url}}.')
+            row = {}
+            for size, url in sizes.items():
+                if size not in AD_SIZES:
+                    raise serializers.ValidationError(f'Unknown size "{size}".')
+                if not isinstance(url, str):
+                    raise serializers.ValidationError('Image URLs must be strings.')
+                if url.strip():
+                    row[size] = to_key(url.strip())
+            if row:
+                cleaned[locale] = row
+        return cleaned
+
+    def validate(self, attrs):
+        starts = attrs.get('starts_at', getattr(self.instance, 'starts_at', None))
+        ends = attrs.get('ends_at', getattr(self.instance, 'ends_at', None))
+        if starts and ends and ends < starts:
+            raise serializers.ValidationError(
+                {'ends_at': 'The end date is before the start date.'}
+            )
+        return attrs
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['images'] = ad_images(instance.images, self.context.get('request'))
+        return data
+
+
+def ad_images(images, request):
+    """{locale: {size: url}} with stored keys turned into public URLs."""
+    return {
+        locale: {size: to_url(url, request) for size, url in sizes.items()}
+        for locale, sizes in (images or {}).items()
+    }

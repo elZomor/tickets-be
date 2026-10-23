@@ -20,6 +20,7 @@ class ActivityObject(models.TextChoices):
     NAV_GROUP = 'nav_group', 'Nav group'
     ABOUT = 'about', 'About page'
     SITE_SETTINGS = 'site_settings', 'Site settings'
+    AD = 'ad', 'Ad'
 
 
 class ActivityLog(models.Model):

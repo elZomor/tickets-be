@@ -12,6 +12,7 @@ from django.db.models.fields.files import FieldFile
 
 from third_side.models import (
     AboutPage,
+    Ad,
     ActivityLog,
     Article,
     ArticleTranslation,
@@ -37,10 +38,19 @@ OBJECT_TYPES = {
     NavGroup: ActivityObject.NAV_GROUP,
     AboutPage: ActivityObject.ABOUT,
     SiteSettings: ActivityObject.SITE_SETTINGS,
+    Ad: ActivityObject.AD,
 }
 
 # Bookkeeping and counters: they change without an editor doing anything.
-SKIP_FIELDS = {'id', 'created_at', 'updated_at', 'read_count', 'share_count'}
+SKIP_FIELDS = {
+    'id',
+    'created_at',
+    'updated_at',
+    'read_count',
+    'share_count',
+    'impressions',
+    'clicks',
+}
 
 EMPTY = (None, '', [], {})
 
