@@ -25,6 +25,7 @@ from .SiteViews import (  # noqa:F401
     AdClickView,
     AdImpressionView,
     AdPickView,
+    AdViewSet,
     FooterView,
     TermsDetailView,
     TermsVersionsView,

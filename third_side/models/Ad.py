@@ -3,6 +3,10 @@ from django.db import models
 from third_side.i18n import default_locales
 
 
+# Creative sizes: tall 300x600, rect 300x250, wide 970x250 (home banner).
+AD_SIZES = ('tall', 'rect', 'wide')
+
+
 class AdType(models.TextChoices):
     EVENT = 'event', 'Event'
     SPONSOR = 'sponsor', 'Sponsor'
