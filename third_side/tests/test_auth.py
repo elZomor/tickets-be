@@ -111,8 +111,9 @@ class AuthFlowTests(APITestCase):
 
         User.objects.create_user('u3@example.com', 'Old-pass-123')
         with (
-            override_settings(THIRD_SIDE_FE_URL='https://fe.test'),
-            mock.patch('third_side.views.AuthViews.SEND_EMAIL', True),
+            override_settings(
+                THIRD_SIDE_FE_URL='https://fe.test', THIRD_SIDE_SEND_EMAIL=True
+            ),
             mock.patch('third_side.views.AuthViews.send_email') as send,
         ):
             for lang, segment in (

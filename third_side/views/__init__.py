@@ -34,3 +34,4 @@ from .SiteViews import (  # noqa:F401
 from .SubmissionViews import SubmissionsView  # noqa:F401
 from .ProfileViews import ProfileAvatarView, ProfileMeView  # noqa:F401
 from .FestivalViews import FestivalPostViewSet, FestivalViewSet  # noqa:F401
+from .EmailViews import EmailView  # noqa:F401

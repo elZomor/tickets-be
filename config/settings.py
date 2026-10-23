@@ -35,6 +35,17 @@ REDIS_URL = env.str('REDIS_URL', 'redis://redis:6379/0')
 # Third Side site origin, used in password-reset links.
 THIRD_SIDE_FE_URL = env.str('THIRD_SIDE_FE_URL', default='http://localhost:3000')
 
+# Third Side mail goes through Brevo's HTTPS API (the host blocks SMTP).
+BREVO_API_KEY = env.str('BREVO_API_KEY', default='')
+# Third Side's own switch for system mail (password reset); SEND_EMAIL is the
+# festival apps'.
+THIRD_SIDE_SEND_EMAIL = env.bool('THIRD_SIDE_SEND_EMAIL', default=False)
+# Editors send from their own address on this domain (authenticated in Brevo).
+THIRD_SIDE_MAIL_DOMAIN = env.str('THIRD_SIDE_MAIL_DOMAIN', default='third-side.org')
+THIRD_SIDE_SYSTEM_SENDER = env.str(
+    'THIRD_SIDE_SYSTEM_SENDER', default='no-reply@third-side.org'
+)
+
 REPORT_AUTO_HIDE_THRESHOLD = env.int('REPORT_AUTO_HIDE_THRESHOLD', default=5)
 
 DJANGO_APPS = [
