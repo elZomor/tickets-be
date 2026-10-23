@@ -81,4 +81,4 @@ API for the Third Side magazine frontend (`../../third_side_frontend`, see its C
 - Throttle scopes: `third_side_write`, `third_side_read`, `third_side_submit` (env `THIRD_SIDE_*_RATE`). Tests that post repeatedly should `cache.clear()` in `setUp`.
 - Seed from the FE mock JSON: `python manage.py seed_third_side [--mock-dir ../../third_side_frontend/app/lib/mock]`; `tests/test_seed_contract.py` diffs API output against those mocks.
 - Tests: `python manage.py test third_side` (set `ENVIRONMENT=local DEBUG=true ALLOWED_HOSTS=localhost SECRET_KEY=...`).
-- Env: `THIRD_SIDE_FE_URL` (reset links), `CORS_ALLOW_ALL_ORIGINS`/`CORS_EXTRA_ORIGINS`, `SEND_EMAIL`.
+- Env: `THIRD_SIDE_FE_URL` (reset links), `CORS_ALLOW_ALL_ORIGINS`/`CORS_EXTRA_ORIGINS`, `THIRD_SIDE_SEND_EMAIL` (password-reset mail; the global `SEND_EMAIL` belongs to the festival apps), `BREVO_API_KEY`.

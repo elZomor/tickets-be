@@ -12,7 +12,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from config.constants import SEND_EMAIL
 from third_side.auth import issue_tokens, rotate_refresh
 from third_side.models import TermsAcceptance, TermsVersion, ThirdSideUser
 from third_side.services.mail import send_email
@@ -162,7 +161,7 @@ class ForgotPasswordView(PublicAuthView):
         email = serializer.validated_data['email'].strip().lower()
         lang = serializer.validated_data['lang']
         user = ThirdSideUser.objects.filter(email__iexact=email, is_active=True).first()
-        if user and SEND_EMAIL:
+        if user and settings.THIRD_SIDE_SEND_EMAIL:
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
             segment = quote(RESET_SEGMENTS[lang])
