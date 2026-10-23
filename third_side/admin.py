@@ -17,6 +17,7 @@ from third_side.models import (
     FestivalPost,
     FestivalPostMedia,
     NavGroup,
+    OutgoingEmail,
     SiteSettings,
     Rating,
     Report,
@@ -221,4 +222,19 @@ class ActivityLogAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(OutgoingEmail)
+class OutgoingEmailAdmin(admin.ModelAdmin):
+    """Read-only: emails are sent from the admin panel (POST /emails)."""
+
+    list_display = ('created_at', 'from_email', 'subject', 'status')
+    list_filter = ('status', 'audience')
+    search_fields = ('subject', 'from_email')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
         return False

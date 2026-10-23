@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from config.constants import SEND_EMAIL
 from third_side.auth import issue_tokens, rotate_refresh
 from third_side.models import TermsAcceptance, TermsVersion, ThirdSideUser
-from utils.email_utils import send_email
+from third_side.services.mail import send_email
 
 logger = logging.getLogger(__name__)
 
