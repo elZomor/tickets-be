@@ -36,6 +36,9 @@ class ThirdSideUser(AbstractBaseUser):
     avatar = models.ImageField(
         upload_to=AsciiUploadTo('third_side/avatars'), null=True, blank=True
     )
+    # Email signature an editor sets in the admin (services/mail.signature_html):
+    # {name: {ar, en}, title: {ar, en}, phone, show_photo, show_social}.
+    signature = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     objects = ThirdSideUserManager()
