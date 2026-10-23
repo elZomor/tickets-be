@@ -101,6 +101,39 @@ class NavSectionTests(_EditorTestCase):
         self.assertEqual(self.category.name, 'Film')
         self.assertFalse(self.category.show_in_nav)
 
+    def test_long_signed_upload_urls_are_accepted(self):
+        # A signed S3 URL easily passes 300 characters; only the key is kept.
+        signed = (
+            'https://bucket.s3.amazonaws.com/third_side/media/'
+            + 'a' * 120
+            + '.jpg?X-Amz-Signature='
+            + 'f' * 400
+        )
+        response = self.client.patch(
+            f'/third_side/categories/{self.category.pk}',
+            {'image_url': signed, 'hero_image_url': signed},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.category.refresh_from_db()
+        key = 'third_side/media/' + 'a' * 120 + '.jpg'
+        self.assertEqual(self.category.image_url, key)
+        self.assertEqual(self.category.hero_image_url, key)
+        response = self.client.patch(
+            f'/third_side/nav-groups/{self.group.pk}', {'image_url': signed}, format='json'
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.group.refresh_from_db()
+        self.assertEqual(self.group.image_url, key)
+        # The column's limit still applies to what is saved.
+        response = self.client.patch(
+            f'/third_side/categories/{self.category.pk}',
+            {'image_url': 'third_side/media/' + 'a' * 300 + '.jpg'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('image_url', response.data)
+
     def test_url_segments_must_be_unique_across_groups_and_categories(self):
         response = self.client.patch(
             f'/third_side/categories/{self.category.pk}',
