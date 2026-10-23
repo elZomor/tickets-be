@@ -2,6 +2,7 @@ from rest_framework import serializers, status
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import EmailAudience, EmailStatus, OutgoingEmail
@@ -40,6 +41,7 @@ class SendEmailSerializer(serializers.Serializer):
     )
     # A test goes to the sender only and is not kept in the history.
     test = serializers.BooleanField(default=False)
+    signature = serializers.BooleanField(default=True)
 
     def validate_audience(self, value):
         if value == EmailAudience.SUBSCRIBERS:
@@ -63,6 +65,87 @@ class SendEmailSerializer(serializers.Serializer):
             )
         data['to'], data['cc'] = to, cc
         return data
+
+
+def render(request, data):
+    """The full email as sent: frame, body and (unless switched off) signature."""
+    direction = data['direction']
+    signature = (
+        mail.signature_html(request.user, direction, request)
+        if data['signature']
+        else ''
+    )
+    return mail.render_email(data['html'], direction, signature)
+
+
+class PreviewSerializer(serializers.Serializer):
+    direction = serializers.ChoiceField(choices=['rtl', 'ltr'], default='rtl')
+    html = serializers.CharField(allow_blank=True, default='')
+    signature = serializers.BooleanField(default=True)
+
+
+class EmailPreviewView(APIView):
+    """POST emails/preview: the email exactly as it would be sent (nothing sent)."""
+
+    authentication_classes = [ThirdSideJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsEditor]
+    serializer_class = PreviewSerializer
+
+    def post(self, request):
+        serializer = PreviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response({'html': render(request, serializer.validated_data)})
+
+
+def _text_map(value, field):
+    """{ar, en} with trimmed strings; other keys dropped."""
+    if value in (None, ''):
+        return {}
+    if not isinstance(value, dict):
+        raise serializers.ValidationError({field: 'Expected {ar, en}'})
+    out = {}
+    for lang in ('ar', 'en'):
+        text = value.get(lang) or ''
+        if not isinstance(text, str) or len(text) > 120:
+            raise serializers.ValidationError(
+                {field: f'{lang}: at most 120 characters'}
+            )
+        if text.strip():
+            out[lang] = text.strip()
+    return out
+
+
+class SignatureSerializer(serializers.Serializer):
+    name = serializers.JSONField(required=False)
+    title = serializers.JSONField(required=False)
+    phone = serializers.CharField(max_length=40, allow_blank=True, default='')
+    show_photo = serializers.BooleanField(default=True)
+    show_social = serializers.BooleanField(default=True)
+
+    def validate(self, data):
+        data['name'] = _text_map(data.get('name'), 'name')
+        data['title'] = _text_map(data.get('title'), 'title')
+        data['phone'] = data['phone'].strip()
+        return data
+
+
+class SignatureView(APIView):
+    """GET/PUT profile/me/signature: the signed-in editor's email signature."""
+
+    authentication_classes = [ThirdSideJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsEditor]
+    serializer_class = SignatureSerializer
+    throttle_scope = 'third_side_write'
+
+    def get(self, request):
+        return Response(SignatureSerializer(request.user.signature or {}).data)
+
+    def put(self, request):
+        serializer = SignatureSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        request.user.signature = serializer.validated_data
+        request.user.save(update_fields=['signature'])
+        return Response(serializer.validated_data)
 
 
 class EmailView(ListCreateAPIView):
@@ -89,7 +172,7 @@ class EmailView(ListCreateAPIView):
         serializer = SendEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        html = mail.render_email(data['html'], data['direction'])
+        html = render(request, data)
 
         if data['test']:
             try:
