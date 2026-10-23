@@ -1,13 +1,15 @@
 """Uploaded images are stored by storage key and turned into URLs on read.
 
 A storage URL can be signed and expire (S3), so saving it would break the image
-later. Writes keep only the key (`third_side/media/x.png`); reads ask the
-storage for a fresh URL. External or already-absolute URLs pass through.
+later. Writes keep only the key (`third_side/media/x.png`); reads turn it into
+the public URL (the media Worker in production, never a raw S3 link). External
+or already-absolute URLs pass through.
 """
 
 import copy
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
+from django.conf import settings
 from django.core.files.storage import default_storage
 
 KEY_ROOT = 'third_side/'
@@ -25,14 +27,22 @@ def to_key(value):
     return path[start + 1 :] if start != -1 else value
 
 
+def file_url(name, request=None):
+    """The public URL of a stored file, by its storage key."""
+    host = settings.MEDIA_PUBLIC_HOST
+    if host:
+        return f"{host.rstrip('/')}/{quote(name)}"
+    url = default_storage.url(name)
+    if url.startswith('/') and request is not None:
+        return request.build_absolute_uri(url)
+    return url
+
+
 def to_url(value, request=None):
     """A usable URL for a stored key (or the value itself when it is a URL)."""
     if not isinstance(value, str) or not value or value.startswith(_ABSOLUTE):
         return value
-    url = default_storage.url(value)
-    if url.startswith('/') and request is not None:
-        return request.build_absolute_uri(url)
-    return url
+    return file_url(value, request)
 
 
 def _walk(node, fn):

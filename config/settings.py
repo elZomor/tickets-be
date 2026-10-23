@@ -251,3 +251,11 @@ STORAGES = {
         "BACKEND": 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     },
 }
+
+# Public origin of uploaded files: the media Worker in front of the private
+# bucket (stable, cacheable, resizable URLs). Empty locally, where Django
+# serves the files itself.
+MEDIA_PUBLIC_HOST = env.str(
+    'MEDIA_PUBLIC_HOST',
+    default='https://media.play-cast.com' if environment == 'production' else '',
+)

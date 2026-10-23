@@ -12,7 +12,7 @@ from rest_framework import serializers
 from third_side.i18n import LOCALES
 from third_side.models import Category, NavGroup
 from third_side.serializers import _clean_text_map
-from third_side.services.media_urls import to_key, to_url
+from third_side.services.media_urls import file_url, to_key, to_url
 
 SOCIAL_NETWORKS = ('facebook', 'instagram', 'x', 'tiktok', 'youtube')
 # Keys inside the About content that hold an image.
@@ -56,7 +56,7 @@ def _image_out(file_field, url, request):
     if url:
         return to_url(url, request)
     if file_field:
-        return request.build_absolute_uri(file_field.url) if request else file_field.url
+        return file_url(file_field.name, request)
     return ''
 
 

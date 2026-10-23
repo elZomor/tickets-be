@@ -12,6 +12,7 @@ from third_side.auth import ThirdSideJWTAuthentication
 from third_side.i18n import LOCALE_CHOICES, clean_locale, localize, slugify_name
 from third_side.models import Article, Category, Critic, Media
 from third_side.models.Article import ArticleStatus
+from third_side.services.media_urls import file_url
 from third_side.services.translations import pick_locale, translation_map
 
 MIN_CONTENT = 100
@@ -120,8 +121,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     def get_images(self, obj) -> list[str]:
         request = self.context.get('request')
         media = sorted(obj.submitted_media.all(), key=lambda item: item.pk)
-        urls = [item.file.url for item in media]
-        return [request.build_absolute_uri(url) if request else url for url in urls]
+        return [file_url(item.file.name, request) for item in media]
 
     def get_status(self, obj) -> str:
         return submission_status(obj.status)
