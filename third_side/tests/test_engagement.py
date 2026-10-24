@@ -121,6 +121,8 @@ class EngagementTests(APITestCase):
         self.assertEqual(data['rating'], {'average': 4.0, 'count': 2})
 
     def test_report_is_idempotent_per_reader(self):
+        self.alice.email_verified = True
+        self.alice.save()
         self.login(self.alice)
         body = {'content_type': 'article', 'object_id': self.article.pk}
         self.assertEqual(
