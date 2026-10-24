@@ -20,6 +20,7 @@ from third_side.models import (
     NavGroup,
     Notification,
     NotificationPreference,
+    ExpoPushDevice,
     PushSubscription,
     Rating,
     Report,
@@ -334,3 +335,84 @@ class PurgeTests(APITestCase):
         tasks.purge_notifications()
         self.assertFalse(Notification.objects.filter(pk=old.pk).exists())
         self.assertTrue(Notification.objects.filter(pk=unread.pk).exists())
+
+
+@override_settings(**PUSH)
+class ExpoPushTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        category = Category.objects.create(name='C', slug='c')
+        critic = Critic.objects.create(name='K')
+        cls.author = User.objects.create_user(
+            'author@example.com', 'pw-12345678', language='en'
+        )
+        cls.other = User.objects.create_user('other@example.com', 'pw-12345678')
+        cls.article = Article.objects.create(
+            title='Title',
+            slug='title',
+            category=category,
+            critic=critic,
+            status=ArticleStatus.PUBLISHED,
+            created_by=cls.author,
+        )
+        cls.device = ExpoPushDevice.objects.create(
+            user=cls.author, token='ExponentPushToken[one]'
+        )
+
+    def comment(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            Comment.objects.create(user=self.other, article=self.article, text='a')
+
+    def ok(self, post, status='ok', error=None):
+        ticket = {'status': status}
+        if error:
+            ticket['details'] = {'error': error}
+        post.return_value = mock.Mock(
+            json=lambda: {'data': [ticket]}, raise_for_status=lambda: None
+        )
+
+    @mock.patch('third_side.services.push.requests.post')
+    def test_phone_gets_the_push_in_the_users_language(self, post):
+        self.ok(post)
+        self.comment()
+        self.assertEqual(post.call_count, 1)
+        sent = post.call_args.kwargs['json'][0]
+        self.assertEqual(sent['to'], 'ExponentPushToken[one]')
+        self.assertIn('commented on', sent['body'])
+        self.assertIn('/en/c/title', sent['data']['url'])
+        self.device.refresh_from_db()
+        self.assertIsNotNone(self.device.last_success_at)
+
+    @mock.patch('third_side.services.push.requests.post')
+    def test_unregistered_device_is_removed(self, post):
+        self.ok(post, status='error', error='DeviceNotRegistered')
+        self.comment()
+        self.assertFalse(ExpoPushDevice.objects.exists())
+        self.assertEqual(Notification.objects.count(), 1)
+
+    @mock.patch('third_side.services.push.requests.post')
+    def test_request_failures_count_then_drop(self, post):
+        post.side_effect = RuntimeError('boom')
+        for _ in range(5):
+            self.comment()
+            Notification.objects.all().delete()
+        self.assertFalse(ExpoPushDevice.objects.exists())
+
+    @mock.patch('third_side.services.push.requests.post')
+    def test_preference_off_skips_the_phone(self, post):
+        NotificationPreference.objects.create(user=self.author, activity=False)
+        self.comment()
+        post.assert_not_called()
+
+    @override_settings(THIRD_SIDE_SEND_PUSH=False)
+    @mock.patch('third_side.services.push.requests.post')
+    def test_kill_switch(self, post):
+        self.comment()
+        post.assert_not_called()
+
+    @override_settings(VAPID_PRIVATE_KEY='')
+    @mock.patch('third_side.services.push.requests.post')
+    def test_phone_push_does_not_need_vapid(self, post):
+        self.ok(post)
+        self.comment()
+        self.assertEqual(post.call_count, 1)

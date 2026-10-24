@@ -8,6 +8,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import (
+    ExpoPushDevice,
     Notification,
     NotificationPreference,
     PushSubscription,
@@ -158,5 +159,55 @@ class PushSubscriptionView(APIView):
         serializer.is_valid(raise_exception=True)
         PushSubscription.objects.filter(
             user=request.user, endpoint=serializer.validated_data['endpoint']
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ExpoDeviceSerializer(serializers.Serializer):
+    """The mobile app's Expo push token."""
+
+    token = serializers.CharField(max_length=200)
+    platform = serializers.ChoiceField(
+        choices=['ios', 'android'], required=False, allow_blank=True, default=''
+    )
+
+    def validate_token(self, value):
+        if not value.startswith(('ExponentPushToken[', 'ExpoPushToken[')):
+            raise serializers.ValidationError('Not an Expo push token.')
+        return value
+
+
+class ExpoDeviceTokenSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=200)
+
+
+class ExpoDeviceView(APIView):
+    """POST push/expo-devices registers this phone for the signed-in user (a
+    phone that was another account's moves over); DELETE removes it."""
+
+    authentication_classes = [ThirdSideJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = ExpoDeviceSerializer
+    throttle_scope = 'third_side_write'
+
+    def post(self, request):
+        serializer = ExpoDeviceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        ExpoPushDevice.objects.update_or_create(
+            token=data['token'],
+            defaults={
+                'user': request.user,
+                'platform': data.get('platform', ''),
+                'failure_count': 0,
+            },
+        )
+        return Response(status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        serializer = ExpoDeviceTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ExpoPushDevice.objects.filter(
+            user=request.user, token=serializer.validated_data['token']
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -8,12 +8,13 @@ swallowed.
 import json
 import logging
 
+import requests
 from django.conf import settings
 from django.utils import timezone
 
 from third_side.i18n import localize
 
-from third_side.models import NotificationPreference, PushSubscription
+from third_side.models import ExpoPushDevice, NotificationPreference, PushSubscription
 from third_side.models.Notification import NotificationType as T
 from third_side.services.notify import (
     NOTIFICATIONS_SEGMENT,
@@ -165,15 +166,19 @@ def wants_push(user, kind):
 
 
 def send_to_user(user, notification):
-    """Push `notification` to every device of `user` that wants it."""
+    """Push `notification` to every device of `user` that wants it: browsers
+    (Web Push) and phones (Expo)."""
     if not settings.THIRD_SIDE_SEND_PUSH:
         return 0
-    if not (settings.VAPID_PRIVATE_KEY and wants_push(user, notification.type)):
+    if not wants_push(user, notification.type):
         return 0
-    payload = json.dumps(render(notification, user.language), ensure_ascii=False)
+    message = render(notification, user.language)
     sent = 0
-    for subscription in PushSubscription.objects.filter(user=user):
-        sent += _send(subscription, payload)
+    if settings.VAPID_PRIVATE_KEY:
+        payload = json.dumps(message, ensure_ascii=False)
+        for subscription in PushSubscription.objects.filter(user=user):
+            sent += _send(subscription, payload)
+    sent += _send_expo(user, message)
     return sent
 
 
@@ -217,3 +222,63 @@ def _fail(subscription, error):
         subscription.delete()
     else:
         subscription.save(update_fields=['failure_count'])
+
+
+def _send_expo(user, message):
+    """One request to Expo's push service for all of the user's phones. The
+    app maps `url` (a web path) to its own screen."""
+    devices = list(ExpoPushDevice.objects.filter(user=user))
+    if not devices:
+        return 0
+    messages = [
+        {
+            'to': device.token,
+            'title': message['title'],
+            'body': message['body'],
+            'data': {
+                'url': message['url'],
+                'type': message['type'],
+                'tag': message['tag'],
+            },
+            'sound': 'default',
+            'ttl': TTL_SECONDS,
+            'channelId': 'default',
+        }
+        for device in devices
+    ]
+    headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+    if settings.EXPO_PUSH_ACCESS_TOKEN:
+        headers['Authorization'] = f'Bearer {settings.EXPO_PUSH_ACCESS_TOKEN}'
+    try:
+        response = requests.post(
+            settings.EXPO_PUSH_URL, json=messages, headers=headers, timeout=10
+        )
+        response.raise_for_status()
+        tickets = response.json().get('data', [])
+    except Exception as error:  # noqa: BLE001 - the inbox row is the record
+        logger.warning('Expo push request failed: %s', error)
+        for device in devices:
+            _fail_expo(device, error)
+        return 0
+
+    sent = 0
+    for device, ticket in zip(devices, tickets):
+        if ticket.get('status') == 'ok':
+            device.last_success_at = timezone.now()
+            device.failure_count = 0
+            device.save(update_fields=['last_success_at', 'failure_count'])
+            sent += 1
+        elif (ticket.get('details') or {}).get('error') == 'DeviceNotRegistered':
+            device.delete()
+        else:
+            _fail_expo(device, ticket.get('message', 'rejected'))
+    return sent
+
+
+def _fail_expo(device, error):
+    logger.warning('Expo push failed for device %s: %s', device.pk, error)
+    device.failure_count += 1
+    if device.failure_count >= MAX_FAILURES:
+        device.delete()
+    else:
+        device.save(update_fields=['failure_count'])

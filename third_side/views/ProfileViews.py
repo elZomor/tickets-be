@@ -1,5 +1,5 @@
 from django.db import transaction
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,17 +9,33 @@ from third_side.auth import ThirdSideJWTAuthentication
 from third_side.permissions import EmailVerified
 from third_side.serializers import ProfileSerializer, ProfileUpdateSerializer
 from third_side import tasks
+from third_side.services.account import delete_account, is_staff_account
 from third_side.services.images import image_error
 from third_side.services.notify import enqueue
 
 AVATAR_MAX_BYTES = 5 * 1024 * 1024
 
 
+class AccountDeleteSerializer(serializers.Serializer):
+    """Deleting needs the password again, so a stolen session cannot do it."""
+
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+
 class ProfileMeView(APIView):
+    """GET / PATCH the signed-in user's profile; DELETE removes the account
+    (body: {password}). Staff accounts are removed by an administrator."""
+
     authentication_classes = [ThirdSideJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = ProfileSerializer
     throttle_scope = 'third_side_write'
+
+    def get_throttles(self):
+        # Password checks share the (stricter) auth limit.
+        if self.request.method == 'DELETE':
+            self.throttle_scope = 'third_side_auth'
+        return super().get_throttles()
 
     def get(self, request):
         return Response(
@@ -49,6 +65,22 @@ class ProfileMeView(APIView):
         return Response(
             ProfileSerializer(request.user, context={'request': request}).data
         )
+
+    def delete(self, request):
+        user = request.user
+        if is_staff_account(user):
+            return Response(
+                {'detail': 'Staff accounts are removed by an administrator.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        serializer = AccountDeleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if not user.check_password(serializer.validated_data['password']):
+            return Response(
+                {'password': ['Wrong password.']}, status=status.HTTP_400_BAD_REQUEST
+            )
+        delete_account(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 def _notify_profile(user, fields):
