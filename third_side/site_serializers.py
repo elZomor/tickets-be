@@ -348,7 +348,7 @@ class AdSerializer(serializers.ModelSerializer):
     """An ad as the admin edits it: every locale's alt text and creatives,
     plus its first-party counters (read-only).
 
-    images: {locale: {tall|rect|wide: url}}; uploads are stored by key.
+    images: {locale: {slim|banner|box|column|rect: url}}; uploads are stored by key.
     """
 
     class Meta:

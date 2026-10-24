@@ -20,7 +20,7 @@ def ad(name, **kwargs):
         weight=1,
         alt=LOC,
         images={
-            k: {'tall': f'/{name}-{k}-t.png', 'rect': f'/{name}-{k}-r.png'} for k in LOC
+            k: {'banner': f'/{name}-{k}-b.png', 'rect': f'/{name}-{k}-r.png'} for k in LOC
         },
     )
     defaults.update(kwargs)
@@ -111,7 +111,7 @@ class AdsTests(APITestCase):
         data = self.pick().data
         self.assertEqual(data['id'], live.pk)
         self.assertEqual(data['image'], '/live-en-r.png')
-        self.assertEqual(data['images']['tall'], '/live-en-t.png')
+        self.assertEqual(data['images']['banner'], '/live-en-b.png')
         self.assertEqual(data['alt'], 'English')
 
     def test_exclude_avoids_repeat_unless_only_one(self):
@@ -120,7 +120,7 @@ class AdsTests(APITestCase):
             self.assertEqual(self.pick(f'&exclude={first.pk}').data['id'], second.pk)
         only = ad('solo', locales=['ro'])
         response = self.client.get(
-            f'/third_side/ads/pick?size=tall&lang=ro&exclude={only.pk}'
+            f'/third_side/ads/pick?size=banner&lang=ro&exclude={only.pk}'
         )
         self.assertEqual(response.data['id'], only.pk)
 
@@ -128,14 +128,21 @@ class AdsTests(APITestCase):
         ad('zero', weight=0)
         self.assertEqual(self.pick().status_code, 204)
 
-    def test_wide_only_picks_ads_with_a_wide_image(self):
-        ad('no-wide')
-        url = '/third_side/ads/pick?size=wide&lang=en'
+    def test_slim_only_picks_ads_with_a_slim_image(self):
+        ad('no-slim')
+        url = '/third_side/ads/pick?size=slim&lang=en'
         self.assertEqual(self.client.get(url).status_code, 204)
         banner = ad('banner')
-        banner.images['en']['wide'] = '/banner-en-w.png'
+        banner.images['en']['slim'] = '/banner-en-s.png'
         banner.save()
-        self.assertEqual(self.client.get(url).data['image'], '/banner-en-w.png')
+        self.assertEqual(self.client.get(url).data['image'], '/banner-en-s.png')
+
+    def test_legacy_sizes_serve_rect(self):
+        live = ad('live')
+        for size in ('tall', 'wide'):
+            data = self.client.get(f'/third_side/ads/pick?size={size}&lang=en').data
+            self.assertEqual(data['id'], live.pk)
+            self.assertEqual(data['image'], '/live-en-r.png')
 
     def test_size_required(self):
         self.assertEqual(self.client.get('/third_side/ads/pick').status_code, 400)

@@ -13,7 +13,7 @@ from rest_framework.viewsets import ModelViewSet
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.i18n import clean_locale, localize, localize_tree
 from third_side.models import AboutPage, Ad, SiteSettings, TermsVersion
-from third_side.models.Ad import AD_SIZES
+from third_side.models.Ad import AD_SIZES, LEGACY_AD_SIZES
 from third_side.models.ActivityLog import ActivityAction
 from third_side.permissions import RequirePerm, model_perms
 from third_side.services import audit
@@ -182,7 +182,7 @@ def _active_ads(lang, today):
 class AdPickView(APIView):
     """One weighted-random active ad for a locale and size, or 204.
 
-    ?lang= ?size=tall|rect|wide ?exclude=1,2 (avoid repeating an ad on one page).
+    ?lang= ?size=slim|banner|box|column|rect ?exclude=1,2 (avoid repeating an ad on one page).
     """
 
     permission_classes = [AllowAny]
@@ -192,8 +192,12 @@ class AdPickView(APIView):
     def get(self, request):
         lang = clean_locale(request.query_params.get('lang'))
         size = request.query_params.get('size')
+        # Installed app builds still ask for the old sizes; they only ever show rect.
+        size = LEGACY_AD_SIZES.get(size, size)
         if size not in AD_SIZES:
-            return Response({'size': 'must be tall, rect or wide'}, status=400)
+            return Response(
+                {'size': f'must be one of {", ".join(AD_SIZES)}'}, status=400
+            )
         exclude = {
             int(part)
             for part in request.query_params.get('exclude', '').split(',')
@@ -221,7 +225,7 @@ class AdPickView(APIView):
                 'url': ad.url,
                 'internal': ad.internal,
                 'image': image,
-                # Other creatives of the same ad (e.g. the wide banner uses rect on phones).
+                # Other creatives of the same ad (the slim and banner strips use rect on phones).
                 'images': images,
                 'alt': localize(ad.alt, lang),
             }
