@@ -209,7 +209,9 @@ REST_FRAMEWORK = {
         'third_side_auth': env.str('THIRD_SIDE_AUTH_RATE', default='30/min'),
         'third_side_submit': env.str('THIRD_SIDE_SUBMIT_RATE', default='10/hour'),
         # Per user (ScopedRateThrottle keys on user id): confirmation mail resends.
-        'third_side_verify_resend': env.str('THIRD_SIDE_VERIFY_RESEND_RATE', default='5/hour'),
+        'third_side_verify_resend': env.str(
+            'THIRD_SIDE_VERIFY_RESEND_RATE', default='5/hour'
+        ),
         'third_side_read': env.str('THIRD_SIDE_READ_RATE', default='120/min'),
     },
 }

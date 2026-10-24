@@ -39,7 +39,10 @@ COPY = {
         'welcome_subject': 'تم تأكيد بريدك — مرحباً بك في الضلع الثالث',
         'welcome_hello': 'مرحباً {name}،',
         'welcome_intro': 'شكراً لتأكيد بريدك، وأهلاً بك بين قرّائنا وكتّابنا. صار بإمكانك الآن:',
-        'welcome_items': ['إرسال مقالك ليراجعه فريق التحرير', 'إضافة صورتك الشخصية ونبذة قصيرة عنك'],
+        'welcome_items': [
+            'إرسال مقالك ليراجعه فريق التحرير',
+            'إضافة صورتك الشخصية ونبذة قصيرة عنك',
+        ],
         'welcome_profile': 'أكمل ملفك الشخصي',
         'welcome_submit': 'أرسل مقالاً',
         'welcome_close': 'نكتب عن الفن من زاوية ثالثة — ويسعدنا أن تكون جزءاً منها.',
@@ -55,7 +58,10 @@ COPY = {
         'welcome_subject': "You're confirmed — welcome to Third Side",
         'welcome_hello': 'Hi {name},',
         'welcome_intro': "Thanks for confirming your email, and welcome among our readers and writers. You can now:",
-        'welcome_items': ['Submit an article for our editors to review', 'Add your photo and a short bio'],
+        'welcome_items': [
+            'Submit an article for our editors to review',
+            'Add your photo and a short bio',
+        ],
         'welcome_profile': 'Complete your profile',
         'welcome_submit': 'Submit an article',
         'welcome_close': "We write about the arts from a third angle — we're happy to have you in it.",
@@ -71,7 +77,10 @@ COPY = {
         'welcome_subject': 'Email confirmat — bun venit la Third Side',
         'welcome_hello': 'Salut {name},',
         'welcome_intro': 'Mulțumim că ți-ai confirmat emailul și bine ai venit printre cititorii și autorii noștri. Acum poți:',
-        'welcome_items': ['Să trimiți un articol pentru a fi revizuit de redacție', 'Să adaugi poza ta și o scurtă prezentare'],
+        'welcome_items': [
+            'Să trimiți un articol pentru a fi revizuit de redacție',
+            'Să adaugi poza ta și o scurtă prezentare',
+        ],
         'welcome_profile': 'Completează-ți profilul',
         'welcome_submit': 'Trimite un articol',
         'welcome_close': 'Scriem despre artă dintr-un al treilea unghi — ne bucurăm să fii parte din el.',
@@ -119,7 +128,9 @@ def _button(url, label):
 def verification_link(user):
     lang = user.language
     uid = urlsafe_base64_encode(force_bytes(user.pk))
-    return _page_url(VERIFY_SEGMENTS, lang, f'?uid={uid}&token={quote(make_token(user))}')
+    return _page_url(
+        VERIFY_SEGMENTS, lang, f'?uid={uid}&token={quote(make_token(user))}'
+    )
 
 
 def _safe_send(user, subject, body, direction):

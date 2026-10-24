@@ -289,7 +289,11 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         if value is None:
             return value
         today = timezone.localdate()
-        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        age = (
+            today.year
+            - value.year
+            - ((today.month, today.day) < (value.month, value.day))
+        )
         if age < 13 or age > 120:
             raise serializers.ValidationError('Enter a valid date of birth')
         return value
