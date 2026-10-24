@@ -54,6 +54,10 @@ THIRD_SIDE_SEND_PUSH = env.bool('THIRD_SIDE_SEND_PUSH', default=False)
 VAPID_PUBLIC_KEY = env.str('VAPID_PUBLIC_KEY', default='')
 VAPID_PRIVATE_KEY = env.str('VAPID_PRIVATE_KEY', default='')
 VAPID_SUBJECT = env.str('VAPID_SUBJECT', default='mailto:noreply@third-side.org')
+# Third Side mobile app: Expo's push service. The access token is only needed if
+# "enhanced push security" is enabled for the Expo project.
+EXPO_PUSH_URL = env.str('EXPO_PUSH_URL', default='https://exp.host/--/api/v2/push/send')
+EXPO_PUSH_ACCESS_TOKEN = env.str('EXPO_PUSH_ACCESS_TOKEN', default='')
 # Run notification tasks inline instead of through the Celery broker (tests).
 THIRD_SIDE_NOTIFY_EAGER = env.bool('THIRD_SIDE_NOTIFY_EAGER', default=False)
 

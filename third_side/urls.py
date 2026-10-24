@@ -26,6 +26,7 @@ from third_side.views import (
     HomeView,
     MediaUploadView,
     CommentViewSet,
+    ExpoDeviceView,
     NavGroupViewSet,
     NotificationPreferenceView,
     NotificationViewSet,
@@ -105,6 +106,7 @@ urlpatterns = [
     path(
         'push/subscriptions', PushSubscriptionView.as_view(), name='push-subscriptions'
     ),
+    path('push/expo-devices', ExpoDeviceView.as_view(), name='push-expo-devices'),
     path('saved-articles', SavedArticlesView.as_view(), name='saved-articles'),
     path('saved-articles/ids', SavedArticleIdsView.as_view(), name='saved-article-ids'),
     path(

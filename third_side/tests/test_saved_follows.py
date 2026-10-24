@@ -11,6 +11,7 @@ from third_side.models import (
     NavGroup,
     Notification,
     NotificationPreference,
+    ExpoPushDevice,
     PushSubscription,
     SavedArticle,
     ThirdSideUser,
@@ -220,6 +221,35 @@ class InboxTests(APITestCase):
         self.client.force_authenticate(self.other)
         self.client.delete(url, {'endpoint': body['endpoint']}, format='json')
         self.assertEqual(PushSubscription.objects.count(), 0)
+
+    def test_expo_device_register_move_and_remove(self):
+        url = f'{BASE}/push/expo-devices'
+        body = {'token': 'ExponentPushToken[abc]', 'platform': 'android'}
+        self.assertEqual(self.client.post(url, body, format='json').status_code, 201)
+        self.client.force_authenticate(self.other)
+        self.assertEqual(self.client.post(url, body, format='json').status_code, 201)
+        self.assertEqual(ExpoPushDevice.objects.get().user, self.other)
+        self.client.force_authenticate(self.user)
+        self.client.delete(url, {'token': body['token']}, format='json')
+        self.assertEqual(ExpoPushDevice.objects.count(), 1)
+        self.client.force_authenticate(self.other)
+        self.client.delete(url, {'token': body['token']}, format='json')
+        self.assertEqual(ExpoPushDevice.objects.count(), 0)
+
+    def test_expo_device_rejects_other_tokens(self):
+        response = self.client.post(
+            f'{BASE}/push/expo-devices', {'token': 'abc'}, format='json'
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_expo_device_needs_login(self):
+        self.client.force_authenticate(None)
+        response = self.client.post(
+            f'{BASE}/push/expo-devices',
+            {'token': 'ExponentPushToken[abc]'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 401)
 
     def test_push_endpoint_must_be_https(self):
         body = {
