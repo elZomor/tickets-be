@@ -8,7 +8,6 @@ from third_side.models import (
     Category,
     Critic,
     NavGroup,
-    Role,
     SiteSettings,
     ThirdSideUser,
 )
@@ -18,7 +17,7 @@ class _EditorTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.editor = ThirdSideUser.objects.create_user(
-            'e@example.com', 'pw', role=Role.EDITOR
+            'e@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user('r@example.com', 'pw')
 

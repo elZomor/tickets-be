@@ -15,7 +15,7 @@ from third_side.i18n import clean_locale, localize, localize_tree
 from third_side.models import AboutPage, Ad, SiteSettings, TermsVersion
 from third_side.models.Ad import AD_SIZES
 from third_side.models.ActivityLog import ActivityAction
-from third_side.permissions import IsEditor
+from third_side.permissions import RequirePerm, model_perms
 from third_side.services import audit
 from third_side.views.audit_mixin import AuditedMixin
 from third_side.site_serializers import (
@@ -58,7 +58,7 @@ def _save_audited(request, instance, apply, repr_):
 
 class _EditorView(APIView):
     authentication_classes = [ThirdSideJWTAuthentication]
-    permission_classes = [IsAuthenticated, IsEditor]
+    permission_classes = [IsAuthenticated, RequirePerm]
     throttle_scope = 'third_side_write'
 
 
@@ -70,6 +70,7 @@ class AboutDocView(_EditorView):
     """
 
     serializer_class = AboutSerializer
+    required_perms = {'get': 'view_aboutpage', 'put': 'change_aboutpage'}
 
     def _payload(self, page, request):
         return {'content': about_to_urls(page.content or {}, request)}
@@ -95,6 +96,7 @@ class FooterView(_EditorView):
     every locale. The home hero in the same settings is left as it is."""
 
     serializer_class = FooterSerializer
+    required_perms = {'get': 'view_sitesettings', 'put': 'change_sitesettings'}
 
     def get(self, request):
         return Response(footer_payload(SiteSettings.load(), request))
@@ -259,6 +261,7 @@ class AdViewSet(AuditedMixin, ModelViewSet):
     queryset = Ad.objects.all()
     serializer_class = AdSerializer
     authentication_classes = [ThirdSideJWTAuthentication]
-    permission_classes = [IsAuthenticated, IsEditor]
+    permission_classes = [IsAuthenticated, RequirePerm]
+    required_perms = model_perms('ad')
     # ads/pick and ads/<id>/impression|click are separate public routes.
     lookup_value_regex = r'\d+'

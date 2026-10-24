@@ -11,7 +11,7 @@ from rest_framework.viewsets import GenericViewSet
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Article, Comment, Report
 from third_side.models.ActivityLog import ActivityAction, ActivityObject
-from third_side.permissions import IsEditor
+from third_side.permissions import RequirePerm
 from third_side.serializers import ReportSerializer
 from third_side.services import audit
 
@@ -30,11 +30,16 @@ class ReportViewSet(
         'content_type', 'reporter', 'reviewed_by'
     ).order_by('-created_at', '-id')
     permission_classes = [IsAuthenticated]
+    required_perms = {
+        'list': 'view_report',
+        'retrieve': 'view_report',
+        'review': 'change_report',
+    }
     throttle_scope = 'third_side_write'
 
     def get_permissions(self):
         if self.action in ('list', 'retrieve', 'review'):
-            return [IsAuthenticated(), IsEditor()]
+            return [IsAuthenticated(), RequirePerm()]
         return [IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):

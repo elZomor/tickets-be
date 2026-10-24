@@ -8,7 +8,7 @@ from django.test import SimpleTestCase
 from rest_framework.test import APITestCase
 
 from third_side.i18n import slug_from_title
-from third_side.models import Article, Category, Critic, Media, Role, Tag, ThirdSideUser
+from third_side.models import Article, Category, Critic, Media, Tag, ThirdSideUser
 from third_side.models.Article import ArticleStatus
 
 
@@ -30,10 +30,10 @@ class AdminArticleTests(APITestCase):
         cls.category = Category.objects.create(name='Cinema', slug='cinema')
         cls.critic = Critic.objects.create(name='Writer')
         cls.editor = ThirdSideUser.objects.create_user(
-            'editor@example.com', 'pw', role=Role.EDITOR
+            'editor@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'reader@example.com', 'pw', role=Role.READER
+            'reader@example.com', 'pw'
         )
 
     def body(self, **extra):
@@ -136,10 +136,10 @@ class MediaUploadTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.editor = ThirdSideUser.objects.create_user(
-            'editor@example.com', 'pw', role=Role.EDITOR
+            'editor@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'reader@example.com', 'pw', role=Role.READER
+            'reader@example.com', 'pw'
         )
 
     def upload(self, name='a.png', data=None, content_type='image/png'):
@@ -181,10 +181,10 @@ class PublishingAndEditorTests(APITestCase):
         cls.category = Category.objects.create(name='Cinema', slug='cinema')
         cls.critic = Critic.objects.create(name='Writer')
         cls.editor = ThirdSideUser.objects.create_user(
-            'editor@example.com', 'pw', name='Ed', role=Role.EDITOR
+            'editor@example.com', 'pw', name='Ed', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'reader@example.com', 'pw', role=Role.READER
+            'reader@example.com', 'pw'
         )
 
     def body(self, **extra):
@@ -349,7 +349,7 @@ class ArticleSeoTests(APITestCase):
         cls.category = Category.objects.create(name='Cinema', slug='cinema')
         cls.critic = Critic.objects.create(name='Writer')
         cls.editor = ThirdSideUser.objects.create_user(
-            'editor@example.com', 'pw', role=Role.EDITOR
+            'editor@example.com', 'pw', is_superuser=True
         )
         Tag.objects.create(slug='drama', name={'en': 'Drama'})
 
@@ -431,7 +431,7 @@ class PublishedArticleLockTests(APITestCase):
         cls.category = Category.objects.create(name='Cinema', slug='cinema')
         cls.critic = Critic.objects.create(name='Writer')
         cls.editor = ThirdSideUser.objects.create_user(
-            'editor@example.com', 'pw', role=Role.EDITOR
+            'editor@example.com', 'pw', is_superuser=True
         )
 
     def setUp(self):

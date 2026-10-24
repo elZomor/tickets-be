@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import EmailAudience, EmailStatus, OutgoingEmail
-from third_side.permissions import IsEditor
+from third_side.permissions import RequirePerm
 from third_side.services import mail
 
 MAX_RECIPIENTS = 50
@@ -88,7 +88,8 @@ class EmailPreviewView(APIView):
     """POST emails/preview: the email exactly as it would be sent (nothing sent)."""
 
     authentication_classes = [ThirdSideJWTAuthentication]
-    permission_classes = [IsAuthenticated, IsEditor]
+    permission_classes = [IsAuthenticated, RequirePerm]
+    required_perms = {'post': 'add_outgoingemail'}
     serializer_class = PreviewSerializer
 
     def post(self, request):
@@ -133,7 +134,8 @@ class SignatureView(APIView):
     """GET/PUT profile/me/signature: the signed-in editor's email signature."""
 
     authentication_classes = [ThirdSideJWTAuthentication]
-    permission_classes = [IsAuthenticated, IsEditor]
+    permission_classes = [IsAuthenticated, RequirePerm]
+    required_perms = {'get': 'add_outgoingemail', 'put': 'add_outgoingemail'}
     serializer_class = SignatureSerializer
     throttle_scope = 'third_side_write'
 
@@ -155,7 +157,8 @@ class EmailView(ListCreateAPIView):
     """
 
     authentication_classes = [ThirdSideJWTAuthentication]
-    permission_classes = [IsAuthenticated, IsEditor]
+    permission_classes = [IsAuthenticated, RequirePerm]
+    required_perms = {'get': 'view_outgoingemail', 'post': 'add_outgoingemail'}
     serializer_class = OutgoingEmailSerializer
     throttle_scope = 'third_side_write'
 

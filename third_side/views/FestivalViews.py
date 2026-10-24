@@ -11,7 +11,7 @@ from third_side.models import Festival, FestivalPost
 from third_side.models.Article import live_q
 from third_side.models.FestivalPost import FestivalPostType
 from third_side.views.audit_mixin import AuditedMixin
-from third_side.permissions import IsEditor, is_editor
+from third_side.permissions import RequirePerm, has_perm, model_perms
 from third_side.read_serializers import (
     FestivalPostReadSerializer,
     FestivalReadSerializer,
@@ -63,6 +63,7 @@ class FestivalPostViewSet(
     """
 
     authentication_classes = [ThirdSideJWTAuthentication]
+    required_perms = model_perms('festivalpost')
 
     def get_serializer_class(self):
         if getattr(self.request, 'method', None) == 'GET' and self.action == 'list':
@@ -71,7 +72,7 @@ class FestivalPostViewSet(
 
     def get_permissions(self):
         if self.action == 'doc' or getattr(self.request, 'method', None) != 'GET':
-            return [IsAuthenticated(), IsEditor()]
+            return [IsAuthenticated(), RequirePerm()]
         return [AllowAny()]
 
     def get_queryset(self):
@@ -83,7 +84,7 @@ class FestivalPostViewSet(
         festival = self.request.query_params.get('festival')
         if festival and festival.isdigit():
             queryset = queryset.filter(festival_id=int(festival))
-        if is_editor(self.request.user):
+        if has_perm(self.request.user, 'view_festivalpost'):
             return queryset
         queryset = queryset.filter(is_published=True)
         # An article post whose article is gone, hidden or not published yet

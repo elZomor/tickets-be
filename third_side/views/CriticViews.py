@@ -10,7 +10,7 @@ from third_side.auth import ThirdSideJWTAuthentication
 from third_side.views.audit_mixin import AuditedMixin
 from third_side.models import Critic
 from third_side.models.Article import live_q
-from third_side.permissions import IsEditor
+from third_side.permissions import RequirePerm, model_perms
 from third_side.read_serializers import CriticReadSerializer
 from third_side.serializers import CriticSerializer
 
@@ -28,6 +28,7 @@ class CriticViewSet(
     GET /articles?critic=<id>."""
 
     authentication_classes = [ThirdSideJWTAuthentication]
+    required_perms = model_perms('critic')
 
     def get_serializer_class(self):
         if getattr(self.request, 'method', None) == 'GET':
@@ -61,7 +62,7 @@ class CriticViewSet(
     def get_permissions(self):
         if getattr(self.request, 'method', None) == 'GET':
             return [AllowAny()]
-        return [IsAuthenticated(), IsEditor()]
+        return [IsAuthenticated(), RequirePerm()]
 
     @action(detail=False, methods=['get'], url_path=r'by-slug/(?P<slug>[^/]+)')
     def by_slug(self, request, slug=None):

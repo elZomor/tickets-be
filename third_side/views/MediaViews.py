@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Media
 from third_side.models.ActivityLog import ActivityAction
-from third_side.permissions import is_editor
+from third_side.permissions import has_perm
 from third_side.services import audit
 from third_side.services.images import image_error
 from third_side.services.media_urls import file_url
@@ -58,8 +58,8 @@ class MediaUploadView(APIView):
         )
         with transaction.atomic():
             media.save()
-            # The activity log is for editor actions only.
-            if is_editor(request.user):
+            # The activity log is for staff actions only.
+            if has_perm(request.user, 'add_media'):
                 audit.record(
                     request,
                     ActivityAction.UPLOAD,

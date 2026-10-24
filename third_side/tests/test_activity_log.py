@@ -18,7 +18,6 @@ from third_side.models import (
     Festival,
     FestivalPost,
     Report,
-    Role,
     ThirdSideUser,
 )
 from third_side.models.Article import ArticleStatus
@@ -44,13 +43,13 @@ class ActivityLogTests(APITestCase):
         cls.category = Category.objects.create(name='Cinema', slug='cinema')
         cls.critic = Critic.objects.create(name='Writer')
         cls.editor = ThirdSideUser.objects.create_user(
-            'editor@example.com', 'pw', role=Role.EDITOR, name='Ed'
+            'editor@example.com', 'pw', is_superuser=True, name='Ed'
         )
         cls.other = ThirdSideUser.objects.create_user(
-            'other@example.com', 'pw', role=Role.EDITOR
+            'other@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'reader@example.com', 'pw', role=Role.READER
+            'reader@example.com', 'pw'
         )
         cls.festival = Festival.objects.create(
             slug='fest',
@@ -284,10 +283,10 @@ class TagCreateTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.editor = ThirdSideUser.objects.create_user(
-            'editor@example.com', 'pw', role=Role.EDITOR
+            'editor@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'reader@example.com', 'pw', role=Role.READER
+            'reader@example.com', 'pw'
         )
 
     def post(self, name):

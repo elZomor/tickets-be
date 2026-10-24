@@ -57,15 +57,24 @@ class ThirdSideUserForm(forms.ModelForm):
 
     class Meta:
         model = ThirdSideUser
-        fields = ('email', 'name', 'role', 'is_active', 'new_password')
+        fields = (
+            'email',
+            'name',
+            'is_active',
+            'is_superuser',
+            'groups',
+            'user_permissions',
+            'new_password',
+        )
 
 
 @admin.register(ThirdSideUser)
 class ThirdSideUserAdmin(admin.ModelAdmin):
     form = ThirdSideUserForm
-    list_display = ('email', 'name', 'role', 'is_active', 'created_at')
-    list_filter = ('role', 'is_active')
+    list_display = ('email', 'name', 'is_active', 'is_superuser', 'created_at')
+    list_filter = ('is_active', 'is_superuser', 'groups')
     search_fields = ('email', 'name')
+    filter_horizontal = ('groups', 'user_permissions')
 
     def save_model(self, request, obj, form, change):
         password = form.cleaned_data.get('new_password')

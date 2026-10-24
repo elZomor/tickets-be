@@ -27,7 +27,8 @@ class AuthFlowTests(APITestCase):
         self.assertEqual(me.status_code, 200)
         self.assertEqual(me.data['name'], 'Sara Ali')
         self.assertEqual(me.data['email'], 'sara@example.com')
-        self.assertEqual(me.data['role'], 'READER')
+        self.assertEqual(me.data['groups'], [])
+        self.assertEqual(me.data['permissions'], [])
 
     def test_signup_duplicate_email_is_field_error(self):
         self.client.post('/third_side/auth/signup', SIGNUP, format='json')

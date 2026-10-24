@@ -7,7 +7,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Comment, CommentLike
-from third_side.permissions import is_editor
+from third_side.permissions import has_perm
 from third_side.serializers import CommentSerializer
 
 
@@ -31,7 +31,7 @@ class CommentViewSet(
             .annotate(likes_total=Count('likes'))
             .order_by('-created_at', '-id')
         )
-        if not (is_editor(self.request.user)):
+        if not has_perm(self.request.user, 'view_comment'):
             queryset = queryset.filter(is_hidden=False)
         if self.action == 'list' and self.request.query_params.get('article'):
             queryset = queryset.filter(article_id=self.request.query_params['article'])
@@ -45,18 +45,18 @@ class CommentViewSet(
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    def _is_owner_or_editor(self, instance):
+    def _is_owner_or(self, instance, codename):
         if instance.user_id == self.request.user.id:
             return True
-        return bool(is_editor(self.request.user))
+        return has_perm(self.request.user, codename)
 
     def perform_update(self, serializer):
-        if not self._is_owner_or_editor(serializer.instance):
+        if not self._is_owner_or(serializer.instance, 'change_comment'):
             self.permission_denied(self.request)
         serializer.save()
 
     def perform_destroy(self, instance):
-        if not self._is_owner_or_editor(instance):
+        if not self._is_owner_or(instance, 'delete_comment'):
             self.permission_denied(self.request)
         instance.delete()
 

@@ -7,7 +7,6 @@ from third_side.models import (
     Critic,
     Festival,
     FestivalPost,
-    Role,
     ThirdSideUser,
 )
 from third_side.models.Article import ArticleStatus
@@ -43,10 +42,10 @@ class FestivalPostAdminTests(APITestCase):
             status=ArticleStatus.DRAFT,
         )
         cls.editor = ThirdSideUser.objects.create_user(
-            'e@example.com', 'pw', role=Role.EDITOR
+            'e@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'r@example.com', 'pw', role=Role.READER
+            'r@example.com', 'pw'
         )
 
     def setUp(self):

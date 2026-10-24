@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.test import override_settings
 from rest_framework.test import APITestCase
 
-from third_side.models import OutgoingEmail, Role, SiteSettings, ThirdSideUser
+from third_side.models import OutgoingEmail, SiteSettings, ThirdSideUser
 from third_side.services import mail
 
 BODY = {
@@ -28,10 +28,10 @@ class EmailTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.editor = ThirdSideUser.objects.create_user(
-            'mohamed.elzomor@third-side.org', 'pw', name='Mohamed', role=Role.EDITOR
+            'mohamed.elzomor@third-side.org', 'pw', name='Mohamed', is_superuser=True
         )
         cls.outsider = ThirdSideUser.objects.create_user(
-            'editor@gmail.com', 'pw', role=Role.EDITOR
+            'editor@gmail.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user('r@third-side.org', 'pw')
 
@@ -127,7 +127,7 @@ class SignatureTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.editor = ThirdSideUser.objects.create_user(
-            'mohamed.elzomor@third-side.org', 'pw', name='Mohamed', role=Role.EDITOR
+            'mohamed.elzomor@third-side.org', 'pw', name='Mohamed', is_superuser=True
         )
         cls.editor.avatar.name = 'third_side/avatars/me.png'
         cls.editor.save()

@@ -8,12 +8,14 @@ from third_side.i18n import DEFAULT_LOCALE, LOCALE_CHOICES
 from third_side.models.Category import Category
 from third_side.models.Critic import Critic
 from third_side.models.Tag import Tag
+from third_side.services.roles import reviewers
 
 
 class ArticleStatus(models.TextChoices):
     DRAFT = 'DRAFT', 'Draft'
     SUBMITTED = 'SUBMITTED', 'Submitted'
     UNDER_REVIEW = 'UNDER_REVIEW', 'Under Review'
+    CHANGES_REQUESTED = 'CHANGES_REQUESTED', 'Changes Requested'
     READY_FOR_EDITING = 'READY_FOR_EDITING', 'Ready for Editing'
     READY_FOR_PUBLISHING = 'READY_FOR_PUBLISHING', 'Ready for Publishing'
     SCHEDULED = 'SCHEDULED', 'Scheduled'
@@ -21,6 +23,24 @@ class ArticleStatus(models.TextChoices):
     ARCHIVED = 'ARCHIVED', 'Archived'
     REJECTED = 'REJECTED', 'Rejected'
     REPORTED = 'REPORTED', 'Reported'
+
+
+# Who may move an article where. An author (the account behind created_by) may
+# edit it only while it is theirs to work on, and may only draft or submit it.
+# Reviewers (`review_article`) run it through review; publishing and shelving it
+# (`publish_article`) is a separate right.
+AUTHOR_EDITABLE = (
+    ArticleStatus.DRAFT,
+    ArticleStatus.REJECTED,
+    ArticleStatus.CHANGES_REQUESTED,
+)
+AUTHOR_SETS = (ArticleStatus.DRAFT, ArticleStatus.SUBMITTED)
+PUBLISH_STATUSES = (
+    ArticleStatus.READY_FOR_PUBLISHING,
+    ArticleStatus.SCHEDULED,
+    ArticleStatus.PUBLISHED,
+    ArticleStatus.ARCHIVED,
+)
 
 
 def live_q(prefix=''):
@@ -57,7 +77,7 @@ class Article(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        limit_choices_to={'role': 'EDITOR'},
+        limit_choices_to=reviewers,
         related_name='third_side_edited_articles',
     )
     created_by = models.ForeignKey(
@@ -96,6 +116,12 @@ class Article(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        permissions = [
+            ('review_article', 'Can review articles'),
+            ('publish_article', 'Can publish and archive articles'),
+        ]
 
     def __str__(self):
         return self.title
