@@ -8,7 +8,7 @@ from rest_framework.viewsets import GenericViewSet
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.views.audit_mixin import AuditedMixin
 from third_side.models import Category, NavGroup, Tag
-from third_side.permissions import IsEditor
+from third_side.permissions import RequirePerm, model_perms
 from third_side.read_serializers import (
     CategoryReadSerializer,
     NavGroupSerializer,
@@ -36,6 +36,7 @@ class _EditableSectionViewSet(
     authentication_classes = [ThirdSideJWTAuthentication]
     read_serializer_class = None
     write_serializer_class = None
+    required_perms = {}
 
     def _is_public_read(self):
         # self.action is set after the authenticators are picked: use the route.
@@ -56,7 +57,7 @@ class _EditableSectionViewSet(
     def get_permissions(self):
         if self._is_public_read():
             return [AllowAny()]
-        return [IsAuthenticated(), IsEditor()]
+        return [IsAuthenticated(), RequirePerm()]
 
     @action(detail=True, methods=['get'])
     def doc(self, request, pk=None):
@@ -65,6 +66,7 @@ class _EditableSectionViewSet(
 
 class CategoryViewSet(_EditableSectionViewSet):
     queryset = Category.objects.select_related('group').order_by('order', 'id')
+    required_perms = model_perms('category')
     read_serializer_class = CategoryReadSerializer
     write_serializer_class = CategoryWriteSerializer
 
@@ -82,6 +84,7 @@ class NavGroupViewSet(_EditableSectionViewSet):
     """Header groups. Deleting one leaves its categories ungrouped."""
 
     queryset = NavGroup.objects.prefetch_related('categories').order_by('order', 'id')
+    required_perms = model_perms('navgroup')
     read_serializer_class = NavGroupSerializer
     write_serializer_class = NavGroupWriteSerializer
 
@@ -95,6 +98,7 @@ class TagViewSet(AuditedMixin, mixins.CreateModelMixin, _PublicReadViewSet):
     """Anyone reads the tags; editors create new ones (POST {name: {ar, en, ro}})."""
 
     queryset = Tag.objects.order_by('slug')
+    required_perms = {'create': 'add_tag'}
 
     def get_serializer_class(self):
         if getattr(self.request, 'method', None) == 'GET':
@@ -109,4 +113,4 @@ class TagViewSet(AuditedMixin, mixins.CreateModelMixin, _PublicReadViewSet):
     def get_permissions(self):
         if getattr(self.request, 'method', None) == 'GET':
             return [AllowAny()]
-        return [IsAuthenticated(), IsEditor()]
+        return [IsAuthenticated(), RequirePerm()]

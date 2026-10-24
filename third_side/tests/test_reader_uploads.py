@@ -7,7 +7,7 @@ from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from third_side.models import ActivityLog, Article, Category, Critic
-from third_side.models import Role, ThirdSideUser
+from third_side.models import ThirdSideUser
 from third_side.tests.test_admin_articles import png_bytes
 
 MEDIA_ROOT = tempfile.mkdtemp()
@@ -36,7 +36,7 @@ class SubmissionImageTests(_MediaTestCase):
         cls.reader = ThirdSideUser.objects.create_user('r@example.com', 'pw')
         cls.other = ThirdSideUser.objects.create_user('o@example.com', 'pw')
         cls.editor = ThirdSideUser.objects.create_user(
-            'e@example.com', 'pw', role=Role.EDITOR
+            'e@example.com', 'pw', is_superuser=True
         )
 
     def upload(self):

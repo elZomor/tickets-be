@@ -5,7 +5,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Rating
-from third_side.permissions import is_editor
+from third_side.permissions import has_perm
 from third_side.serializers import RatingSerializer
 
 
@@ -27,7 +27,7 @@ class RatingViewSet(
 
     def get_queryset(self):
         queryset = Rating.objects.order_by('-id')
-        if not (is_editor(self.request.user)):
+        if not has_perm(self.request.user, 'view_rating'):
             queryset = queryset.filter(user=self.request.user)
         if self.request.query_params.get('article'):
             queryset = queryset.filter(article_id=self.request.query_params['article'])

@@ -6,7 +6,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import ActivityLog
-from third_side.permissions import IsEditor
+from third_side.permissions import RequirePerm
 from third_side.serializers import (
     ActivityLogDetailSerializer,
     ActivityLogListSerializer,
@@ -24,7 +24,8 @@ class ActivityLogViewSet(
     """
 
     authentication_classes = [ThirdSideJWTAuthentication]
-    permission_classes = [IsAuthenticated, IsEditor]
+    permission_classes = [IsAuthenticated, RequirePerm]
+    required_perms = {'*': 'view_activitylog'}
     queryset = ActivityLog.objects.order_by('-created_at', '-id')
 
     def get_serializer_class(self):

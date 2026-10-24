@@ -3,16 +3,22 @@ from django.http import Http404
 from django.utils import timezone
 from rest_framework import mixins
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.views.audit_mixin import AuditedMixin
 from third_side.models import Article
-from third_side.models.Article import ArticleStatus, live_q
-from third_side.permissions import IsEditor, is_editor
+from third_side.models.Article import (
+    AUTHOR_EDITABLE,
+    AUTHOR_SETS,
+    PUBLISH_STATUSES,
+    ArticleStatus,
+    live_q,
+)
+from third_side.permissions import has_perm
 from third_side.read_serializers import (
     ArticleDetailSerializer,
     ArticleReadSerializer,
@@ -20,6 +26,43 @@ from third_side.read_serializers import (
 from third_side.serializers import ArticleSerializer
 from third_side.services.media_urls import to_url
 from third_side.services.translations import translation_map
+
+
+# Fields only staff who manage articles (change_article) may set; an author
+# working on their own piece may not.
+STAFF_ONLY_FIELDS = {'editor': None, 'is_hidden': False, 'published_at': None}
+
+
+class ArticlePermission(BasePermission):
+    """Who may write articles.
+
+    add_article: create. change_article: edit any article. An author (add_article
+    without change_article) edits only their own piece, and only while it is in
+    AUTHOR_EDITABLE. Reading one article's editor doc needs view_article, or being
+    its author. Deleting needs delete_article.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        if view.action == 'create':
+            return has_perm(user, 'add_article')
+        if view.action in ('update', 'partial_update'):
+            return has_perm(user, 'change_article') or has_perm(user, 'add_article')
+        if view.action == 'destroy':
+            return has_perm(user, 'delete_article')
+        if view.action == 'doc':
+            return has_perm(user, 'view_article') or has_perm(user, 'add_article')
+        return False
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        if view.action == 'doc':
+            return has_perm(user, 'view_article') or obj.created_by_id == user.pk
+        if view.action in ('update', 'partial_update'):
+            if has_perm(user, 'change_article'):
+                return True
+            return obj.created_by_id == user.pk and obj.status in AUTHOR_EDITABLE
+        return True
 
 
 class ArticleViewSet(
@@ -51,11 +94,19 @@ class ArticleViewSet(
             return ArticleDetailSerializer
         return ArticleReadSerializer
 
-    def _is_editor(self):
-        return bool(is_editor(self.request.user))
+    def _scope(self):
+        """What the caller reads: 'all' (staff who view articles), 'own' (authors:
+        the live ones plus their own pieces), else 'live' (readers, anonymous)."""
+        user = self.request.user
+        if has_perm(user, 'view_article'):
+            return 'all'
+        if has_perm(user, 'add_article'):
+            return 'own'
+        return 'live'
 
     def get_queryset(self):
-        if self._is_editor():
+        scope = self._scope()
+        if scope != 'live':
             # Show scheduled articles whose time has come as published.
             Article.objects.filter(
                 status=ArticleStatus.SCHEDULED, published_at__lte=timezone.now()
@@ -69,7 +120,11 @@ class ArticleViewSet(
             )
             .order_by('-published_at', '-id')
         )
-        if not self._is_editor():
+        if scope == 'own':
+            queryset = queryset.filter(
+                Q(live_q(), is_hidden=False) | Q(created_by=self.request.user)
+            )
+        elif scope == 'live':
             queryset = queryset.filter(live_q(), is_hidden=False)
         if self.action != 'list':
             return queryset
@@ -82,7 +137,7 @@ class ArticleViewSet(
             queryset = queryset.filter(tags__slug=params['tag'])
         if params.get('critic'):
             queryset = queryset.filter(critic_id=params['critic'])
-        if params.get('editor') and self._is_editor():
+        if params.get('editor') and scope == 'all':
             queryset = queryset.filter(editor_id=params['editor'])
         if params.get('featured') in ('1', 'true'):
             queryset = queryset.filter(is_featured=True)
@@ -95,10 +150,51 @@ class ArticleViewSet(
 
     def get_permissions(self):
         if self.action == 'doc':
-            return [IsAuthenticated(), IsEditor()]
+            return [IsAuthenticated(), ArticlePermission()]
         if getattr(self.request, 'method', None) == 'GET' or self.action in ('read',):
             return [AllowAny()]
-        return [IsAuthenticated(), IsEditor()]
+        return [IsAuthenticated(), ArticlePermission()]
+
+    def _check_write(self, serializer):
+        """Refuse what the caller's permissions do not cover: staff-only fields
+        for an author, and status moves (review and publishing are separate rights)."""
+        user = self.request.user
+        data = serializer.validated_data
+        if not has_perm(user, 'change_article'):
+            # Setting a field to the value it already has is not a change.
+            fields = [
+                name
+                for name, default in STAFF_ONLY_FIELDS.items()
+                if name in data
+                and data[name]
+                != (
+                    getattr(serializer.instance, name)
+                    if serializer.instance
+                    else default
+                )
+            ]
+            if fields:
+                raise PermissionDenied(f'You cannot set: {", ".join(fields)}.')
+        new = data.get('status')
+        old = serializer.instance.status if serializer.instance else None
+        if new is None or new == old or new in AUTHOR_SETS:
+            return
+        if new in PUBLISH_STATUSES:
+            allowed = has_perm(user, 'publish_article')
+        else:
+            allowed = has_perm(user, 'review_article') or has_perm(
+                user, 'publish_article'
+            )
+        if not allowed:
+            raise PermissionDenied(f'You cannot move an article to {new}.')
+
+    def perform_create(self, serializer):
+        self._check_write(serializer)
+        super().perform_create(serializer)
+
+    def perform_update(self, serializer):
+        self._check_write(serializer)
+        super().perform_update(serializer)
 
     def _refuse_if_published(self, article):
         """A published article is final: no edits, no state change, no delete."""

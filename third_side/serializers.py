@@ -21,7 +21,6 @@ from third_side.models import (
     FestivalPostMedia,
     Rating,
     Report,
-    Role,
     Tag,
     ThirdSideUser,
 )
@@ -43,7 +42,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     category_name = serializers.SerializerMethodField()
     critic_name = serializers.SerializerMethodField()
     editor = serializers.PrimaryKeyRelatedField(
-        queryset=ThirdSideUser.objects.filter(role=Role.EDITOR),
+        queryset=ThirdSideUser.objects.with_perm('review_article'),
         allow_null=True,
         required=False,
     )
@@ -267,11 +266,17 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     name = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
+    groups = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
+    permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = ThirdSideUser
-        fields = ['id', 'name', 'email', 'role', 'avatar']
+        fields = ['id', 'name', 'email', 'avatar', 'groups', 'permissions']
         read_only_fields = fields
+
+    @staticmethod
+    def get_permissions(obj) -> list[str]:
+        return obj.permission_codenames()
 
     @staticmethod
     def get_name(obj) -> str:

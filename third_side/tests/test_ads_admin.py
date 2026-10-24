@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.test import override_settings
 from rest_framework.test import APITestCase
 
-from third_side.models import ActivityLog, Ad, Role, ThirdSideUser
+from third_side.models import ActivityLog, Ad, ThirdSideUser
 from third_side.tests.test_site_content import ad
 
 HOST = 'https://media.play-cast.com'
@@ -17,7 +17,7 @@ class AdAdminTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.editor = ThirdSideUser.objects.create_user(
-            'e@example.com', 'pw', role=Role.EDITOR
+            'e@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user('r@example.com', 'pw')
         cls.ad = ad('fest', impressions=10, clicks=2)

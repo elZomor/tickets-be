@@ -13,7 +13,7 @@ from third_side.models import (
     Tag,
 )
 from third_side.models.FestivalPost import FestivalPostType
-from third_side.permissions import is_editor
+from third_side.permissions import has_perm
 from third_side.services.media_urls import file_url, to_url
 from third_side.services.festivals import article_path, shown_translation
 from third_side.services.translations import (
@@ -235,7 +235,7 @@ class ArticleReadSerializer(serializers.ModelSerializer):
 
     def _staff_view(self):
         request = self.context.get('request')
-        return is_editor(getattr(request, 'user', None))
+        return has_perm(getattr(request, 'user', None), 'view_article')
 
     def get_editor(self, obj) -> int | None:
         return obj.editor_id if self._staff_view() else None

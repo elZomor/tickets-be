@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase, override_settings
 
-from third_side.models import Article, Category, NavGroup, Role, ThirdSideUser
+from third_side.models import Article, Category, NavGroup, ThirdSideUser
 from third_side.services.media_urls import file_url, to_key, to_url
 from third_side.tests.test_reader_uploads import _MediaTestCase, image
 
@@ -27,7 +27,7 @@ class NoRawStorageUrlsTests(_MediaTestCase):
     @classmethod
     def setUpTestData(cls):
         cls.editor = ThirdSideUser.objects.create_user(
-            'e@example.com', 'pw', role=Role.EDITOR
+            'e@example.com', 'pw', is_superuser=True
         )
         group = NavGroup.objects.create(
             slug='visual', label={'en': 'Visual'}, image_url=KEY
