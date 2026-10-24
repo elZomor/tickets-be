@@ -38,7 +38,7 @@ class AdAdminTests(APITestCase):
             'ends_at': (today + timedelta(days=7)).isoformat(),
             'weight': 2,
             'alt': {'ar': 'أمسية', 'en': 'An evening', 'ro': ''},
-            'images': {'ar': {'rect': SIGNED, 'wide': ''}, 'en': {'tall': SIGNED}},
+            'images': {'ar': {'rect': SIGNED, 'slim': ''}, 'en': {'column': SIGNED}},
             'is_active': True,
         }
         data.update(kwargs)
@@ -48,7 +48,7 @@ class AdAdminTests(APITestCase):
         response = self.client.post('/third_side/ads', self.body(), format='json')
         self.assertEqual(response.status_code, 201, response.data)
         created = Ad.objects.get(pk=response.data['id'])
-        self.assertEqual(created.images, {'ar': {'rect': KEY}, 'en': {'tall': KEY}})
+        self.assertEqual(created.images, {'ar': {'rect': KEY}, 'en': {'column': KEY}})
         self.assertEqual(created.locales, ['ar', 'en'])  # site order
         self.assertEqual(created.alt, {'ar': 'أمسية', 'en': 'An evening'})
         self.assertEqual(response.data['images']['ar']['rect'], f'{HOST}/{KEY}')
@@ -88,7 +88,7 @@ class AdAdminTests(APITestCase):
         self.assertEqual(self.client.get('/third_side/ads').status_code, 403)
         self.client.force_authenticate(None)
         self.assertEqual(self.client.get('/third_side/ads').status_code, 401)
-        pick = self.client.get('/third_side/ads/pick?lang=en&size=tall')
+        pick = self.client.get('/third_side/ads/pick?lang=en&size=banner')
         self.assertEqual(pick.status_code, 200)
         self.assertEqual(
             self.client.post(f'/third_side/ads/{self.ad.pk}/click').status_code, 204
@@ -96,9 +96,9 @@ class AdAdminTests(APITestCase):
 
     def test_pick_returns_media_urls_for_stored_keys(self):
         Ad.objects.exclude(pk=self.ad.pk).delete()
-        self.ad.images = {'en': {'tall': KEY}}
+        self.ad.images = {'en': {'column': KEY}}
         self.ad.save()
         self.client.force_authenticate(None)
-        data = self.client.get('/third_side/ads/pick?lang=en&size=tall').data
+        data = self.client.get('/third_side/ads/pick?lang=en&size=column').data
         self.assertEqual(data['image'], f'{HOST}/{KEY}')
-        self.assertEqual(data['images'], {'tall': f'{HOST}/{KEY}'})
+        self.assertEqual(data['images'], {'column': f'{HOST}/{KEY}'})
