@@ -20,11 +20,14 @@ from third_side.models import (
     FestivalPost,
     FestivalPostMedia,
     Rating,
+    ModerationAction,
     Report,
     Tag,
     ThirdSideUser,
 )
 from third_side.models.Article import ArticleStatus
+from third_side.models.ModerationAction import STRIKE_ACTIONS
+from third_side.models.Report import ReportReason
 
 
 class CriticSerializer(serializers.ModelSerializer):
@@ -235,9 +238,17 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class ReportSerializer(serializers.ModelSerializer):
+    """What a reader sends and gets back; nothing about the target's author."""
+
     reporter = serializers.PrimaryKeyRelatedField(read_only=True)
     content_type = serializers.ChoiceField(
         choices=['article', 'comment'], write_only=True
+    )
+    reason = serializers.ChoiceField(
+        choices=ReportReason.choices, required=False, allow_blank=True
+    )
+    note = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=500
     )
     target_type = serializers.SerializerMethodField()
 
@@ -250,6 +261,7 @@ class ReportSerializer(serializers.ModelSerializer):
             'object_id',
             'target_type',
             'reason',
+            'note',
             'created_at',
             'reviewed_by',
             'reviewed_at',
@@ -259,6 +271,132 @@ class ReportSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_target_type(obj):
         return obj.content_type.model
+
+
+class ModerationActionSerializer(serializers.ModelSerializer):
+    moderator_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ModerationAction
+        fields = ['id', 'action', 'note', 'email_sent', 'created_at', 'moderator_name']
+
+    @staticmethod
+    def get_moderator_name(obj):
+        return obj.moderator.display_name if obj.moderator else ''
+
+
+def report_target_author(report):
+    """The account behind the reported article or comment, if it still exists."""
+    target = report.target
+    if target is None:
+        return None
+    return target.user if report.content_type.model == 'comment' else target.created_by
+
+
+class ReportAdminSerializer(ReportSerializer):
+    """Moderator view: the target, its author, the other reports and history."""
+
+    reporter = serializers.SerializerMethodField()
+    reviewed_by = serializers.SerializerMethodField()
+    target_info = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
+    report_count = serializers.SerializerMethodField()
+    reports = serializers.SerializerMethodField()
+    author_history = serializers.SerializerMethodField()
+
+    class Meta(ReportSerializer.Meta):
+        fields = ReportSerializer.Meta.fields + [
+            'target_info',
+            'author',
+            'report_count',
+            'reports',
+            'author_history',
+        ]
+        read_only_fields = fields
+
+    @staticmethod
+    def get_reporter(obj):
+        return {'id': obj.reporter_id, 'name': obj.reporter.display_name}
+
+    @staticmethod
+    def get_reviewed_by(obj):
+        return obj.reviewed_by.display_name if obj.reviewed_by else None
+
+    @staticmethod
+    def get_target_info(obj):
+        target = obj.target
+        if target is None:
+            return {'exists': False}
+        if obj.content_type.model == 'comment':
+            article = target.article
+            return {
+                'exists': True,
+                'is_hidden': target.is_hidden,
+                'text': target.text[:500],
+                'article_id': article.pk,
+                'article_title': article.title,
+                'article_slug': article.slug,
+            }
+        return {
+            'exists': True,
+            'is_hidden': target.is_hidden,
+            'text': '',
+            'article_id': target.pk,
+            'article_title': target.title,
+            'article_slug': target.slug,
+        }
+
+    @staticmethod
+    def get_author(obj):
+        author = report_target_author(obj)
+        if author is None:
+            return None
+        return {
+            'id': author.pk,
+            'name': author.display_name,
+            'email': author.email,
+            'language': author.language,
+            'is_active': author.is_active,
+        }
+
+    @staticmethod
+    def _siblings(obj):
+        return Report.objects.filter(
+            content_type=obj.content_type, object_id=obj.object_id
+        )
+
+    def get_report_count(self, obj):
+        return self._siblings(obj).count()
+
+    def get_reports(self, obj):
+        # Only the detail view lists them; the table needs the count.
+        if not self.context.get('detail'):
+            return []
+        return [
+            {
+                'id': r.pk,
+                'reporter': r.reporter.display_name,
+                'reason': r.reason,
+                'note': r.note or '',
+                'created_at': r.created_at,
+                'reviewed_at': r.reviewed_at,
+            }
+            for r in self._siblings(obj).select_related('reporter')
+        ]
+
+    def get_author_history(self, obj):
+        if not self.context.get('detail'):
+            return {'strikes': 0, 'actions': []}
+        author = report_target_author(obj)
+        if author is None:
+            return {'strikes': 0, 'actions': []}
+        actions = ModerationAction.objects.filter(author=author).select_related(
+            'moderator'
+        )
+        return {
+            'strikes': actions.filter(action__in=STRIKE_ACTIONS).count(),
+            'actions': ModerationActionSerializer(actions[:10], many=True).data,
+        }
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):

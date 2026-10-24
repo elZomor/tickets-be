@@ -67,6 +67,8 @@ ROLES = {
         'delete_comment',
         'view_report',
         'change_report',
+        'view_moderationaction',
+        'suspend_user',
     ],
     'Marketing': [*_crud('ad', *ALL), 'add_outgoingemail', 'view_outgoingemail'],
 }

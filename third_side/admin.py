@@ -21,6 +21,7 @@ from third_side.models import (
     OutgoingEmail,
     SiteSettings,
     Rating,
+    ModerationAction,
     Report,
     Tag,
     TermsAcceptance,
@@ -155,11 +156,22 @@ class ReportAdmin(admin.ModelAdmin):
         'reporter',
         'content_type',
         'object_id',
+        'reason',
         'created_at',
         'reviewed_by',
     )
-    list_filter = ('content_type',)
+    list_filter = ('content_type', 'reason')
     readonly_fields = ('created_at',)
+
+
+@admin.register(ModerationAction)
+class ModerationActionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'action', 'author', 'moderator', 'email_sent', 'created_at')
+    list_filter = ('action', 'email_sent')
+    readonly_fields = [f.name for f in ModerationAction._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(SiteSettings)
