@@ -20,8 +20,8 @@ class SubmissionTests(APITestCase):
             group=group,
             name_i18n={'ar': 'سينما', 'en': 'Cinema'},
         )
-        cls.user = User.objects.create_user('u@example.com', 'pw-12345678', name='Ali')
-        cls.other = User.objects.create_user('o@example.com', 'pw-12345678')
+        cls.user = User.objects.create_user('u@example.com', 'pw-12345678', name='Ali', email_verified=True)
+        cls.other = User.objects.create_user('o@example.com', 'pw-12345678', email_verified=True)
 
     def setUp(self):
         cache.clear()  # throttle counters live in the cache

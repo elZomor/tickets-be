@@ -3,17 +3,23 @@ from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
+from django.db import transaction
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import serializers, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from third_side.auth import issue_tokens, rotate_refresh
+from third_side.auth import ThirdSideJWTAuthentication, issue_tokens, rotate_refresh
 from third_side.models import TermsAcceptance, TermsVersion, ThirdSideUser
+from third_side.services.account_mail import (
+    mark_verified,
+    read_token,
+    send_verification_email,
+)
 from third_side.services.mail import send_email
 
 logger = logging.getLogger(__name__)
@@ -29,6 +35,8 @@ class SignupSerializer(serializers.Serializer):
     # Required once a version is in force, and must be that version: a stale
     # form is refused so nobody accepts text they were not shown.
     accepted_terms_version = serializers.CharField(required=False, allow_blank=True)
+    # The locale they signed up in: the language of their account emails.
+    lang = serializers.ChoiceField(choices=['ar', 'en', 'ro'], default='ar')
 
     def validate(self, attrs):
         terms = TermsVersion.current()
@@ -102,7 +110,10 @@ class SignupView(PublicAuthView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         user = ThirdSideUser.objects.create_user(
-            email=data['email'], password=data['password'], name=data['name'].strip()
+            email=data['email'],
+            password=data['password'],
+            name=data['name'].strip(),
+            language=data['lang'],
         )
         if data['terms'] is not None:
             TermsAcceptance.objects.create(
@@ -110,6 +121,7 @@ class SignupView(PublicAuthView):
                 terms=data['terms'],
                 ip_address=request.META.get('REMOTE_ADDR') or None,
             )
+        transaction.on_commit(lambda: send_verification_email(user))
         return Response(issue_tokens(user), status=status.HTTP_201_CREATED)
 
 
@@ -206,3 +218,46 @@ class ResetPasswordView(PublicAuthView):
         user.set_password(data['password'])
         user.save(update_fields=['password'])
         return Response(issue_tokens(user))
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+
+class VerifyEmailView(PublicAuthView):
+    """Confirm an address from the link in the email.
+
+    POST, not GET: mail scanners open links, and must not verify anyone. The
+    token is the proof, so no sign-in is needed. Repeating it is harmless.
+    """
+
+    serializer_class = VerifyEmailSerializer
+
+    def post(self, request):
+        serializer = VerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = read_token(
+            serializer.validated_data['uid'], serializer.validated_data['token']
+        )
+        if user is None:
+            return Response(
+                {'detail': 'Invalid or expired link'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        mark_verified(user)
+        return Response({'ok': True})
+
+
+class ResendVerificationView(APIView):
+    """Send the confirmation email again to the signed-in, unverified user."""
+
+    authentication_classes = [ThirdSideJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    throttle_scope = 'third_side_verify_resend'
+
+    def post(self, request):
+        user = request.user
+        if not user.email_verified:
+            send_verification_email(user)
+        return Response({'ok': True})

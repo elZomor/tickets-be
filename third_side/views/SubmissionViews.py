@@ -12,6 +12,7 @@ from third_side.auth import ThirdSideJWTAuthentication
 from third_side.i18n import LOCALE_CHOICES, clean_locale, localize, slugify_name
 from third_side.models import Article, Category, Critic, Media
 from third_side.models.Article import ArticleStatus
+from third_side.permissions import EmailVerified
 from third_side.services.media_urls import file_url
 from third_side.services.translations import pick_locale, translation_map
 
@@ -161,6 +162,12 @@ class SubmissionsView(GenericAPIView):
     authentication_classes = [ThirdSideJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = SubmissionSerializer
+
+    def get_permissions(self):
+        # Reading your own submissions is open; sending one needs a verified email.
+        if self.request.method == 'POST':
+            return [IsAuthenticated(), EmailVerified()]
+        return [IsAuthenticated()]
 
     @property
     def throttle_scope(self):

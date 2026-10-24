@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.models import Media
 from third_side.models.ActivityLog import ActivityAction
-from third_side.permissions import has_perm
+from third_side.permissions import EmailVerified, has_perm
 from third_side.services import audit
 from third_side.services.images import image_error
 from third_side.services.media_urls import file_url
@@ -40,7 +40,7 @@ class MediaUploadView(APIView):
     """
 
     authentication_classes = [ThirdSideJWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, EmailVerified]
     throttle_scope = 'third_side_write'
     parser_classes = [MultiPartParser, FormParser]
 

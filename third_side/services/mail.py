@@ -53,14 +53,14 @@ def send(sender_email, sender_name, to, subject, html, cc=(), reply_to=None):
     return response.json().get('messageId', '')
 
 
-def send_email(to_email, subject, body):
-    """System mail (password reset) from THIRD_SIDE_SYSTEM_SENDER."""
+def send_email(to_email, subject, body, direction='ltr'):
+    """System mail (password reset, account mail) from THIRD_SIDE_SYSTEM_SENDER."""
     return send(
         settings.THIRD_SIDE_SYSTEM_SENDER,
         'Third Side',
         [to_email],
         subject,
-        render_email(body, 'ltr'),
+        render_email(body, direction),
     )
 
 

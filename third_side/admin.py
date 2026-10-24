@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.db import models
+from django.utils import timezone
 from django_json_widget.widgets import JSONEditorWidget
 
 from third_side.models import (
@@ -62,6 +63,13 @@ class ThirdSideUserForm(forms.ModelForm):
             'name',
             'is_active',
             'is_superuser',
+            'email_verified',
+            'language',
+            'date_of_birth',
+            'gender',
+            'governorate',
+            'bio',
+            'newsletter_opt_in',
             'groups',
             'user_permissions',
             'new_password',
@@ -71,10 +79,25 @@ class ThirdSideUserForm(forms.ModelForm):
 @admin.register(ThirdSideUser)
 class ThirdSideUserAdmin(admin.ModelAdmin):
     form = ThirdSideUserForm
-    list_display = ('email', 'name', 'is_active', 'is_superuser', 'created_at')
-    list_filter = ('is_active', 'is_superuser', 'groups')
+    list_display = (
+        'email',
+        'name',
+        'is_active',
+        'email_verified',
+        'is_superuser',
+        'created_at',
+    )
+    list_filter = ('is_active', 'email_verified', 'is_superuser', 'groups')
     search_fields = ('email', 'name')
     filter_horizontal = ('groups', 'user_permissions')
+    actions = ['mark_verified']
+
+    @admin.action(description='Mark selected users as email-verified')
+    def mark_verified(self, request, queryset):
+        count = queryset.filter(email_verified=False).update(
+            email_verified=True, email_verified_at=timezone.now()
+        )
+        self.message_user(request, f'{count} user(s) marked verified.')
 
     def save_model(self, request, obj, form, change):
         password = form.cleaned_data.get('new_password')

@@ -9,6 +9,45 @@ from third_side.utils import AsciiUploadTo
 
 APP_LABEL = 'third_side'
 
+GENDERS = [
+    ('female', 'Female'),
+    ('male', 'Male'),
+    ('other', 'Other'),
+    ('prefer_not', 'Prefer not to say'),
+]
+LANGUAGES = [('ar', 'Arabic'), ('en', 'English'), ('ro', 'Romanian')]
+# Egypt's 27 governorates (labels live in the FE); `outside_egypt` for the rest.
+GOVERNORATES = [
+    ('cairo', 'Cairo'),
+    ('giza', 'Giza'),
+    ('alexandria', 'Alexandria'),
+    ('qalyubia', 'Qalyubia'),
+    ('port_said', 'Port Said'),
+    ('suez', 'Suez'),
+    ('damietta', 'Damietta'),
+    ('dakahlia', 'Dakahlia'),
+    ('sharqia', 'Sharqia'),
+    ('gharbia', 'Gharbia'),
+    ('monufia', 'Monufia'),
+    ('kafr_el_sheikh', 'Kafr El Sheikh'),
+    ('beheira', 'Beheira'),
+    ('ismailia', 'Ismailia'),
+    ('faiyum', 'Faiyum'),
+    ('beni_suef', 'Beni Suef'),
+    ('minya', 'Minya'),
+    ('asyut', 'Asyut'),
+    ('sohag', 'Sohag'),
+    ('qena', 'Qena'),
+    ('luxor', 'Luxor'),
+    ('aswan', 'Aswan'),
+    ('red_sea', 'Red Sea'),
+    ('new_valley', 'New Valley'),
+    ('matrouh', 'Matrouh'),
+    ('north_sinai', 'North Sinai'),
+    ('south_sinai', 'South Sinai'),
+    ('outside_egypt', 'Outside Egypt'),
+]
+
 
 class ThirdSideUserManager(BaseUserManager):
     def with_perm(self, codename):
@@ -73,6 +112,20 @@ class ThirdSideUser(AbstractBaseUser, PermissionsMixin):
     # {name: {ar, en}, title: {ar, en}, phone, show_photo, show_social}.
     signature = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
+    # Email proof: set by POST /auth/verify-email. Unverified readers cannot
+    # submit articles, upload images or write a bio (see can_contribute).
+    email_verified = models.BooleanField(default=False)
+    email_verified_at = models.DateTimeField(null=True, blank=True)
+    # Language of the account's emails (the locale they signed up in).
+    language = models.CharField(max_length=2, choices=LANGUAGES, default='ar')
+    # Optional profile data, edited with PATCH /profile/me.
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=10, choices=GENDERS, blank=True, default='')
+    governorate = models.CharField(
+        max_length=20, choices=GOVERNORATES, blank=True, default=''
+    )
+    bio = models.TextField(max_length=500, blank=True, default='')
+    newsletter_opt_in = models.BooleanField(default=False)
 
     objects = ThirdSideUserManager()
 
@@ -84,6 +137,11 @@ class ThirdSideUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    @property
+    def can_contribute(self):
+        """May submit, upload and write a bio: verified readers and staff."""
+        return self.email_verified or self.is_superuser or self.groups.exists()
 
     @property
     def display_name(self):
