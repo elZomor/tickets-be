@@ -17,6 +17,8 @@ from third_side.views import (
     EmailView,
     FestivalPostViewSet,
     FestivalViewSet,
+    FollowsView,
+    FollowView,
     FooterView,
     ForgotPasswordView,
     LoginView,
@@ -25,6 +27,12 @@ from third_side.views import (
     MediaUploadView,
     CommentViewSet,
     NavGroupViewSet,
+    NotificationPreferenceView,
+    NotificationViewSet,
+    PushSubscriptionView,
+    SavedArticleIdsView,
+    SavedArticlesView,
+    SavedArticleView,
     TagViewSet,
     CriticViewSet,
     ProfileAvatarView,
@@ -55,6 +63,7 @@ router.register(r'comments', CommentViewSet, basename='comment-view')
 router.register(r'reports', ReportViewSet, basename='report-view')
 router.register(r'activity-log', ActivityLogViewSet, basename='activity-log-view')
 router.register(r'ads', AdViewSet, basename='ad-view')
+router.register(r'notifications', NotificationViewSet, basename='notification-view')
 
 urlpatterns = [
     path('auth/login', LoginView.as_view(), name='auth-login'),
@@ -88,4 +97,25 @@ urlpatterns = [
     path('profile/me', ProfileMeView.as_view(), name='profile-me'),
     path('profile/me/avatar', ProfileAvatarView.as_view(), name='profile-avatar'),
     path('profile/me/signature', SignatureView.as_view(), name='profile-signature'),
+    path(
+        'notification-preferences',
+        NotificationPreferenceView.as_view(),
+        name='notification-preferences',
+    ),
+    path(
+        'push/subscriptions', PushSubscriptionView.as_view(), name='push-subscriptions'
+    ),
+    path('saved-articles', SavedArticlesView.as_view(), name='saved-articles'),
+    path('saved-articles/ids', SavedArticleIdsView.as_view(), name='saved-article-ids'),
+    path(
+        'saved-articles/<int:article_id>',
+        SavedArticleView.as_view(),
+        name='saved-article',
+    ),
+    path('follows', FollowsView.as_view(), name='follows'),
+    path(
+        'follows/<str:target_type>/<str:target_ref>',
+        FollowView.as_view(),
+        name='follow',
+    ),
 ] + router.urls
