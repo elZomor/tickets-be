@@ -37,3 +37,15 @@ from .SubmissionViews import SubmissionsView  # noqa:F401
 from .ProfileViews import ProfileAvatarView, ProfileMeView  # noqa:F401
 from .FestivalViews import FestivalPostViewSet, FestivalViewSet  # noqa:F401
 from .EmailViews import EmailPreviewView, EmailView, SignatureView  # noqa:F401
+from .NotificationViews import (  # noqa:F401
+    NotificationPreferenceView,
+    NotificationViewSet,
+    PushSubscriptionView,
+)
+from .LibraryViews import (  # noqa:F401
+    FollowsView,
+    FollowView,
+    SavedArticleIdsView,
+    SavedArticlesView,
+    SavedArticleView,
+)

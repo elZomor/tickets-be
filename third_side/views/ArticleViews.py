@@ -1,6 +1,5 @@
 from django.db.models import Avg, Case, Count, F, IntegerField, Q, Value, When
 from django.http import Http404
-from django.utils import timezone
 from rest_framework import mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -25,6 +24,7 @@ from third_side.read_serializers import (
 )
 from third_side.serializers import ArticleSerializer
 from third_side.services.media_urls import to_url
+from third_side.services.publishing import promote_due_articles
 from third_side.services.translations import translation_map
 
 
@@ -108,9 +108,7 @@ class ArticleViewSet(
         scope = self._scope()
         if scope != 'live':
             # Show scheduled articles whose time has come as published.
-            Article.objects.filter(
-                status=ArticleStatus.SCHEDULED, published_at__lte=timezone.now()
-            ).update(status=ArticleStatus.PUBLISHED)
+            promote_due_articles()
         queryset = (
             Article.objects.select_related('category', 'critic', 'editor')
             .prefetch_related('translations', 'tags')

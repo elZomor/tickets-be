@@ -8,7 +8,9 @@ from rest_framework.views import APIView
 from third_side.auth import ThirdSideJWTAuthentication
 from third_side.permissions import EmailVerified
 from third_side.serializers import ProfileSerializer, ProfileUpdateSerializer
+from third_side import tasks
 from third_side.services.images import image_error
+from third_side.services.notify import enqueue
 
 AVATAR_MAX_BYTES = 5 * 1024 * 1024
 
@@ -37,10 +39,22 @@ class ProfileMeView(APIView):
             and not request.user.can_contribute
         ):
             return Response(EmailVerified.message, status=status.HTTP_403_FORBIDDEN)
+        changed = [
+            name
+            for name, value in serializer.validated_data.items()
+            if getattr(request.user, name) != value
+        ]
         serializer.save()
+        _notify_profile(request.user, changed)
         return Response(
             ProfileSerializer(request.user, context={'request': request}).data
         )
+
+
+def _notify_profile(user, fields):
+    """Tell the user their details changed (field names only, no values)."""
+    if fields:
+        enqueue(tasks.notify_profile_updated, user.pk, list(fields))
 
 
 def _drop_file(field):
@@ -78,6 +92,7 @@ class ProfileAvatarView(APIView):
                 _drop_file(user.avatar)
             user.avatar = upload
             user.save(update_fields=['avatar'])
+            _notify_profile(user, ['avatar'])
         return self._profile(request)
 
     def delete(self, request):
@@ -87,4 +102,5 @@ class ProfileAvatarView(APIView):
                 _drop_file(user.avatar)
                 user.avatar = None
                 user.save(update_fields=['avatar'])
+                _notify_profile(user, ['avatar'])
         return self._profile(request)

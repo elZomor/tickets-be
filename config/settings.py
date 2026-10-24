@@ -48,6 +48,15 @@ THIRD_SIDE_SYSTEM_SENDER = env.str(
 
 REPORT_AUTO_HIDE_THRESHOLD = env.int('REPORT_AUTO_HIDE_THRESHOLD', default=5)
 
+# Third Side Web Push (VAPID). Generate once with `vapid --gen`; the public key
+# is also the frontend's VITE_VAPID_PUBLIC_KEY.
+THIRD_SIDE_SEND_PUSH = env.bool('THIRD_SIDE_SEND_PUSH', default=False)
+VAPID_PUBLIC_KEY = env.str('VAPID_PUBLIC_KEY', default='')
+VAPID_PRIVATE_KEY = env.str('VAPID_PRIVATE_KEY', default='')
+VAPID_SUBJECT = env.str('VAPID_SUBJECT', default='mailto:noreply@third-side.org')
+# Run notification tasks inline instead of through the Celery broker (tests).
+THIRD_SIDE_NOTIFY_EAGER = env.bool('THIRD_SIDE_NOTIFY_EAGER', default=False)
+
 DJANGO_APPS = [
     'admin_interface',
     'colorfield',
@@ -251,7 +260,16 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = 'UTC'
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+    'third-side-promote-scheduled-articles': {
+        'task': 'third_side.tasks.promote_scheduled_articles',
+        'schedule': 60.0,
+    },
+    'third-side-purge-notifications': {
+        'task': 'third_side.tasks.purge_notifications',
+        'schedule': 24 * 60 * 60.0,
+    },
+}
 
 s3_storage = S3Boto3Storage()
 STORAGES = {
