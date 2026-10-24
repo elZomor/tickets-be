@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from third_side.auth import ThirdSideJWTAuthentication
-from third_side.serializers import ProfileSerializer
+from third_side.permissions import EmailVerified
+from third_side.serializers import ProfileSerializer, ProfileUpdateSerializer
 from third_side.services.images import image_error
 
 AVATAR_MAX_BYTES = 5 * 1024 * 1024
@@ -16,8 +17,27 @@ class ProfileMeView(APIView):
     authentication_classes = [ThirdSideJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = ProfileSerializer
+    throttle_scope = 'third_side_write'
 
     def get(self, request):
+        return Response(
+            ProfileSerializer(request.user, context={'request': request}).data
+        )
+
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(
+            request.user, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        # The bio is public-facing text: it waits for a confirmed email.
+        bio = serializer.validated_data.get('bio')
+        if (
+            bio is not None
+            and bio != request.user.bio
+            and not request.user.can_contribute
+        ):
+            return Response(EmailVerified.message, status=status.HTTP_403_FORBIDDEN)
+        serializer.save()
         return Response(
             ProfileSerializer(request.user, context={'request': request}).data
         )
@@ -37,7 +57,7 @@ class ProfileAvatarView(APIView):
     """
 
     authentication_classes = [ThirdSideJWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, EmailVerified]
     parser_classes = [MultiPartParser, FormParser]
     serializer_class = ProfileSerializer
     throttle_scope = 'third_side_write'

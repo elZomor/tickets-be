@@ -33,7 +33,7 @@ class AdminArticleTests(APITestCase):
             'editor@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'reader@example.com', 'pw'
+            'reader@example.com', 'pw', email_verified=True
         )
 
     def body(self, **extra):
@@ -139,7 +139,7 @@ class MediaUploadTests(APITestCase):
             'editor@example.com', 'pw', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'reader@example.com', 'pw'
+            'reader@example.com', 'pw', email_verified=True
         )
 
     def upload(self, name='a.png', data=None, content_type='image/png'):
@@ -184,7 +184,7 @@ class PublishingAndEditorTests(APITestCase):
             'editor@example.com', 'pw', name='Ed', is_superuser=True
         )
         cls.reader = ThirdSideUser.objects.create_user(
-            'reader@example.com', 'pw'
+            'reader@example.com', 'pw', email_verified=True
         )
 
     def body(self, **extra):

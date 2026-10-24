@@ -15,7 +15,9 @@ from .AuthViews import (  # noqa:F401
     ForgotPasswordView,
     LoginView,
     RefreshView,
+    ResendVerificationView,
     ResetPasswordView,
+    VerifyEmailView,
     SignupView,
 )
 from .HomeViews import CategoryPageView, HomeView  # noqa:F401

@@ -45,3 +45,19 @@ class RequirePerm(BasePermission):
         key = getattr(view, 'action', None) or request.method.lower()
         codename = perms.get(key, perms.get('*'))
         return codename is not None and has_perm(request.user, codename)
+
+
+class EmailVerified(BasePermission):
+    """Signed-in readers must have confirmed their email (staff are exempt).
+
+    The 403 carries `code: email_not_verified` so the FE can offer a resend.
+    """
+
+    message = {
+        'detail': 'Confirm your email address first',
+        'code': 'email_not_verified',
+    }
+
+    def has_permission(self, request, view):
+        user = request.user
+        return isinstance(user, ThirdSideUser) and user.can_contribute

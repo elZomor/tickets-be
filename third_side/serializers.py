@@ -261,6 +261,40 @@ class ReportSerializer(serializers.ModelSerializer):
         return obj.content_type.model
 
 
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    """PATCH /profile/me: the reader's own details, all optional."""
+
+    name = serializers.CharField(min_length=2, max_length=150, required=False)
+    bio = serializers.CharField(max_length=500, allow_blank=True, required=False)
+    date_of_birth = serializers.DateField(allow_null=True, required=False)
+
+    class Meta:
+        model = ThirdSideUser
+        fields = [
+            'name',
+            'date_of_birth',
+            'gender',
+            'governorate',
+            'bio',
+            'newsletter_opt_in',
+        ]
+
+    def validate_name(self, value):
+        return value.strip()
+
+    def validate_bio(self, value):
+        return value.strip()
+
+    def validate_date_of_birth(self, value):
+        if value is None:
+            return value
+        today = timezone.localdate()
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 13 or age > 120:
+            raise serializers.ValidationError('Enter a valid date of birth')
+        return value
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     """The signed-in reader: GET /profile/me."""
 
@@ -271,7 +305,21 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ThirdSideUser
-        fields = ['id', 'name', 'email', 'avatar', 'groups', 'permissions']
+        fields = [
+            'id',
+            'name',
+            'email',
+            'avatar',
+            'groups',
+            'permissions',
+            'email_verified',
+            'language',
+            'date_of_birth',
+            'gender',
+            'governorate',
+            'bio',
+            'newsletter_opt_in',
+        ]
         read_only_fields = fields
 
     @staticmethod

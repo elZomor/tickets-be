@@ -33,8 +33,8 @@ class SubmissionImageTests(_MediaTestCase):
     @classmethod
     def setUpTestData(cls):
         Category.objects.create(name='Cinema', slug='cinema')
-        cls.reader = ThirdSideUser.objects.create_user('r@example.com', 'pw')
-        cls.other = ThirdSideUser.objects.create_user('o@example.com', 'pw')
+        cls.reader = ThirdSideUser.objects.create_user('r@example.com', 'pw', email_verified=True)
+        cls.other = ThirdSideUser.objects.create_user('o@example.com', 'pw', email_verified=True)
         cls.editor = ThirdSideUser.objects.create_user(
             'e@example.com', 'pw', is_superuser=True
         )
@@ -108,7 +108,7 @@ class SubmissionImageTests(_MediaTestCase):
 class AvatarTests(_MediaTestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.reader = ThirdSideUser.objects.create_user('r@example.com', 'pw')
+        cls.reader = ThirdSideUser.objects.create_user('r@example.com', 'pw', email_verified=True)
 
     def post(self, file):
         return self.client.post(
