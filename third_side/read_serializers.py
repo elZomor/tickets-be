@@ -304,7 +304,9 @@ class CriticReadSerializer(serializers.ModelSerializer):
         return localize(obj.name_i18n, _lang(self), obj.name)
 
     def get_bio(self, obj) -> str:
-        return localize(obj.bio_i18n, _lang(self), obj.bio or '')
+        # A reader-writer's bio is the one they keep on their profile.
+        fallback = obj.bio or (obj.user.bio if obj.user_id else '')
+        return localize(obj.bio_i18n, _lang(self), fallback or '')
 
     def get_photo(self, obj) -> str | None:
         photo = _media_url(self, obj.photo, obj.photo_url)
