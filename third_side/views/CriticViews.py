@@ -2,6 +2,7 @@ from django.db.models import Count, Q
 from django.http import Http404
 from rest_framework import mixins
 from rest_framework.decorators import action
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -10,7 +11,7 @@ from third_side.auth import ThirdSideJWTAuthentication
 from third_side.views.audit_mixin import AuditedMixin
 from third_side.models import Critic
 from third_side.models.Article import live_q
-from third_side.permissions import RequirePerm, model_perms
+from third_side.permissions import RequirePerm, has_perm, model_perms
 from third_side.read_serializers import CriticReadSerializer
 from third_side.serializers import CriticSerializer
 
@@ -49,10 +50,25 @@ class CriticViewSet(
 
     def filter_queryset(self, queryset):
         # Reader accounts that submitted but have nothing published are not
-        # public writers yet.
-        if self.action in ('list', 'by_slug'):
+        # public writers yet. The admin asks with ?staff=1 to pick any author.
+        if self.action in ('list', 'by_slug') and not self._staff_listing():
             queryset = queryset.filter(Q(user__isnull=True) | Q(article_count__gt=0))
         return super().filter_queryset(queryset)
+
+    def _staff_listing(self):
+        """True for ?staff=1 from a signed-in user who writes or manages critics.
+
+        Reads are anonymous, so the token is checked here, and a bad one just
+        means the public list.
+        """
+        if self.action != 'list' or self.request.query_params.get('staff') != '1':
+            return False
+        try:
+            auth = ThirdSideJWTAuthentication().authenticate(self.request)
+        except AuthenticationFailed:
+            return False
+        user = auth[0] if auth else None
+        return has_perm(user, 'view_critic') or has_perm(user, 'add_article')
 
     def get_authenticators(self):
         if getattr(self.request, 'method', None) == 'GET':

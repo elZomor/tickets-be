@@ -41,6 +41,7 @@ def _localized_site(site, lang, request=None):
                 'phone': contact.get('phone', ''),
                 'address': localize(contact.get('address'), lang),
             },
+            'about': localize(site.about, lang),
             'social': site.social or [],
             'sponsors': [
                 {

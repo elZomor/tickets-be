@@ -147,7 +147,7 @@ class NotificationTests(APITestCase):
             article.status = ArticleStatus.CHANGES_REQUESTED
             article.save()
         row = self.inbox(self.author, type=NotificationType.ARTICLE_STATUS).get()
-        self.assertEqual(row.params['status'], ArticleStatus.CHANGES_REQUESTED)
+        self.assertEqual(row.params['status'], 'changes_requested')
 
     def test_author_own_moves_are_not_notified(self):
         article = Article.objects.create(
@@ -416,3 +416,27 @@ class ExpoPushTests(APITestCase):
         self.ok(post)
         self.comment()
         self.assertEqual(post.call_count, 1)
+
+
+class StatusTextTests(APITestCase):
+    """The status is spelled in the reader's language, whatever its casing."""
+
+    def render(self, lang, status):
+        from third_side.models import Notification
+        from third_side.services.push import render
+
+        row = Notification(
+            type=NotificationType.ARTICLE_STATUS,
+            params={'title': 'T', 'status': status},
+            count=1,
+        )
+        return render(row, lang)['body']
+
+    def test_lowercase_status_is_translated(self):
+        self.assertIn('منشور', self.render('ar', 'published'))
+        self.assertIn('published', self.render('en', 'published'))
+
+    def test_rows_saved_with_the_raw_enum_are_translated_too(self):
+        body = self.render('ar', 'PUBLISHED')
+        self.assertIn('منشور', body)
+        self.assertNotIn('PUBLISHED', body)

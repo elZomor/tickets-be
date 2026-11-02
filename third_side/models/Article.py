@@ -121,6 +121,7 @@ class Article(models.Model):
         permissions = [
             ('review_article', 'Can review articles'),
             ('publish_article', 'Can publish and archive articles'),
+            ('edit_published_article', 'Can edit published articles'),
         ]
 
     def __str__(self):

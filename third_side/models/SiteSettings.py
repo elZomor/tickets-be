@@ -8,12 +8,14 @@ class SiteSettings(models.Model):
     contact:  {email, phone, address{loc}}
     social:   [{network, url}]
     sponsors: [{id, name{loc}, url, logo?}]
+    about:    the footer blurb, {loc: text}; empty falls back to the site's own text
     """
 
     hero = models.JSONField(default=dict, blank=True)
     contact = models.JSONField(default=dict, blank=True)
     social = models.JSONField(default=list, blank=True)
     sponsors = models.JSONField(default=list, blank=True)
+    about = models.JSONField(default=dict, blank=True)
 
     class Meta:
         verbose_name_plural = 'Site settings'

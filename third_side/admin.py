@@ -36,7 +36,7 @@ class JsonFieldsAdmin(admin.ModelAdmin):
 
 @admin.register(NavGroup)
 class NavGroupAdmin(JsonFieldsAdmin):
-    list_display = ('slug', 'order')
+    list_display = ('slug', 'order', 'is_coming_soon')
 
 
 @admin.register(Tag)
@@ -111,7 +111,15 @@ class ThirdSideUserAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(JsonFieldsAdmin):
-    list_display = ('name', 'slug', 'group', 'order', 'show_in_nav', 'featured')
+    list_display = (
+        'name',
+        'slug',
+        'group',
+        'order',
+        'show_in_nav',
+        'featured',
+        'is_coming_soon',
+    )
     prepopulated_fields = {'slug': ('name',)}
 
 

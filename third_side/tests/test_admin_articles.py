@@ -1,6 +1,7 @@
 import io
 from datetime import timedelta
 
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from django.utils import timezone
@@ -10,6 +11,7 @@ from rest_framework.test import APITestCase
 from third_side.i18n import slug_from_title
 from third_side.models import Article, Category, Critic, Media, Tag, ThirdSideUser
 from third_side.models.Article import ArticleStatus
+from third_side.services.roles import sync_roles
 
 
 def lexical(text):
@@ -430,9 +432,10 @@ class PublishedArticleLockTests(APITestCase):
     def setUpTestData(cls):
         cls.category = Category.objects.create(name='Cinema', slug='cinema')
         cls.critic = Critic.objects.create(name='Writer')
-        cls.editor = ThirdSideUser.objects.create_user(
-            'editor@example.com', 'pw', is_superuser=True
-        )
+        # A publisher, not a superuser: only edit_published_article may edit.
+        sync_roles()
+        cls.editor = ThirdSideUser.objects.create_user('editor@example.com', 'pw')
+        cls.editor.groups.add(Group.objects.get(name='Publisher'))
 
     def setUp(self):
         self.client.force_authenticate(self.editor)
