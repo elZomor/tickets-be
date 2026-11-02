@@ -1,4 +1,5 @@
 import os
+import sys
 from .constants import (
     AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY,
@@ -101,6 +102,8 @@ INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    # After CORS so cached bodies still get CORS headers.
+    'third_side.middleware.AnonymousReadCacheMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -256,6 +259,24 @@ AWS_S3_REGION_NAME = AWS_S3_REGION_NAME
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 AWS_S3_VERIFY = True
+
+# Shared cache (anonymous Third Side reads, see third_side/middleware.py).
+# Redis when REDIS_URL is set in the environment, else per-process memory.
+if os.environ.get('REDIS_URL'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            'KEY_PREFIX': 'tickets-be',
+        }
+    }
+else:
+    CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+# 0 = off. Off under `manage.py test` so write-then-read tests see fresh data.
+THIRD_SIDE_READ_CACHE_TTL = (
+    0 if 'test' in sys.argv[1:2] else env.int('THIRD_SIDE_READ_CACHE_TTL', default=60)
+)
+THIRD_SIDE_READ_CACHE_SWR = env.int('THIRD_SIDE_READ_CACHE_SWR', default=300)
 
 # Celery configuration
 CELERY_BROKER_URL = REDIS_URL
