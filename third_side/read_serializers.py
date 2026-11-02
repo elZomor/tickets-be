@@ -53,6 +53,7 @@ class NavGroupSerializer(serializers.ModelSerializer):
             'tagline',
             'description',
             'image',
+            'is_coming_soon',
             'categories',
         ]
 
@@ -95,6 +96,7 @@ class CategoryReadSerializer(serializers.ModelSerializer):
             'group',
             'show_in_nav',
             'featured',
+            'is_coming_soon',
             'name',
             'url_slug',
             'url_slugs',

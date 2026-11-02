@@ -40,6 +40,7 @@ COPY = {
             'published': 'منشور',
             'archived': 'مؤرشف',
             'rejected': 'مرفوض',
+            'reported': 'مُبلَّغ عنه',
         },
         T.ARTICLE_STATUS: 'تغيّرت حالة مقالك «{title}»: {status}',
         T.PROFILE_UPDATED: 'تم تحديث بيانات حسابك',
@@ -66,6 +67,7 @@ COPY = {
             'published': 'published',
             'archived': 'archived',
             'rejected': 'rejected',
+            'reported': 'reported',
         },
         T.ARTICLE_STATUS: 'Your article “{title}” is now {status}',
         T.PROFILE_UPDATED: 'Your account details were updated',
@@ -92,6 +94,7 @@ COPY = {
             'published': 'publicat',
             'archived': 'arhivat',
             'rejected': 'respins',
+            'reported': 'semnalat',
         },
         T.ARTICLE_STATUS: 'Articolul tău „{title}” este acum {status}',
         T.PROFILE_UPDATED: 'Datele contului tău au fost actualizate',
@@ -110,6 +113,13 @@ COPY = {
 }
 
 
+def _status_text(copy, status):
+    """The status in the reader's language. Rows saved before the key was
+    lowercased hold the raw enum (PUBLISHED), so the lookup ignores case."""
+    status = status or ''
+    return copy['status'].get(status.lower(), status)
+
+
 def render(notification, lang):
     """{title, body, url, tag} of a notification in `lang`."""
     copy = COPY[lang]
@@ -120,7 +130,7 @@ def render(notification, lang):
     if kind == T.ARTICLE_STATUS:
         body = copy[kind].format(
             title=params.get('title', ''),
-            status=copy['status'].get(params.get('status'), params.get('status', '')),
+            status=_status_text(copy, params.get('status')),
         )
     elif kind == T.CONTENT_REPORTED:
         target = copy['target_' + params.get('target', 'article')].format(

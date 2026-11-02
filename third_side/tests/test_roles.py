@@ -8,6 +8,7 @@ from rest_framework.test import APITestCase
 
 from third_side.models import Article, Category, Comment, Critic, Report, ThirdSideUser
 from third_side.models.Article import ArticleStatus
+from third_side.auth import issue_tokens
 from third_side.services.roles import ROLES, sync_roles
 
 
@@ -30,8 +31,8 @@ class RoleTestCase(APITestCase):
             )
             user.groups.add(Group.objects.get(name=name))
             cls.users[name] = user
-        cls.users['Admin'] = ThirdSideUser.objects.create_user(
-            'admin@example.com', 'pw', is_superuser=True
+        cls.users['Superuser'] = ThirdSideUser.objects.create_user(
+            'superuser@example.com', 'pw', is_superuser=True
         )
         cls.users['Reader'] = ThirdSideUser.objects.create_user(
             'reader@example.com', 'pw'
@@ -90,14 +91,21 @@ class GroupsTests(RoleTestCase):
         self.assertEqual(me['groups'], ['Moderator'])
         self.assertIn('change_report', me['permissions'])
         self.assertNotIn('add_article', me['permissions'])
-        self.as_('Admin')
+        self.as_('Superuser')
         admin = self.client.get('/third_side/profile/me').data
         self.assertIn('change_sitesettings', admin['permissions'])
 
     def test_a_group_member_does_not_get_more_than_the_group(self):
         self.assertFalse(self.users['Writer'].has_perm('third_side.publish_article'))
         self.assertTrue(self.users['Publisher'].has_perm('third_side.publish_article'))
+        self.assertTrue(
+            self.users['Superuser'].has_perm('third_side.change_sitesettings')
+        )
         self.assertTrue(self.users['Admin'].has_perm('third_side.change_sitesettings'))
+        self.assertTrue(self.users['Admin'].has_perm('third_side.edit_published_article'))
+        self.assertFalse(
+            self.users['Publisher'].has_perm('third_side.edit_published_article')
+        )
         self.assertFalse(self.users['Reader'].has_perm('third_side.add_article'))
 
 
@@ -253,6 +261,7 @@ class ReviewerTests(RoleTestCase):
                 self.users['Reviewer'].pk,
                 self.users['Publisher'].pk,
                 self.users['Admin'].pk,
+                self.users['Superuser'].pk,
             },
         )
 
@@ -321,15 +330,118 @@ class MarketingTests(RoleTestCase):
         self.assertEqual(self.client.get('/third_side/activity-log').status_code, 403)
 
 
-class SiteAdminTests(RoleTestCase):
-    def test_a_superuser_can_do_everything(self):
+class AdminTests(RoleTestCase):
+    def test_holds_every_permission_of_the_app(self):
+        from django.contrib.auth.models import Permission
+
+        group = Group.objects.get(name='Admin')
+        self.assertEqual(
+            set(group.permissions.values_list('codename', flat=True)),
+            set(
+                Permission.objects.filter(
+                    content_type__app_label='third_side'
+                ).values_list('codename', flat=True)
+            ),
+        )
+
+    def test_edits_a_published_article(self):
         self.as_('Admin')
+        article = self.article(ArticleStatus.PUBLISHED, author='Writer')
+        response = self.patch(article, title='fixed')
+        self.assertEqual(response.status_code, 200, response.data)
+        article.refresh_from_db()
+        self.assertEqual(article.title, 'fixed')
+
+    def test_others_find_a_published_article_locked(self):
+        article = self.article(ArticleStatus.PUBLISHED, author='Writer', slug='live')
+        self.as_('Writer')
+        self.assertEqual(self.patch(article, title='x').status_code, 403)
+        for role in ('Reviewer', 'Publisher'):
+            self.as_(role)
+            self.assertEqual(self.patch(article, title='x').status_code, 400, role)
+
+    def test_any_group_can_be_granted_the_permission_by_hand(self):
+        from django.contrib.auth.models import Permission
+
+        perm = Permission.objects.get(codename='edit_published_article')
+        Group.objects.get(name='Publisher').permissions.add(perm)
+        sync_roles()  # runs on every migrate: must not take the grant back
+        self.assertTrue(
+            Group.objects.get(name='Publisher')
+            .permissions.filter(codename='edit_published_article')
+            .exists()
+        )
+        article = self.article(ArticleStatus.PUBLISHED, slug='live')
+        self.as_('Publisher')
+        self.assertEqual(self.patch(article, title='fixed').status_code, 200)
+
+    def test_sync_still_takes_back_other_hand_grants(self):
+        from django.contrib.auth.models import Permission
+
+        perm = Permission.objects.get(codename='publish_article')
+        group = Group.objects.get(name='Writer')
+        group.permissions.add(perm)
+        sync_roles()
+        self.assertFalse(group.permissions.filter(codename='publish_article').exists())
+
+    def test_cannot_delete_a_published_article(self):
+        self.as_('Admin')
+        article = self.article(ArticleStatus.PUBLISHED, slug='live')
+        response = self.client.delete(f'/third_side/articles/{article.pk}')
+        self.assertEqual(response.status_code, 400)
+
+
+class SuperuserTests(RoleTestCase):
+    def test_a_superuser_can_do_everything(self):
+        self.as_('Superuser')
         article = self.article(ArticleStatus.SUBMITTED, author='Writer')
         self.assertEqual(self.patch(article, status='PUBLISHED').status_code, 200)
         self.assertEqual(self.client.get('/third_side/footer').status_code, 200)
         self.assertEqual(self.client.get('/third_side/activity-log').status_code, 200)
 
     def test_an_inactive_account_holds_nothing(self):
-        user = self.users['Admin']
+        user = self.users['Superuser']
         user.is_active = False
         self.assertFalse(user.has_perm('third_side.add_article'))
+
+
+class CriticListTests(RoleTestCase):
+    """A reader's writer profile is hidden from the public list until they have
+    a live article, but staff picking an author must see it."""
+
+    def setUp(self):
+        super().setUp()
+        self.reader_critic = Critic.objects.create(
+            name='Newcomer', user=self.users['Reader']
+        )
+
+    def ids(self, query='', role=None):
+        # The list reads the token itself (GET is anonymous), so send a real one.
+        extra = {}
+        if role:
+            token = issue_tokens(self.users[role])['access']
+            extra['HTTP_AUTHORIZATION'] = f'Bearer {token}'
+        response = self.client.get(f'/third_side/critics{query}', **extra)
+        self.assertEqual(response.status_code, 200)
+        return {row['id'] for row in response.data['results']}
+
+    def test_public_list_hides_a_writer_without_live_articles(self):
+        self.assertNotIn(self.reader_critic.pk, self.ids())
+        self.assertNotIn(self.reader_critic.pk, self.ids('?staff=1'))
+
+    def test_staff_list_includes_them(self):
+        for role in ('Writer', 'Content Manager', 'Admin'):
+            self.assertIn(self.reader_critic.pk, self.ids('?staff=1', role), role)
+        # Without the flag even staff get the public list.
+        self.assertNotIn(self.reader_critic.pk, self.ids('', 'Admin'))
+
+    def test_a_reader_or_a_moderator_gets_the_public_list(self):
+        for role in ('Reader', 'Moderator'):
+            self.assertNotIn(self.reader_critic.pk, self.ids('?staff=1', role), role)
+
+    def test_a_bad_token_gets_the_public_list(self):
+        response = self.client.get(
+            '/third_side/critics?staff=1', HTTP_AUTHORIZATION='Bearer nonsense'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(self.reader_critic.pk, {r['id'] for r in response.data['results']})

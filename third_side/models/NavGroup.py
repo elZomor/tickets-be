@@ -19,6 +19,8 @@ class NavGroup(models.Model):
         upload_to=AsciiUploadTo('third_side/groups'), null=True, blank=True
     )
     image_url = models.CharField(max_length=300, blank=True, default='')
+    # Announced but not built: its own page shows Coming Soon.
+    is_coming_soon = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['order', 'id']

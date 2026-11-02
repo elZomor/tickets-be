@@ -39,7 +39,8 @@ class ArticlePermission(BasePermission):
     add_article: create. change_article: edit any article. An author (add_article
     without change_article) edits only their own piece, and only while it is in
     AUTHOR_EDITABLE. Reading one article's editor doc needs view_article, or being
-    its author. Deleting needs delete_article.
+    its author. Deleting needs delete_article. A published article is
+    locked (see _refuse_if_published); only edit_published_article may change it.
     """
 
     def has_permission(self, request, view):
@@ -194,8 +195,13 @@ class ArticleViewSet(
         self._check_write(serializer)
         super().perform_update(serializer)
 
-    def _refuse_if_published(self, article):
-        """A published article is final: no edits, no state change, no delete."""
+    def _refuse_if_published(self, article, *, editing=False):
+        """A published article is final: no edits, no state change, no delete.
+
+        Holders of edit_published_article may still edit it (not delete it).
+        """
+        if editing and has_perm(self.request.user, 'edit_published_article'):
+            return
         if article.status == ArticleStatus.PUBLISHED:
             raise ValidationError(
                 {
@@ -205,7 +211,7 @@ class ArticleViewSet(
             )
 
     def update(self, request, *args, **kwargs):
-        self._refuse_if_published(self.get_object())
+        self._refuse_if_published(self.get_object(), editing=True)
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):

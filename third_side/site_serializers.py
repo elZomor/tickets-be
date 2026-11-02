@@ -19,6 +19,7 @@ SOCIAL_NETWORKS = ('facebook', 'instagram', 'x', 'tiktok', 'youtube')
 # Keys inside the About content that hold an image.
 IMAGE_KEYS = ('image',)
 MAX_ABOUT_BYTES = 200_000
+MAX_ABOUT_CHARS = 400  # the footer blurb
 
 
 def clean_url_slugs(value, field='url_slug'):
@@ -141,6 +142,7 @@ class NavGroupWriteSerializer(_SectionWriteSerializer):
             'tagline',
             'description',
             'image_url',
+            'is_coming_soon',
         ]
 
     def get_fields(self):
@@ -178,6 +180,7 @@ class CategoryWriteSerializer(_SectionWriteSerializer):
             'group_order',
             'show_in_nav',
             'featured',
+            'is_coming_soon',
             'url_slug',
             'tagline',
             'description',
@@ -259,6 +262,17 @@ class FooterSerializer(serializers.Serializer):
     contact = ContactSerializer()
     social = SocialLinkSerializer(many=True)
     sponsors = SponsorSerializer(many=True)
+    # Optional, so an older admin that does not send it leaves the text alone.
+    about = serializers.JSONField(required=False)
+
+    def validate_about(self, value):
+        cleaned = _clean_text_map(value, 'about')
+        too_long = [loc for loc, text in cleaned.items() if len(text) > MAX_ABOUT_CHARS]
+        if too_long:
+            raise serializers.ValidationError(
+                f'At most {MAX_ABOUT_CHARS} characters ({", ".join(too_long)}).'
+            )
+        return cleaned
 
     def validate_social(self, value):
         networks = [item['network'] for item in value]
@@ -284,6 +298,8 @@ class FooterSerializer(serializers.Serializer):
         site.contact = dict(data['contact'])
         site.social = [dict(item) for item in data['social']]
         site.sponsors = [dict(item) for item in data['sponsors']]
+        if 'about' in data:
+            site.about = data['about']
         site.save()
         return site
 
@@ -296,6 +312,7 @@ def footer_payload(site, request):
             'phone': contact.get('phone', ''),
             'address': contact.get('address') or {},
         },
+        'about': site.about or {},
         'social': site.social or [],
         'sponsors': [
             {**item, 'logo': to_url(item.get('logo'), request) or ''}

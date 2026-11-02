@@ -74,7 +74,7 @@ def notify_article_status(article_id, new_status, dedupe_key):
     notify(
         [article_author_id(article)],
         NotificationType.ARTICLE_STATUS,
-        _article_params(article, status=new_status),
+        _article_params(article, status=new_status.lower()),
         dedupe_key,
     )
 

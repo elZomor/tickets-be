@@ -246,6 +246,30 @@ FOOTER = {
 
 
 class FooterAdminTests(_EditorTestCase):
+    def test_the_footer_text_is_saved_and_served_per_language(self):
+        body = {**FOOTER, 'about': {'ar': 'نص الفوتر', 'en': 'Footer text'}}
+        response = self.client.put('/third_side/footer', body, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data['about']['en'], 'Footer text')
+        self.client.force_authenticate(None)
+        cache.clear()
+        ar = self.client.get('/third_side/home?lang=ar').data['site']
+        ro = self.client.get('/third_side/home?lang=ro').data['site']
+        self.assertEqual(ar['about'], 'نص الفوتر')
+        self.assertEqual(ro['about'], 'نص الفوتر')  # no Romanian: the default language
+
+    def test_saving_without_the_text_keeps_it(self):
+        SiteSettings.objects.create(about={'en': 'Keep me'})
+        response = self.client.put('/third_side/footer', FOOTER, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(SiteSettings.load().about, {'en': 'Keep me'})
+
+    def test_the_footer_text_has_a_length_limit(self):
+        body = {**FOOTER, 'about': {'en': 'x' * 401}}
+        self.assertEqual(
+            self.client.put('/third_side/footer', body, format='json').status_code, 400
+        )
+
     def test_save_keeps_the_hero_and_numbers_new_sponsors(self):
         SiteSettings.objects.create(hero={'image': '/mock/hero.jpg'})
         response = self.client.put('/third_side/footer', FOOTER, format='json')
