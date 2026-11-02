@@ -21,6 +21,7 @@ from third_side.views import (
     FollowView,
     FooterView,
     ForgotPasswordView,
+    AdminLoginView,
     LoginView,
     RefreshView,
     HomeView,
@@ -68,6 +69,7 @@ router.register(r'notifications', NotificationViewSet, basename='notification-vi
 
 urlpatterns = [
     path('auth/login', LoginView.as_view(), name='auth-login'),
+    path('auth/admin-login', AdminLoginView.as_view(), name='auth-admin-login'),
     path('auth/refresh', RefreshView.as_view(), name='auth-refresh'),
     path('auth/signup', SignupView.as_view(), name='auth-signup'),
     path('auth/forgot-password', ForgotPasswordView.as_view(), name='auth-forgot'),

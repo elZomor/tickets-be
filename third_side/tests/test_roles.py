@@ -445,3 +445,46 @@ class CriticListTests(RoleTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertNotIn(self.reader_critic.pk, {r['id'] for r in response.data['results']})
+
+
+class AdminLoginTests(RoleTestCase):
+    """The dashboard has its own sign-in, and a reader never gets a token."""
+
+    URL = '/third_side/auth/admin-login'
+
+    def login(self, email, password='pw'):
+        return self.client.post(
+            self.URL, {'email': email, 'password': password}, format='json'
+        )
+
+    def test_a_reader_with_the_right_password_gets_no_token(self):
+        response = self.login('reader@example.com')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['code'], 'not_staff')
+        self.assertNotIn('access', response.data)
+
+    def test_every_role_and_a_superuser_sign_in(self):
+        for role in ROLES:
+            email = f"{role.lower().replace(' ', '')}@example.com"
+            response = self.login(email)
+            self.assertEqual(response.status_code, 200, role)
+            self.assertIn('access', response.data)
+        self.assertEqual(self.login('superuser@example.com').status_code, 200)
+
+    def test_a_wrong_password_is_the_usual_400(self):
+        self.assertEqual(self.login('writer@example.com', 'nope').status_code, 400)
+        self.assertEqual(self.login('reader@example.com', 'nope').status_code, 400)
+
+    def test_an_inactive_staff_account_is_refused(self):
+        user = self.users['Writer']
+        user.is_active = False
+        user.save()
+        self.assertEqual(self.login('writer@example.com').status_code, 400)
+
+    def test_the_public_login_still_serves_readers(self):
+        response = self.client.post(
+            '/third_side/auth/login',
+            {'email': 'reader@example.com', 'password': 'pw'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 200)

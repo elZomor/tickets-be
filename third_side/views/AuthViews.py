@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 
 from third_side.auth import ThirdSideJWTAuthentication, issue_tokens, rotate_refresh
 from third_side.models import TermsAcceptance, TermsVersion, ThirdSideUser
+from third_side.services.account import is_staff_account
 from third_side.services.account_mail import (
     mark_verified,
     read_token,
@@ -127,6 +128,8 @@ class SignupView(PublicAuthView):
 
 class LoginView(PublicAuthView):
     serializer_class = LoginSerializer
+    # The admin dashboard signs in through a subclass that refuses readers.
+    staff_only = False
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -142,7 +145,20 @@ class LoginView(PublicAuthView):
             return Response(
                 {'detail': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST
             )
+        if self.staff_only and not is_staff_account(user):
+            # Right credentials, but no role: no token is issued for the dashboard.
+            return Response(
+                {'detail': 'This area is for the team', 'code': 'not_staff'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         return Response(issue_tokens(user))
+
+
+class AdminLoginView(LoginView):
+    """POST auth/admin-login: sign in to the admin dashboard. Only staff (a
+    role, or a superuser) get tokens; a reader's valid password gets a 403."""
+
+    staff_only = True
 
 
 class RefreshView(PublicAuthView):
