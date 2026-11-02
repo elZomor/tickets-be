@@ -13,6 +13,7 @@ from .CommentViews import CommentViewSet  # noqa:F401
 from .ReportViews import ReportViewSet  # noqa:F401
 from .AuthViews import (  # noqa:F401
     ForgotPasswordView,
+    AdminLoginView,
     LoginView,
     RefreshView,
     ResendVerificationView,
