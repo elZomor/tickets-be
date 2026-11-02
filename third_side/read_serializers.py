@@ -127,7 +127,9 @@ class CategoryReadSerializer(serializers.ModelSerializer):
         return _media_url(self, obj.image, obj.image_url)
 
     def get_hero_image(self, obj) -> str | None:
-        return obj.hero_image_url or _media_url(self, obj.image, obj.image_url)
+        # hero_image_url holds a bare storage key when set from the admin.
+        hero = to_url(obj.hero_image_url, self.context.get('request'))
+        return hero or _media_url(self, obj.image, obj.image_url)
 
 
 class TagSerializer(serializers.ModelSerializer):

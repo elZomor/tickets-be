@@ -44,3 +44,17 @@ class AnonymousReadCacheTests(APITestCase):
         self.assertEqual(
             self.client.get('/third_side/nav-groups?page=1&lang=en')['X-Cache'], 'HIT'
         )
+
+
+class CategoryHeroImageTests(APITestCase):
+    def test_hero_image_key_is_served_as_a_full_url(self):
+        from third_side.models import Category
+
+        Category.objects.create(
+            name='Lit', slug='lit', hero_image_url='third_side/media/hero-abc.png'
+        )
+        data = self.client.get('/third_side/categories?lang=en').data['results']
+        hero = next(c for c in data if c['slug'] == 'lit')
+        self.assertTrue(
+            hero.get('hero_image', '').startswith('http'), hero.get('hero_image')
+        )
