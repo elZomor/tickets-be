@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase, override_settings
 
-from third_side.models import Article, Category, NavGroup, ThirdSideUser
+from third_side.models import Category, NavGroup, ThirdSideUser
 from third_side.services.media_urls import file_url, to_key, to_url
 from third_side.tests.test_reader_uploads import _MediaTestCase, image
 

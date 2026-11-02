@@ -29,8 +29,12 @@ class ResolveSerializer(serializers.Serializer):
     # Warn / delete / suspend may also hide the content (hide, suspend always do).
     hide_content = serializers.BooleanField(required=False, default=False)
     send_email = serializers.BooleanField(required=False, default=False)
-    email_subject = serializers.CharField(required=False, allow_blank=True, max_length=200)
-    email_body = serializers.CharField(required=False, allow_blank=True, max_length=4000)
+    email_subject = serializers.CharField(
+        required=False, allow_blank=True, max_length=200
+    )
+    email_body = serializers.CharField(
+        required=False, allow_blank=True, max_length=4000
+    )
     notify_reporters = serializers.BooleanField(required=False, default=True)
 
 
@@ -123,7 +127,9 @@ class ReportViewSet(
         author = report_target_author(report)
         if author is None:
             return Response({'detail': 'The target has no author'}, status=404)
-        return Response(moderation_mail.warning_template(author, report.content_type.model))
+        return Response(
+            moderation_mail.warning_template(author, report.content_type.model)
+        )
 
     @action(detail=True, methods=['POST'])
     def resolve(self, request, pk=None):
@@ -148,12 +154,18 @@ class ReportViewSet(
             if author is None:
                 return Response({'detail': 'The target has no author'}, status=400)
             if author.is_superuser or author.groups.exists():
-                return Response({'detail': 'Staff accounts cannot be suspended here'}, status=400)
+                return Response(
+                    {'detail': 'Staff accounts cannot be suspended here'}, status=400
+                )
         if data['send_email']:
             if author is None:
-                return Response({'detail': 'The target has no author to email'}, status=400)
+                return Response(
+                    {'detail': 'The target has no author to email'}, status=400
+                )
             if not (data.get('email_subject') and data.get('email_body')):
-                return Response({'detail': 'Email subject and body are required'}, status=400)
+                return Response(
+                    {'detail': 'Email subject and body are required'}, status=400
+                )
 
         label = f'{model} #{report.object_id}'
         # Every open report on the same target is settled by this one decision.
