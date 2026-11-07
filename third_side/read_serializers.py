@@ -1,4 +1,4 @@
-"""Read-side serializers shaped for the Third Side frontend (?lang=ar|en|ro)."""
+"""Read-side serializers shaped for the Third Side frontend (?lang=ar|en)."""
 
 from rest_framework import serializers
 
@@ -114,7 +114,7 @@ class CategoryReadSerializer(serializers.ModelSerializer):
 
     def get_url_slugs(self, obj) -> dict:
         return {
-            code: localize(obj.url_slug, code, obj.slug) for code in ('ar', 'en', 'ro')
+            code: localize(obj.url_slug, code, obj.slug) for code in LOCALES
         }
 
     def get_tagline(self, obj) -> str:

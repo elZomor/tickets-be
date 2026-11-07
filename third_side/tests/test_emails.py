@@ -144,7 +144,7 @@ class SignatureTests(APITestCase):
 
     def put(self, **kwargs):
         body = {
-            'name': {'ar': 'محمد الزمر', 'en': 'Mohamed Elzomor', 'ro': 'x'},
+            'name': {'ar': 'محمد الزمر', 'en': 'Mohamed Elzomor', 'fr': 'x'},
             'title': {'ar': 'رئيس التحرير', 'en': ''},
             'phone': ' +20 100 000 0000 ',
         }

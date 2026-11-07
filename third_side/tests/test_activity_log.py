@@ -297,10 +297,10 @@ class TagCreateTests(APITestCase):
         response = self.post({'ar': 'مسرح الشارع', 'en': 'Street Theatre'})
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(response.data['slug'], 'street-theatre')
-        self.assertEqual(response.data['name']['ro'], 'مسرح الشارع')
+        self.assertEqual(response.data['name']['ar'], 'مسرح الشارع')
         self.assertEqual(
             response.data['url_slug'],
-            {'ar': 'مسرح-الشارع', 'en': 'street-theatre', 'ro': 'مسرح-الشارع'},
+            {'ar': 'مسرح-الشارع', 'en': 'street-theatre'},
         )
         row = ActivityLog.objects.get()
         self.assertEqual((row.action, row.object_type), ('create', 'tag'))
@@ -311,7 +311,7 @@ class TagCreateTests(APITestCase):
         response = self.post({'ar': 'نقد'})
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(response.data['slug'], 'نقد')
-        self.assertEqual(response.data['name'], {'ar': 'نقد', 'en': 'نقد', 'ro': 'نقد'})
+        self.assertEqual(response.data['name'], {'ar': 'نقد', 'en': 'نقد'})
 
     def test_bad_names_are_rejected(self):
         self.client.force_authenticate(self.editor)

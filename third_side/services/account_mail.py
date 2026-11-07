@@ -23,9 +23,9 @@ TOKEN_SALT = 'third-side.verify-email'
 TOKEN_MAX_AGE = 3 * 24 * 60 * 60
 
 # The FE serves these pages at localized URL segments (accountPaths.ts).
-VERIFY_SEGMENTS = {'ar': 'تأكيد-البريد', 'en': 'verify-email', 'ro': 'confirmare-email'}
-PROFILE_SEGMENTS = {'ar': 'ملفي-الشخصي', 'en': 'profile', 'ro': 'profil'}
-SUBMIT_SEGMENTS = {'ar': 'إرسال-مقال', 'en': 'submit-article', 'ro': 'trimite-articol'}
+VERIFY_SEGMENTS = {'ar': 'تأكيد-البريد', 'en': 'verify-email'}
+PROFILE_SEGMENTS = {'ar': 'ملفي-الشخصي', 'en': 'profile'}
+SUBMIT_SEGMENTS = {'ar': 'إرسال-مقال', 'en': 'submit-article'}
 
 COPY = {
     'ar': {
@@ -65,25 +65,6 @@ COPY = {
         'welcome_profile': 'Complete your profile',
         'welcome_submit': 'Submit an article',
         'welcome_close': "We write about the arts from a third angle — we're happy to have you in it.",
-    },
-    'ro': {
-        'dir': 'ltr',
-        'verify_subject': 'Bun venit la Third Side — confirmă adresa de email',
-        'verify_hello': 'Salut {name},',
-        'verify_intro': 'Ne bucurăm că te-ai alăturat Third Side. Mai e un pas mic: confirmă adresa de email ca să deblocăm totul — trimiterea articolelor, poza ta și o scurtă prezentare.',
-        'verify_button': 'Confirmă emailul',
-        'verify_fallback': 'Dacă butonul nu merge, copiază acest link în browser:',
-        'verify_note': 'Linkul este valabil 3 zile. Dacă nu ai creat un cont la noi, ignoră acest mesaj și nu se întâmplă nimic.',
-        'welcome_subject': 'Email confirmat — bun venit la Third Side',
-        'welcome_hello': 'Salut {name},',
-        'welcome_intro': 'Mulțumim că ți-ai confirmat emailul și bine ai venit printre cititorii și autorii noștri. Acum poți:',
-        'welcome_items': [
-            'Să trimiți un articol pentru a fi revizuit de redacție',
-            'Să adaugi poza ta și o scurtă prezentare',
-        ],
-        'welcome_profile': 'Completează-ți profilul',
-        'welcome_submit': 'Trimite un articol',
-        'welcome_close': 'Scriem despre artă dintr-un al treilea unghi — ne bucurăm să fii parte din el.',
     },
 }
 

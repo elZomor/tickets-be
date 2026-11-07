@@ -1,7 +1,7 @@
 """Moderation mail: a warning to the author of reported content, and a short
 thank-you to each reporter once their report is resolved.
 
-Text is trilingual (ar / en / ro) and follows the recipient's `language`. The
+Text is bilingual (ar / en) and follows the recipient's `language`. The
 warning body is a template the moderator may edit before it is sent.
 """
 
@@ -32,15 +32,6 @@ COPY = {
         'target_article': 'your article',
         'thanks_subject': 'Thank you for your report',
         'thanks_body': 'Hi {name},\n\nThank you for reporting. Our moderation team has reviewed your report and taken the appropriate action. Reports from readers help us keep a safe place for discussion.',
-    },
-    'ro': {
-        'dir': 'ltr',
-        'warn_subject': 'O notificare despre conținutul tău de pe Third Side',
-        'warn_body': 'Salut {name},\n\nEchipa noastră de moderare a verificat {target} publicat de tine pe Third Side și a constatat că nu respectă regulile de publicare.\n\nTe rugăm să respecți regulile în ce publici de acum încolo. Încălcările repetate pot duce la suspendarea contului.\n\nDacă crezi că decizia este greșită, poți răspunde la acest mesaj.',
-        'target_comment': 'comentariul tău',
-        'target_article': 'articolul tău',
-        'thanks_subject': 'Îți mulțumim pentru raportare',
-        'thanks_body': 'Salut {name},\n\nÎți mulțumim pentru raportare. Echipa de moderare ți-a verificat raportarea și a luat măsurile potrivite. Raportările cititorilor ne ajută să păstrăm un loc sigur pentru discuții.',
     },
 }
 

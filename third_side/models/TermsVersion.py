@@ -9,7 +9,7 @@ class TermsVersion(models.Model):
     user accepted stays reproducible. `content` is
       {title: {ar,en,ro},
        sections: [{heading: {..}, paragraphs: [{..}], bullets: [{..}]}]}
-    with every text a {"ar": ..., "en": ..., "ro": ...} map (resolved per
+    with every text a {"ar": ..., "en": ...} map (resolved per
     ?lang= on read).
     """
 

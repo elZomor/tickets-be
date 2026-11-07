@@ -15,7 +15,7 @@ GENDERS = [
     ('other', 'Other'),
     ('prefer_not', 'Prefer not to say'),
 ]
-LANGUAGES = [('ar', 'Arabic'), ('en', 'English'), ('ro', 'Romanian')]
+LANGUAGES = [('ar', 'Arabic'), ('en', 'English')]
 # Egypt's 27 governorates (labels live in the FE); `outside_egypt` for the rest.
 GOVERNORATES = [
     ('cairo', 'Cairo'),

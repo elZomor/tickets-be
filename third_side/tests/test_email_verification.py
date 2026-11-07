@@ -61,7 +61,7 @@ class VerificationFlowTests(APITestCase):
         self.assertEqual(send.call_args.args[3], 'rtl')
 
     def test_verify_marks_user_and_sends_welcome_once(self):
-        user = User.objects.create_user('v@example.com', 'x', language='ro')
+        user = User.objects.create_user('v@example.com', 'x', language='en')
         payload = {'uid': uid_of(user), 'token': account_mail.make_token(user)}
         with mock.patch(MAIL) as send:
             first = self.client.post(
@@ -76,7 +76,7 @@ class VerificationFlowTests(APITestCase):
         self.assertTrue(user.email_verified)
         self.assertIsNotNone(user.email_verified_at)
         send.assert_called_once()  # the welcome mail
-        self.assertIn('bun venit', send.call_args.args[1].lower())
+        self.assertIn('welcome', send.call_args.args[1].lower())
 
     def test_tampered_expired_and_wrong_uid_tokens_are_refused(self):
         user = User.objects.create_user('v@example.com', 'x')

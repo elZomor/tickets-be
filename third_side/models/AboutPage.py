@@ -5,7 +5,7 @@ class AboutPage(models.Model):
     """Singleton: the About page copy.
 
     `content` keeps the shape the page renders, with every text as a
-    {"ar": ..., "en": ..., "ro": ...} map (resolved per ?lang= on read):
+    {"ar": ..., "en": ...} map (resolved per ?lang= on read):
       {hero: {eyebrow, title, lead, body: [text], image, alt},
        topics: {title, body: [text], gallery: [{image, alt}]},
        journey: {title, items: [{year, title, text}]},

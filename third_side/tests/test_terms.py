@@ -9,7 +9,7 @@ SIGNUP = {'name': 'Sara Ali', 'email': 'sara@example.com', 'password': 'S3cure-p
 
 
 def loc(text):
-    return {'ar': f'{text}-ar', 'en': f'{text}-en', 'ro': f'{text}-ro'}
+    return {'ar': f'{text}-ar', 'en': f'{text}-en'}
 
 
 def make_terms(version, days_ago=1, published=True):
@@ -64,8 +64,8 @@ class TermsApiTests(APITestCase):
         make_terms('draft', published=False)
         versions = self.client.get('/third_side/terms/versions').data
         self.assertEqual([v['version'] for v in versions], ['1.1', '1.0'])
-        old = self.client.get('/third_side/terms/1.0?lang=ro').data
-        self.assertEqual(old['title'], 'title-ro')
+        old = self.client.get('/third_side/terms/1.0?lang=en').data
+        self.assertEqual(old['title'], 'title-en')
         self.assertEqual(self.client.get('/third_side/terms/draft').status_code, 404)
 
 

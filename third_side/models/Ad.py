@@ -20,7 +20,7 @@ class AdType(models.TextChoices):
 class Ad(models.Model):
     """Our own ad (sponsor or event), not an ad network. Counters are first-party.
 
-    images: {"ar": {"slim": url, "banner": url, "box": url, ...}, "en": {...}, "ro": {...}}
+    images: {"ar": {"slim": url, "banner": url, "box": url, ...}, "en": {...}}
     alt:    {"ar": text, ...}
     Sizes: see AD_SIZES. Keys saved before the redesign (tall, wide) are ignored.
     An ad is only picked for sizes it has an image for.

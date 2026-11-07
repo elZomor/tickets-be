@@ -13,7 +13,7 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
-from third_side.i18n import localize
+from third_side.i18n import LOCALES, localize
 from third_side.models import Notification, ThirdSideUser
 from third_side.models.Notification import NotificationType
 
@@ -125,9 +125,9 @@ def _coalesce(recipient_id, type, params, dedupe_key):
 
 # ---- addresses the frontend serves (keep in step with app/lib/accountPaths.ts)
 
-FESTIVALS_SEGMENT = {'ar': 'مهرجانات', 'en': 'festivals', 'ro': 'festivaluri'}
-NOTIFICATIONS_SEGMENT = {'ar': 'الإشعارات', 'en': 'notifications', 'ro': 'notificari'}
-PROFILE_SEGMENT = {'ar': 'ملفي-الشخصي', 'en': 'profile', 'ro': 'profil'}
+FESTIVALS_SEGMENT = {'ar': 'فعاليات', 'en': 'events'}
+NOTIFICATIONS_SEGMENT = {'ar': 'الإشعارات', 'en': 'notifications'}
+PROFILE_SEGMENT = {'ar': 'ملفي-الشخصي', 'en': 'profile'}
 
 
 def account_paths(segments):
@@ -135,12 +135,12 @@ def account_paths(segments):
 
 
 def article_paths(article):
-    """{ar, en, ro: path} of an article, for params the inbox and push link to."""
+    """{ar, en: path} of an article, for params the inbox and push link to."""
     from third_side.services.festivals import article_path, shown_translation
 
     return {
         lang: article_path(article, lang, shown_translation(article, lang))
-        for lang in ('ar', 'en', 'ro')
+        for lang in LOCALES
     }
 
 
@@ -148,5 +148,5 @@ def festival_paths(festival):
     return {
         lang: f'/{lang}/{FESTIVALS_SEGMENT[lang]}/'
         f'{localize(festival.slug_i18n, lang, festival.slug)}'
-        for lang in ('ar', 'en', 'ro')
+        for lang in LOCALES
     }

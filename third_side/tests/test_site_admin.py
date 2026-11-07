@@ -49,7 +49,7 @@ class NavSectionTests(_EditorTestCase):
             {
                 'slug': 'stage',
                 'order': 3,
-                'label': {'ar': 'مسرح', 'en': 'Stage', 'ro': ''},
+                'label': {'ar': 'مسرح', 'en': 'Stage'},
                 'url_slug': {'en': 'the stage'},
                 'image_url': '/mock/stage.jpg',
             },
@@ -254,9 +254,7 @@ class FooterAdminTests(_EditorTestCase):
         self.client.force_authenticate(None)
         cache.clear()
         ar = self.client.get('/third_side/home?lang=ar').data['site']
-        ro = self.client.get('/third_side/home?lang=ro').data['site']
         self.assertEqual(ar['about'], 'نص الفوتر')
-        self.assertEqual(ro['about'], 'نص الفوتر')  # no Romanian: the default language
 
     def test_saving_without_the_text_keeps_it(self):
         SiteSettings.objects.create(about={'en': 'Keep me'})

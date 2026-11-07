@@ -3,7 +3,10 @@
 import re
 import unicodedata
 
-LOCALES = ('ar', 'en', 'ro')
+LOCALES = ('ar', 'en')
+# Romanian was dropped; stored maps may still carry its key. It is never served,
+# but a map holding it is still a locale map.
+RETIRED_LOCALES = ('ro',)
 DEFAULT_LOCALE = 'ar'
 LOCALE_CHOICES = [(code, code) for code in LOCALES]
 
@@ -23,13 +26,13 @@ def localize(values, lang, fallback=''):
     for code in (lang, DEFAULT_LOCALE):
         if values.get(code):
             return values[code]
-    return next((text for text in values.values() if text), fallback)
+    return next((values[code] for code in LOCALES if values.get(code)), fallback)
 
 
 def localize_tree(value, lang):
-    """Collapse every {ar,en,ro} map inside a JSON tree to `lang`'s text."""
+    """Collapse every {ar,en} map inside a JSON tree to `lang`'s text."""
     if isinstance(value, dict):
-        if value and set(value) <= set(LOCALES):
+        if value and set(value) <= set(LOCALES + RETIRED_LOCALES):
             return localize(value, lang)
         return {key: localize_tree(item, lang) for key, item in value.items()}
     if isinstance(value, list):

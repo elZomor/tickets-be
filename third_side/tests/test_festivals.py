@@ -21,8 +21,8 @@ class FestivalApiTests(APITestCase):
     def setUpTestData(cls):
         cls.festival = Festival.objects.create(
             slug='book-fair',
-            slug_i18n={'ar': 'معرض-الكتاب', 'en': 'book-fair', 'ro': 'targul-de-carte'},
-            name_i18n={'ar': 'معرض الكتاب', 'en': 'Book Fair', 'ro': 'Targul de Carte'},
+            slug_i18n={'ar': 'معرض-الكتاب', 'en': 'book-fair'},
+            name_i18n={'ar': 'معرض الكتاب', 'en': 'Book Fair'},
             description_i18n={'en': 'Panels and signings'},
             location_i18n={'en': 'Cairo'},
             cover_url='/mock/literature-hero.jpg',
@@ -36,13 +36,13 @@ class FestivalApiTests(APITestCase):
             ends_on=date(2026, 11, 9),
         )
         group = NavGroup.objects.create(
-            slug='written', url_slug={'ar': 'مكتوب', 'en': 'written', 'ro': 'scris'}
+            slug='written', url_slug={'ar': 'مكتوب', 'en': 'written'}
         )
         category = Category.objects.create(
             name='Literature',
             slug='literature',
             group=group,
-            url_slug={'ar': 'أدب', 'en': 'literature', 'ro': 'literatura'},
+            url_slug={'ar': 'أدب', 'en': 'literature'},
         )
         critic = Critic.objects.create(name='C')
         cls.article = Article.objects.create(
@@ -135,17 +135,17 @@ class FestivalApiTests(APITestCase):
         self.assertEqual(book['slug'], 'معرض-الكتاب')
         self.assertEqual(
             book['slugs'],
-            {'ar': 'معرض-الكتاب', 'en': 'book-fair', 'ro': 'targul-de-carte'},
+            {'ar': 'معرض-الكتاب', 'en': 'book-fair'},
         )
         self.assertEqual(book['cover'], '/mock/literature-hero.jpg')
         self.assertEqual(book['starts_on'], '2026-06-20')
 
     def test_by_slug_any_locale(self):
-        for slug in ('book-fair', 'معرض-الكتاب', 'targul-de-carte'):
-            response = self.client.get(f'/third_side/festivals/by-slug/{slug}?lang=ro')
+        for slug in ('book-fair', 'معرض-الكتاب'):
+            response = self.client.get(f'/third_side/festivals/by-slug/{slug}?lang=en')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.data['id'], self.festival.id)
-            self.assertEqual(response.data['name'], 'Targul de Carte')
+            self.assertEqual(response.data['name'], 'Book Fair')
         self.assertEqual(
             self.client.get('/third_side/festivals/by-slug/nope').status_code, 404
         )
@@ -205,19 +205,20 @@ class FestivalApiTests(APITestCase):
                 'path': '/en/written/literature/the-word-first',
             },
         )
-        # Not translated to ro yet: the original is shown and flagged.
-        ro = self.client.get('/third_side/festival-posts?lang=ro').data['results']
-        item = next(p for p in ro if p['type'] == 'article')
+        # Not translated to ar yet: the original is shown and flagged.
+        ar = self.client.get('/third_side/festival-posts?lang=ar').data['results']
+        item = next(p for p in ar if p['type'] == 'article')
         self.assertEqual(item['content_locale'], 'en')
-        self.assertTrue(item['article']['path'].startswith('/ro/scris/literatura/'))
+        self.assertTrue(item['article']['path'].startswith('/ar/مكتوب/أدب/'))
 
     def test_hidden_article_post_is_dropped(self):
         Article.objects.filter(pk=self.article.pk).update(is_hidden=True)
         self.assertEqual(self.posts().data['count'], 4)
 
     def test_text_fallback_sets_content_locale(self):
-        ro = self.client.get('/third_side/festival-posts?lang=ro').data['results']
-        text = next(p for p in ro if p['id'] == self.text.id)
+        FestivalPost.objects.filter(pk=self.text.pk).update(body_i18n={'ar': 'نص'})
+        en = self.client.get('/third_side/festival-posts?lang=en').data['results']
+        text = next(p for p in en if p['id'] == self.text.id)
         self.assertEqual(text['body'], 'نص')
         self.assertEqual(text['content_locale'], 'ar')
 

@@ -37,7 +37,7 @@ class AdAdminTests(APITestCase):
             'starts_at': today.isoformat(),
             'ends_at': (today + timedelta(days=7)).isoformat(),
             'weight': 2,
-            'alt': {'ar': 'أمسية', 'en': 'An evening', 'ro': ''},
+            'alt': {'ar': 'أمسية', 'en': 'An evening'},
             'images': {'ar': {'rect': SIGNED, 'slim': ''}, 'en': {'column': SIGNED}},
             'is_active': True,
         }

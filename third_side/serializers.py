@@ -2,7 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
-from third_side.i18n import LOCALES, slug_from_title, unique_slug
+from third_side.i18n import LOCALES, RETIRED_LOCALES, slug_from_title, unique_slug
 from third_side.models.FestivalPost import (
     IMAGE_TYPES,
     VIDEO_TYPES,
@@ -486,6 +486,8 @@ def _clean_text_map(value, field):
         raise serializers.ValidationError({field: 'Expected {locale: text}.'})
     cleaned = {}
     for locale, text in value.items():
+        if locale in RETIRED_LOCALES:
+            continue
         if locale not in LOCALES:
             raise serializers.ValidationError({field: f'Unknown language "{locale}".'})
         if not isinstance(text, str):

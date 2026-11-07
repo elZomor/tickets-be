@@ -6,7 +6,7 @@ from third_side.utils import AsciiUploadTo
 class NavGroup(models.Model):
     """A header group of categories, e.g. Visual Arts / Written Arts.
 
-    Localized fields are {"ar": ..., "en": ..., "ro": ...} maps.
+    Localized fields are {"ar": ..., "en": ...} maps.
     """
 
     slug = models.SlugField(max_length=60, unique=True)

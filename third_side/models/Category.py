@@ -20,7 +20,7 @@ class Category(models.Model):
     featured = models.BooleanField(default=False)
     # Announced but not built: its own page shows Coming Soon.
     is_coming_soon = models.BooleanField(default=False)
-    # Localized maps: {"ar": ..., "en": ..., "ro": ...}. `name` is the fallback.
+    # Localized maps: {"ar": ..., "en": ...}. `name` is the fallback.
     url_slug = models.JSONField(default=dict, blank=True)
     name_i18n = models.JSONField(default=dict, blank=True)
     tagline = models.JSONField(default=dict, blank=True)
