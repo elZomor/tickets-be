@@ -13,6 +13,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from third_side.i18n import LOCALES
 from third_side.auth import ThirdSideJWTAuthentication, issue_tokens, rotate_refresh
 from third_side.models import TermsAcceptance, TermsVersion, ThirdSideUser
 from third_side.services.account import is_staff_account
@@ -26,7 +27,7 @@ from third_side.services.mail import send_email
 logger = logging.getLogger(__name__)
 
 # The FE serves the reset page at a localized URL segment (accountPaths.ts).
-RESET_SEGMENTS = {'ar': 'كلمة-مرور-جديدة', 'en': 'reset-password', 'ro': 'parola-noua'}
+RESET_SEGMENTS = {'ar': 'كلمة-مرور-جديدة', 'en': 'reset-password'}
 
 
 class SignupSerializer(serializers.Serializer):
@@ -37,7 +38,7 @@ class SignupSerializer(serializers.Serializer):
     # form is refused so nobody accepts text they were not shown.
     accepted_terms_version = serializers.CharField(required=False, allow_blank=True)
     # The locale they signed up in: the language of their account emails.
-    lang = serializers.ChoiceField(choices=['ar', 'en', 'ro'], default='ar')
+    lang = serializers.ChoiceField(choices=list(LOCALES), default='ar')
 
     def validate(self, attrs):
         terms = TermsVersion.current()
@@ -81,7 +82,7 @@ class RefreshSerializer(serializers.Serializer):
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    lang = serializers.ChoiceField(choices=['ar', 'en', 'ro'], default='ar')
+    lang = serializers.ChoiceField(choices=list(LOCALES), default='ar')
 
 
 class ResetPasswordSerializer(serializers.Serializer):

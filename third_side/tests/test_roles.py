@@ -308,7 +308,7 @@ class ContentManagerTests(RoleTestCase):
         self.as_('Content Manager')
         created = self.client.post(
             '/third_side/nav-groups',
-            {'slug': 'x', 'order': 1, 'name': {'ar': 'س', 'en': 'x', 'ro': 'x'}},
+            {'slug': 'x', 'order': 1, 'name': {'ar': 'س', 'en': 'x'}},
             format='json',
         )
         self.assertNotEqual(created.status_code, 403, created.data)

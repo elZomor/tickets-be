@@ -37,7 +37,7 @@ class SeedContractTests(APITestCase):
         return slugs
 
     def test_home_matches_mock(self):
-        for lang in ('ar', 'en', 'ro'):
+        for lang in ('ar', 'en'):
             data = self.client.get(f'/third_side/home?lang={lang}').data
             hero = self.home['hero']
             self.assertEqual(data['hero']['title'], hero['title'][lang])
@@ -118,23 +118,23 @@ class SeedContractTests(APITestCase):
             self.assertEqual(found['bio'], raw['bio']['en'])
             self.assertEqual(found['main_category'], raw['mainCategory'])
             self.assertEqual(found['photo'], raw.get('photo'))
-            for locale in ('ar', 'en', 'ro'):
+            for locale in ('ar', 'en'):
                 by_slug = self.client.get(
                     f"/third_side/critics/by-slug/{found['slugs'][locale]}?lang={locale}"
                 )
                 self.assertEqual(by_slug.data['name'], raw['name'][locale])
-        data = self.client.get('/third_side/about?lang=ro').data
-        self.assertEqual(data['hero']['title'], about['hero']['title']['ro'])
+        data = self.client.get('/third_side/about?lang=en').data
+        self.assertEqual(data['hero']['title'], about['hero']['title']['en'])
         self.assertEqual(len(data['journey']['items']), len(about['journey']['items']))
         self.assertEqual(
             [i['title'] for i in data['principles']['items']],
-            [i['title']['ro'] for i in about['principles']['items']],
+            [i['title']['en'] for i in about['principles']['items']],
         )
         self.assertEqual(Ad.objects.count(), len(ads))
 
     def test_festivals_match_mock(self):
         mock = json.loads((MOCK_DIR / 'festivals.json').read_text(encoding='utf-8'))
-        for lang in ('ar', 'en', 'ro'):
+        for lang in ('ar', 'en'):
             listed = self.client.get(
                 f'/third_side/festivals?lang={lang}&page_size=100'
             ).data['results']

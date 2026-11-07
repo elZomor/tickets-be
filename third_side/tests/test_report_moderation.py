@@ -38,7 +38,7 @@ class ReportModerationTests(APITestCase):
             created_by=cls.author,
         )
         cls.commenter = User.objects.create_user(
-            'commenter@example.com', 'pw-12345678', name='Commenter', language='ro'
+            'commenter@example.com', 'pw-12345678', name='Commenter', language='en'
         )
         cls.reporter = User.objects.create_user(
             'reporter@example.com', 'pw-12345678', language='ar'
@@ -121,7 +121,7 @@ class ReportModerationTests(APITestCase):
         report_id = self.report().data['id']
         self.client.force_authenticate(self.moderator)
         template = self.client.get(f'{BASE}/{report_id}/warning-template').data
-        self.assertEqual(template['language'], 'ro')
+        self.assertEqual(template['language'], 'en')
         with self.settings(THIRD_SIDE_SEND_EMAIL=True), mock.patch(
             'third_side.services.moderation_mail.send_email'
         ) as send:

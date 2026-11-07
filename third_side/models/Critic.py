@@ -16,7 +16,7 @@ class Critic(models.Model):
     )
     photo = models.ImageField(upload_to=upload_to_critic_photo, null=True, blank=True)
     photo_url = models.CharField(max_length=300, blank=True, default='')
-    # Localized maps {"ar": ..., "en": ..., "ro": ...}; `name`/`bio` are the fallback.
+    # Localized maps {"ar": ..., "en": ...}; `name`/`bio` are the fallback.
     name_i18n = models.JSONField(default=dict, blank=True)
     bio_i18n = models.JSONField(default=dict, blank=True)
     # URL segment per locale (the writer's page lives at /<locale>/writers/<slug>).

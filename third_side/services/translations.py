@@ -79,7 +79,7 @@ def _sync_original_language(article, ticks, titles, slugs):
     """Set Article.original_language from the editor's per-locale tick.
 
     Exactly one ticked locale wins. With several ticked, keep the current
-    original if it is among them, else the first in ar/en/ro order. With none
+    original if it is among them, else the first in ar/en order. With none
     ticked (or a doc without the field) the current value stays. A locale with
     no text yet cannot be the original.
     """

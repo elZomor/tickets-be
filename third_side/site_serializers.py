@@ -1,6 +1,6 @@
 """Editor writes of the site's own content: header sections, About, footer.
 
-Localized fields are {"ar", "en", "ro"} maps. Images come from POST /media and
+Localized fields are {"ar", "en"} maps. Images come from POST /media and
 are stored by key (see services/media_urls); reads turn them back into URLs.
 """
 
@@ -9,7 +9,7 @@ import re
 from django.db.models import Max
 from rest_framework import serializers
 
-from third_side.i18n import LOCALES
+from third_side.i18n import LOCALES, RETIRED_LOCALES
 from third_side.models import Ad, Category, NavGroup
 from third_side.models.Ad import AD_SIZES
 from third_side.serializers import _clean_text_map
@@ -392,8 +392,11 @@ class AdSerializer(serializers.ModelSerializer):
         return _clean_text_map(value, 'alt')
 
     def validate_locales(self, value):
-        if not isinstance(value, list) or any(code not in LOCALES for code in value):
-            raise serializers.ValidationError('Expected a list of ar, en, ro.')
+        if not isinstance(value, list):
+            raise serializers.ValidationError('Expected a list of ar, en.')
+        value = [code for code in value if code not in RETIRED_LOCALES]
+        if any(code not in LOCALES for code in value):
+            raise serializers.ValidationError('Expected a list of ar, en.')
         if not value:
             raise serializers.ValidationError('Pick at least one language.')
         return [code for code in LOCALES if code in value]
@@ -405,6 +408,8 @@ class AdSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Expected {locale: {size: url}}.')
         cleaned = {}
         for locale, sizes in value.items():
+            if locale in RETIRED_LOCALES:
+                continue
             if locale not in LOCALES:
                 raise serializers.ValidationError(f'Unknown language "{locale}".')
             if not isinstance(sizes, dict):

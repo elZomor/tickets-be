@@ -83,12 +83,13 @@ class ArticleI18nTests(APITestCase):
                     {'locale': 'ar', 'ai': False},
                     {'locale': 'en', 'ai': True},
                 ],
-                'missing': ['ro'],
+                'missing': [],
             },
         )
 
     def test_missing_locale_falls_back_to_original(self):
-        data = self.client.get('/third_side/articles/by-slug/chahine?lang=ro').data
+        ArticleTranslation.objects.filter(locale='en').delete()
+        data = self.client.get('/third_side/articles/by-slug/شاهين?lang=en').data
         self.assertEqual(data['content_locale'], 'ar')
         self.assertEqual(data['title'], 'شاهين')
 
@@ -184,8 +185,8 @@ class TranslationSaveTests(APITestCase):
             sync_translations(
                 article,
                 {
-                    'title': {'ar': 'عنوان', 'en': 'Title', 'ro': 'Titlu'},
-                    'slug': {'ar': 'عنوان-3', 'en': 'title-3', 'ro': 'titlu-3'},
+                    'title': {'ar': 'عنوان', 'en': 'Title'},
+                    'slug': {'ar': 'عنوان-3', 'en': 'title-3'},
                     'content': {'ar': lexical('ar'), 'en': lexical('en')},
                     **extra,
                 },
@@ -201,12 +202,12 @@ class TranslationSaveTests(APITestCase):
         self.assertEqual(save(isOriginalLanguage={'ar': False}), 'en')
         # Several ticked: keep the current one if still ticked.
         self.assertEqual(save(isOriginalLanguage={'ar': True, 'en': True}), 'en')
-        # Several ticked and the current one is not among them: first in order.
-        self.assertEqual(save(isOriginalLanguage={'ar': True, 'ro': True}), 'ar')
+        # The current one is no longer ticked: the ticked one wins.
+        self.assertEqual(save(isOriginalLanguage={'ar': True, 'en': False}), 'ar')
         # A language without text cannot be the original.
         self.assertEqual(
             save(
-                isOriginalLanguage={'ro': True},
+                isOriginalLanguage={'en': True},
                 title={'ar': 'عنوان'},
                 slug={'ar': 'عنوان-3'},
             ),
@@ -227,4 +228,4 @@ class TranslationSaveTests(APITestCase):
         )
         data = self.client.get('/third_side/articles/by-slug/title-4?lang=en').data
         self.assertEqual(data['body'], lexical('en'))
-        self.assertEqual(data['languages']['missing'], ['ro'])
+        self.assertEqual(data['languages']['missing'], [])

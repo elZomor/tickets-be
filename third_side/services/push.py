@@ -1,6 +1,6 @@
 """Web Push delivery of inbox notifications.
 
-Copy is trilingual and follows the recipient's `language`. The push is only a
+Copy is bilingual and follows the recipient's `language`. The push is only a
 nudge: the inbox row is the record, so every failure here is logged and
 swallowed.
 """
@@ -82,33 +82,6 @@ COPY = {
         T.NEW_ARTICLE: 'New article: “{title}”',
         T.NEW_ARTICLE + '_by': 'New article by {critic}: “{title}”',
         T.NEW_FESTIVAL_POST: 'New in {festival}',
-    },
-    'ro': {
-        'site': 'Third Side',
-        'status': {
-            'under_review': 'în revizuire',
-            'changes_requested': 'se cer modificări',
-            'ready_for_editing': 'gata de editare',
-            'ready_for_publishing': 'gata de publicare',
-            'scheduled': 'programat',
-            'published': 'publicat',
-            'archived': 'arhivat',
-            'rejected': 'respins',
-            'reported': 'semnalat',
-        },
-        T.ARTICLE_STATUS: 'Articolul tău „{title}” este acum {status}',
-        T.PROFILE_UPDATED: 'Datele contului tău au fost actualizate',
-        T.REPORT_REVIEWED: 'Moderatorii ți-au verificat raportarea',
-        T.CONTENT_REPORTED: '{target} a fost raportat',
-        'target_article': 'articolul tău „{title}”',
-        'target_comment': 'comentariul tău la „{title}”',
-        T.ARTICLE_COMMENT: '{name} a comentat „{title}”',
-        T.ARTICLE_COMMENT + '_many': '{count} comentarii noi la „{title}”',
-        T.ARTICLE_RATING: 'Evaluare nouă ({value}/5) pentru „{title}”',
-        T.ARTICLE_RATING + '_many': '{count} evaluări noi pentru „{title}”',
-        T.NEW_ARTICLE: 'Articol nou: „{title}”',
-        T.NEW_ARTICLE + '_by': 'Articol nou de {critic}: „{title}”',
-        T.NEW_FESTIVAL_POST: 'Nou la {festival}',
     },
 }
 

@@ -6,7 +6,7 @@ from third_side.utils import AsciiUploadTo
 class Festival(models.Model):
     """A festival shown as a card on the Festivals page; its posts form the feed.
 
-    Localized fields are {"ar": ..., "en": ..., "ro": ...} maps; `slug` is the
+    Localized fields are {"ar": ..., "en": ...} maps; `slug` is the
     canonical (fallback) URL segment, `slug_i18n` the one per locale.
     """
 

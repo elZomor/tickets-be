@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from third_side.models import AboutPage, Ad, Article, Category, Critic
 from third_side.models.Article import ArticleStatus
 
-LOC = {'ar': 'عربي', 'en': 'English', 'ro': 'Romana'}
+LOC = {'ar': 'عربي', 'en': 'English'}
 
 
 def ad(name, **kwargs):
@@ -33,9 +33,9 @@ class WritersTests(APITestCase):
         category = Category.objects.create(name='Cinema', slug='cinema')
         cls.critic = Critic.objects.create(
             name='Sara',
-            name_i18n={'ar': 'سارة', 'en': 'Sara', 'ro': 'Sara'},
+            name_i18n={'ar': 'سارة', 'en': 'Sara'},
             bio_i18n={'ar': 'نبذة', 'en': 'Bio'},
-            slug_i18n={'ar': 'سارة', 'en': 'sara', 'ro': 'sara'},
+            slug_i18n={'ar': 'سارة', 'en': 'sara'},
             main_category=category,
         )
         Article.objects.create(
@@ -58,7 +58,8 @@ class WritersTests(APITestCase):
         self.assertEqual(data['article_count'], 1)
 
     def test_bio_falls_back_to_available_locale(self):
-        data = self.client.get('/third_side/critics?lang=ro').data['results'][0]
+        Critic.objects.filter(pk=self.critic.pk).update(bio_i18n={'ar': 'نبذة'})
+        data = self.client.get('/third_side/critics?lang=en').data['results'][0]
         self.assertEqual(data['bio'], 'نبذة')  # default locale before any other
 
     def test_by_slug_any_locale(self):
@@ -118,9 +119,9 @@ class AdsTests(APITestCase):
         first, second = ad('one', locales=['en']), ad('two', locales=['en'])
         for _ in range(10):
             self.assertEqual(self.pick(f'&exclude={first.pk}').data['id'], second.pk)
-        only = ad('solo', locales=['ro'])
+        only = ad('solo', locales=['ar'])
         response = self.client.get(
-            f'/third_side/ads/pick?size=banner&lang=ro&exclude={only.pk}'
+            f'/third_side/ads/pick?size=banner&lang=ar&exclude={only.pk}'
         )
         self.assertEqual(response.data['id'], only.pk)
 

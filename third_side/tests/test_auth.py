@@ -119,7 +119,6 @@ class AuthFlowTests(APITestCase):
         ):
             for lang, segment in (
                 ('en', 'reset-password'),
-                ('ro', 'parola-noua'),
                 ('ar', '%D9%83%D9%84%D9%85%D8%A9'),
             ):
                 self.client.post(
