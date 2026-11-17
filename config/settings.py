@@ -229,6 +229,7 @@ REST_FRAMEWORK = {
             'THIRD_SIDE_VERIFY_RESEND_RATE', default='5/hour'
         ),
         'third_side_read': env.str('THIRD_SIDE_READ_RATE', default='120/min'),
+        'arab_festival_apply': env.str('ARAB_FESTIVAL_APPLY_RATE', default='5/hour'),
     },
 }
 

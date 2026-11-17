@@ -245,3 +245,18 @@ def validate_file_size(value):
     max_size_mb = 80
     if value.size > max_size_mb * 1024 * 1024:
         raise ValidationError(f"File size must be less than {max_size_mb} MB")
+
+
+def _upload_to_arab_festival_application(folder, filename):
+    ext = os.path.splitext(filename)[1].lower()
+    return os.path.join(
+        'media', 'arab_festival_applications', folder, f"{uuid.uuid4()}{ext}"
+    )
+
+
+def upload_to_arab_festival_application_script(instance, filename):
+    return _upload_to_arab_festival_application('script', filename)
+
+
+def upload_to_arab_festival_application_national_id(instance, filename):
+    return _upload_to_arab_festival_application('national_id', filename)
