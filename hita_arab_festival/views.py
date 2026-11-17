@@ -72,7 +72,7 @@ class ArabFestivalViewSet(
     viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin
 ):
     serializer_class = ArabFestivalSerializer
-    queryset = ArabFestival.objects.all()
+    queryset = ArabFestival.objects.filter(is_visible=True)
 
     @action(detail=True, methods=['GET'], url_path='share')
     def profile_meta(self, request, pk=None):

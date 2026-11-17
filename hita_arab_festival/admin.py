@@ -15,8 +15,8 @@ from hita_arab_festival.models.Tag import Tag
 
 @admin.register(ArabFestival)
 class ArabFestivalAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_date', 'end_date', 'applications_open')
-    list_editable = ('applications_open',)
+    list_display = ('name', 'start_date', 'end_date', 'is_visible', 'applications_open')
+    list_editable = ('is_visible', 'applications_open')
 
 
 @admin.register(Show)

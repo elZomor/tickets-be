@@ -132,6 +132,13 @@ class ApplicationTests(APITestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.data['message'], 'ALREADY_APPLIED')
 
+    def test_hidden_festival_still_accepts_applications(self):
+        ArabFestival.objects.update(is_visible=False)
+        self.assertEqual(self.post().status_code, 201)
+        status = self.client.get(f'{URL}/status').data['data']
+        self.assertTrue(status['open'])
+        self.assertEqual(status['festival_name'], 'مهرجان')
+
     def test_closed_when_no_festival_is_open(self):
         ArabFestival.objects.update(applications_open=False)
         response = self.post()

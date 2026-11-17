@@ -15,6 +15,9 @@ class ArabFestival(models.Model):
     awards = models.JSONField(null=True, blank=True)
     organizing_team = models.JSONField(null=True, blank=True)
     applications_open = models.BooleanField(default=False)
+    # Hidden festivals are left out of the public festivals list (e.g. an upcoming
+    # edition that is only accepting applications).
+    is_visible = models.BooleanField(default=True)
 
     @property
     def festival_status(self):
