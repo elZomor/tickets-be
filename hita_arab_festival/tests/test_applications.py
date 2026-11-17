@@ -70,6 +70,10 @@ class ApplicationTests(APITestCase):
         response = self.client.get(f'{URL}/status')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data['data']['open'])
+        self.assertEqual(
+            str(response.data['data']['festival_start_date']), '2027-01-01'
+        )
+        self.assertEqual(str(response.data['data']['festival_end_date']), '2027-01-10')
 
     def test_submits_application(self):
         response = self.post()
