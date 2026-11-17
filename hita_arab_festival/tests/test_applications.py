@@ -3,6 +3,7 @@ import shutil
 import tempfile
 from datetime import date
 
+from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
@@ -138,6 +139,32 @@ class ApplicationTests(APITestCase):
         status = self.client.get(f'{URL}/status').data['data']
         self.assertTrue(status['open'])
         self.assertEqual(status['festival_name'], 'مهرجان')
+
+    def test_status_has_no_application_for_anonymous(self):
+        self.post()
+        self.assertIsNone(self.client.get(f'{URL}/status').data['data']['my_application'])
+
+    def test_status_shows_application_of_logged_in_user_by_email(self):
+        self.assertEqual(self.post().status_code, 201)  # submitted anonymously
+        user = User.objects.create(username='u1', email='director@example.com')
+        self.client.force_authenticate(user)
+        mine = self.client.get(f'{URL}/status').data['data']['my_application']
+        self.assertEqual(mine['show_name'], 'العرض المسرحي')
+        self.assertEqual(mine['status'], 'PENDING')
+
+    def test_status_shows_application_linked_to_user(self):
+        user = User.objects.create(username='u2', email='other@example.com')
+        self.client.force_authenticate(user)
+        self.assertEqual(self.post().status_code, 201)
+        self.assertEqual(Application.objects.get().user, user)
+        mine = self.client.get(f'{URL}/status').data['data']['my_application']
+        self.assertIsNotNone(mine)
+
+    def test_status_ignores_other_users_applications(self):
+        self.post()
+        user = User.objects.create(username='u3', email='someone@example.com')
+        self.client.force_authenticate(user)
+        self.assertIsNone(self.client.get(f'{URL}/status').data['data']['my_application'])
 
     def test_closed_when_no_festival_is_open(self):
         ArabFestival.objects.update(applications_open=False)

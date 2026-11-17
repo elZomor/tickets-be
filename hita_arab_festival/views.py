@@ -1,4 +1,5 @@
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
@@ -229,8 +230,27 @@ class ApplicationViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
             data={
                 'open': festival is not None,
                 'festival_name': festival.name if festival else None,
+                'my_application': self._my_application(request, festival),
             }
         )
+
+    @staticmethod
+    def _my_application(request, festival):
+        """The logged-in user's application to the open festival (by account or email)."""
+        if not festival or not request.user.is_authenticated:
+            return None
+        match = Q(user=request.user)
+        if request.user.email:
+            match |= Q(email__iexact=request.user.email)
+        application = festival.applications.filter(match).first()
+        if not application:
+            return None
+        return {
+            'id': application.id,
+            'show_name': application.show_name,
+            'status': application.status,
+            'created_at': application.created_at,
+        }
 
     def create(self, request, *args, **kwargs):
         festival = get_open_festival_for_applications()
