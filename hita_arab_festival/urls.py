@@ -5,6 +5,7 @@ from hita_arab_festival.views import (
     ShowViewSet,
     ArticleViewSet,
     CommentViewSet,
+    ApplicationViewSet,
 )
 
 router = DefaultRouter(trailing_slash=False)
@@ -12,4 +13,7 @@ router.register(r'festivals', ArabFestivalViewSet, basename='hita_arab_festivals
 router.register(r'shows', ShowViewSet, basename='hita_arab_shows-view')
 router.register(r'articles', ArticleViewSet, basename='hita_arab_articles-view')
 router.register(r'comments', CommentViewSet, basename='hita_arab_comments-view')
+router.register(
+    r'applications', ApplicationViewSet, basename='hita_arab_applications-view'
+)
 urlpatterns = router.urls

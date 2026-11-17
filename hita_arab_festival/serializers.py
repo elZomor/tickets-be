@@ -1,10 +1,27 @@
+import json
+
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from config.constants import ENVIRONMENT
 from hita_arab_festival.models import Show
+from hita_arab_festival.models.Application import (
+    Application,
+    NATIONAL_ID_EXTENSIONS,
+    NATIONAL_ID_MAX_MB,
+    SCRIPT_EXTENSIONS,
+    SCRIPT_MAX_MB,
+)
 from hita_arab_festival.models.Article import Article
 from hita_arab_festival.models.Comment import Comment
 from hita_arab_festival.models.Festival import ArabFestival
+from utils.validators import (
+    is_arabic_text,
+    normalize_egyptian_mobile,
+    normalize_whatsapp,
+    validate_arabic_text,
+    validate_upload,
+)
 
 
 def build_media_url(file_field, request):
@@ -87,3 +104,92 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = "__all__"
+
+
+MAX_ACTORS = 50
+ARABIC_FIELDS = (
+    'show_name',
+    'director_name',
+    'author',
+    'directorial_vision',
+    'show_summary',
+)
+
+
+class ApplicationCreateSerializer(serializers.ModelSerializer):
+    actors = serializers.CharField()
+
+    class Meta:
+        model = Application
+        fields = (
+            'email',
+            'show_name',
+            'director_name',
+            'department',
+            'study_type',
+            'author',
+            'dramaturgy',
+            'mobile',
+            'whatsapp',
+            'actors',
+            'script',
+            'directorial_vision',
+            'show_summary',
+            'national_id',
+        )
+
+    def get_fields(self):
+        fields = super().get_fields()
+        for name in ARABIC_FIELDS:
+            fields[name].validators.append(validate_arabic_text)
+        return fields
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+    def validate_dramaturgy(self, value):
+        value = (value or '').strip()
+        if value and not is_arabic_text(value):
+            raise serializers.ValidationError('ARABIC_ONLY', code='ARABIC_ONLY')
+        return value
+
+    def validate_mobile(self, value):
+        mobile = normalize_egyptian_mobile(value)
+        if not mobile:
+            raise serializers.ValidationError('INVALID_MOBILE', code='INVALID_MOBILE')
+        return mobile
+
+    def validate_whatsapp(self, value):
+        whatsapp = normalize_whatsapp(value)
+        if not whatsapp:
+            raise serializers.ValidationError(
+                'INVALID_WHATSAPP', code='INVALID_WHATSAPP'
+            )
+        return whatsapp
+
+    def validate_actors(self, value):
+        try:
+            actors = json.loads(value)
+        except (TypeError, ValueError):
+            raise serializers.ValidationError('INVALID_ACTORS', code='INVALID_ACTORS')
+        if not isinstance(actors, list):
+            raise serializers.ValidationError('INVALID_ACTORS', code='INVALID_ACTORS')
+        actors = [a.strip() for a in actors if isinstance(a, str) and a.strip()]
+        if not actors or len(actors) > MAX_ACTORS:
+            raise serializers.ValidationError('INVALID_ACTORS', code='INVALID_ACTORS')
+        if not all(is_arabic_text(a) for a in actors):
+            raise serializers.ValidationError('ARABIC_ONLY', code='ARABIC_ONLY')
+        return actors
+
+    def _validate_file(self, upload, extensions, max_mb):
+        try:
+            validate_upload(upload, extensions, max_mb)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.messages[0], code=e.code)
+        return upload
+
+    def validate_script(self, value):
+        return self._validate_file(value, SCRIPT_EXTENSIONS, SCRIPT_MAX_MB)
+
+    def validate_national_id(self, value):
+        return self._validate_file(value, NATIONAL_ID_EXTENSIONS, NATIONAL_ID_MAX_MB)

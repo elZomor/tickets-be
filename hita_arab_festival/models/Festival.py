@@ -14,6 +14,7 @@ class ArabFestival(models.Model):
     jury_list = models.JSONField(null=True, blank=True)
     awards = models.JSONField(null=True, blank=True)
     organizing_team = models.JSONField(null=True, blank=True)
+    applications_open = models.BooleanField(default=False)
 
     @property
     def festival_status(self):

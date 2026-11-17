@@ -1,11 +1,15 @@
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny
 from rest_framework.generics import get_object_or_404
 
 from config.constants import HITA_AF_FE_URL
 from hita_arab_festival.models import Show, Reservation
+from hita_arab_festival.models.Application import Application
 from hita_arab_festival.models.Article import Article
 from hita_arab_festival.models.Comment import Comment, CommentStatus
 from hita_arab_festival.models.Festival import ArabFestival
@@ -14,12 +18,14 @@ from hita_arab_festival.serializers import (
     ShowSerializer,
     ArticleSerializer,
     CommentSerializer,
+    ApplicationCreateSerializer,
 )
 from utils.Response import (
     get_not_found_response,
     get_successful_response,
     get_successful_creation_response,
     get_bad_request_response,
+    get_already_exists_response,
 )
 
 
@@ -195,4 +201,64 @@ class CommentViewSet(
         return get_successful_creation_response(
             data={'id': comment.id, 'content': comment.content, 'show': show.name},
             message='Comment has been added successfully!',
+        )
+
+
+def get_open_festival_for_applications():
+    return (
+        ArabFestival.objects.filter(applications_open=True)
+        .order_by('-start_date')
+        .first()
+    )
+
+
+class ApplicationViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
+    serializer_class = ApplicationCreateSerializer
+    queryset = Application.objects.none()
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_throttles(self):
+        self.throttle_scope = 'arab_festival_apply' if self.action == 'create' else None
+        return super().get_throttles()
+
+    @action(detail=False, methods=['GET'], url_path='status')
+    def application_status(self, request):
+        festival = get_open_festival_for_applications()
+        return get_successful_response(
+            data={
+                'open': festival is not None,
+                'festival_name': festival.name if festival else None,
+            }
+        )
+
+    def create(self, request, *args, **kwargs):
+        festival = get_open_festival_for_applications()
+        if not festival:
+            return get_bad_request_response(message='APPLICATIONS_CLOSED')
+
+        serializer = self.get_serializer(
+            data=request.data, context={'request': request, 'festival': festival}
+        )
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as error:
+            # Return error codes (e.g. ARABIC_ONLY, required) so the client can translate them.
+            return get_bad_request_response(
+                data=error.get_codes(), message='VALIDATION_ERROR'
+            )
+
+        email = serializer.validated_data['email']
+        if Application.objects.filter(festival=festival, email__iexact=email).exists():
+            return get_already_exists_response(message='ALREADY_APPLIED')
+
+        user = request.user if request.user.is_authenticated else None
+        try:
+            application = serializer.save(festival=festival, user=user)
+        except IntegrityError:
+            return get_already_exists_response(message='ALREADY_APPLIED')
+
+        return get_successful_creation_response(
+            data={'id': application.id},
+            message='Application has been submitted successfully!',
         )
