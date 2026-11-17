@@ -230,6 +230,8 @@ class ApplicationViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
             data={
                 'open': festival is not None,
                 'festival_name': festival.name if festival else None,
+                'festival_start_date': festival.start_date if festival else None,
+                'festival_end_date': festival.end_date if festival else None,
                 'my_application': self._my_application(request, festival),
             }
         )
