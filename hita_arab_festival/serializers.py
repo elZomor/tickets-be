@@ -127,6 +127,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
             'director_name',
             'department',
             'study_type',
+            'study_phase',
             'author',
             'dramaturgy',
             'mobile',
@@ -137,6 +138,8 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
             'show_summary',
             'national_id',
         )
+        # Blank only for rows created before the field existed; new ones must pick.
+        extra_kwargs = {'study_phase': {'required': True, 'allow_blank': False}}
 
     def get_fields(self):
         fields = super().get_fields()

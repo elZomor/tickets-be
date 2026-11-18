@@ -50,6 +50,7 @@ class ApplicationTests(APITestCase):
             'director_name': 'أحمد محمد',
             'department': 'ACTING_DIRECTING',
             'study_type': 'CREDIT_HOURS',
+            'study_phase': 'UNDERGRAD',
             'author': 'توفيق الحكيم',
             'dramaturgy': '',
             'mobile': '01012345678',
@@ -130,6 +131,18 @@ class ApplicationTests(APITestCase):
         response = self.client.post(URL, data, format='multipart')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['data']['author'], ['required'])
+
+    def test_requires_study_phase(self):
+        data = self.payload()
+        del data['study_phase']
+        response = self.client.post(URL, data, format='multipart')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['data']['study_phase'], ['required'])
+
+    def test_rejects_invalid_study_phase(self):
+        response = self.post(study_phase='PHD')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['data']['study_phase'], ['invalid_choice'])
 
     def test_one_application_per_email_per_festival(self):
         self.assertEqual(self.post().status_code, 201)

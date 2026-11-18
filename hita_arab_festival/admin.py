@@ -58,11 +58,12 @@ class ApplicationAdmin(ExportMixin, admin.ModelAdmin):
         'director_name',
         'department',
         'study_type',
+        'study_phase',
         'mobile',
         'status',
         'created_at',
     )
-    list_filter = ('festival', 'department', 'study_type', 'status')
+    list_filter = ('festival', 'department', 'study_type', 'study_phase', 'status')
     list_editable = ('status',)
     search_fields = ('show_name', 'director_name', 'email', 'mobile')
     readonly_fields = ('user', 'created_at', 'script_link', 'national_id_link')
