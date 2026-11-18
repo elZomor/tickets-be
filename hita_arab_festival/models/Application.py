@@ -24,6 +24,11 @@ class StudyType(models.TextChoices):
     PARALLEL = 'PARALLEL', 'موازي'
 
 
+class StudyPhase(models.TextChoices):
+    POSTGRAD = 'POSTGRAD', 'دراسات عليا'
+    UNDERGRAD = 'UNDERGRAD', 'مرحلة البكالوريوس'
+
+
 class ApplicationStatus(models.TextChoices):
     PENDING = 'PENDING', 'قيد المراجعة'
     ACCEPTED = 'ACCEPTED', 'مقبول'
@@ -46,6 +51,9 @@ class Application(models.Model):
     director_name = models.CharField(max_length=200)
     department = models.CharField(max_length=32, choices=Department.choices)
     study_type = models.CharField(max_length=32, choices=StudyType.choices)
+    study_phase = models.CharField(
+        max_length=16, choices=StudyPhase.choices, blank=True, default=''
+    )
     author = models.CharField(max_length=200)
     dramaturgy = models.CharField(max_length=200, blank=True, default='')
     mobile = models.CharField(max_length=20)
