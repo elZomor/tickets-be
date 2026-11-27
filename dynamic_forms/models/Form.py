@@ -41,16 +41,28 @@ class Form(models.Model):
     )
     slug = models.SlugField(max_length=120, unique=True, allow_unicode=True)
     title = models.CharField(max_length=255)
+    title_en = models.CharField(max_length=255, blank=True, default='')
     description = models.TextField(blank=True, default='')
+    description_en = models.TextField(blank=True, default='')
     notice = models.CharField(
         max_length=500,
         blank=True,
         default='',
-        help_text='Highlighted note shown above the fields.',
+        help_text='Information note shown above the fields.',
     )
+    notice_en = models.CharField(max_length=500, blank=True, default='')
+    warning = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text='Important warning shown above the fields '
+        '(e.g. all data must be written in Arabic).',
+    )
+    warning_en = models.CharField(max_length=500, blank=True, default='')
     success_message = models.TextField(
         blank=True, default='', help_text='Shown after a successful submission.'
     )
+    success_message_en = models.TextField(blank=True, default='')
     is_active = models.BooleanField(default=True)
     opens_at = models.DateTimeField(null=True, blank=True)
     closes_at = models.DateTimeField(null=True, blank=True)

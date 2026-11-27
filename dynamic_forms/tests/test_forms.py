@@ -169,7 +169,13 @@ class DynamicFormTests(APITestCase):
 
     def test_festival_lists_only_its_open_forms(self):
         Form.objects.create(
-            arab_festival=self.festival, slug='closed', title='closed', is_active=False
+            arab_festival=self.festival, slug='draft', title='draft', is_active=False
+        )
+        Form.objects.create(
+            arab_festival=self.festival,
+            slug='past',
+            title='past',
+            closes_at=timezone.now() - timedelta(days=1),
         )
         other = ArabFestival.objects.create(
             name='other',
@@ -189,6 +195,37 @@ class DynamicFormTests(APITestCase):
         )
         self.assertEqual(alt.data['data'], [])
         self.assertEqual(self.client.get('/hita_arab_festival/forms').status_code, 400)
+
+        everything = self.client.get(
+            '/hita_arab_festival/forms', {'festival': self.festival.pk, 'all': '1'}
+        )
+        self.assertEqual(
+            [(f['slug'], f['status']) for f in everything.data['data']],
+            [('past', 'CLOSED'), ('masterclass', 'OPEN')],
+        )
+
+    def test_schema_includes_english_text(self):
+        self.form.title_en = 'Masterclass'
+        self.form.warning = 'بالعربية فقط'
+        self.form.save()
+        field = self.form.fields.get(key='year')
+        field.label_en = 'Year'
+        field.options_en = ['First', 'Second', 'Graduate']
+        field.save()
+        data = self.client.get(self.url).data['data']
+        self.assertEqual(data['title_en'], 'Masterclass')
+        self.assertEqual(data['warning'], 'بالعربية فقط')
+        year = next(f for f in data['fields'] if f['key'] == 'year')
+        self.assertEqual(year['label_en'], 'Year')
+        self.assertEqual(year['options_en'], ['First', 'Second', 'Graduate'])
+
+    def test_english_options_must_match_options(self):
+        from django.core.exceptions import ValidationError
+
+        field = self.form.fields.get(key='year')
+        field.options_en = ['First']
+        with self.assertRaises(ValidationError):
+            field.full_clean()
 
     # Submission
 

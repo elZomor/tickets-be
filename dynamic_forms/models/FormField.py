@@ -37,7 +37,9 @@ class FormField(models.Model):
         max_length=64, help_text='Stable id for the answer (e.g. name, mobile).'
     )
     label = models.CharField(max_length=500)
+    label_en = models.CharField(max_length=500, blank=True, default='')
     help_text = models.CharField(max_length=500, blank=True, default='')
+    help_text_en = models.CharField(max_length=500, blank=True, default='')
     placeholder = models.CharField(
         max_length=500,
         blank=True,
@@ -45,12 +47,19 @@ class FormField(models.Model):
         help_text='Input hint. For a consent field: the text beside the checkbox '
         '(the label is then shown above it as the rule being confirmed).',
     )
+    placeholder_en = models.CharField(max_length=500, blank=True, default='')
     type = models.CharField(max_length=16, choices=FieldType.choices)
     required = models.BooleanField(default=True)
     options = models.JSONField(
         default=list,
         blank=True,
         help_text='Choices for dropdown / radio / multi-select, e.g. ["أ", "ب"].',
+    )
+    options_en = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='English display text for each option, in the same order '
+        '(answers are always stored with the Arabic option).',
     )
     preset = models.CharField(
         max_length=16, choices=FieldPreset.choices, default=FieldPreset.NONE
@@ -95,6 +104,13 @@ class FormField(models.Model):
                 raise ValidationError({'options': 'Add at least one option.'})
             if not all(isinstance(o, str) and o.strip() for o in self.options):
                 raise ValidationError({'options': 'Options must be non-empty text.'})
+        if self.options_en:
+            if not isinstance(self.options_en, list) or len(self.options_en) != len(
+                self.options or []
+            ):
+                raise ValidationError(
+                    {'options_en': 'Give one English option per option, or none.'}
+                )
         if not isinstance(self.allowed_extensions, list):
             raise ValidationError({'allowed_extensions': 'Must be a list.'})
         if self.pattern:

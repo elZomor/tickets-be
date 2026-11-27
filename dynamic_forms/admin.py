@@ -34,6 +34,10 @@ class FormFieldAdminForm(forms.ModelForm):
         required=False,
         help_text='One option per line (dropdown / radio / multi-select).',
     )
+    options_en = LinesField(
+        required=False,
+        help_text='English text for each option, same order (optional).',
+    )
     allowed_extensions = LinesField(
         required=False,
         widget=forms.Textarea(attrs={'rows': 2, 'cols': 20}),
@@ -52,6 +56,13 @@ class FormFieldInline(admin.StackedInline):
     fieldsets = (
         (None, {'fields': (('order', 'key', 'type', 'required'), 'label')}),
         ('Text & choices', {'fields': ('help_text', 'placeholder', 'options')}),
+        (
+            'English',
+            {
+                'classes': ('collapse',),
+                'fields': ('label_en', 'help_text_en', 'placeholder_en', 'options_en'),
+            },
+        ),
         (
             'Validation',
             {
@@ -134,7 +145,20 @@ class FormAdmin(admin.ModelAdmin):
     inlines = [FormFieldInline]
     actions = ['duplicate_forms', 'export_responses']
     fieldsets = (
-        (None, {'fields': ('title', 'slug', 'description', 'notice')}),
+        (None, {'fields': ('title', 'slug', 'description', 'notice', 'warning')}),
+        (
+            'English',
+            {
+                'classes': ('collapse',),
+                'fields': (
+                    'title_en',
+                    'description_en',
+                    'notice_en',
+                    'warning_en',
+                    'success_message_en',
+                ),
+            },
+        ),
         (
             'Festival (choose exactly one)',
             {'fields': ('arab_festival', 'global_festival', 'alt_spaces_festival')},

@@ -20,8 +20,11 @@ def serialize_field(field):
     data = {
         'key': field.key,
         'label': field.label,
+        'label_en': field.label_en,
         'help_text': field.help_text,
+        'help_text_en': field.help_text_en,
         'placeholder': field.placeholder,
+        'placeholder_en': field.placeholder_en,
         'type': field.type,
         'required': field.required,
         'preset': field.preset,
@@ -31,6 +34,7 @@ def serialize_field(field):
     }
     if field.type in (FieldType.SELECT, FieldType.RADIO, FieldType.CHECKBOXES):
         data['options'] = field.options
+        data['options_en'] = field.options_en or []
     if field.type == FieldType.FILE:
         data['max_files'] = field.max_files
         data['allowed_extensions'] = field.normalized_extensions
@@ -64,7 +68,11 @@ def festival_forms(festival_field):
 
 
 class FormListView(APIView):
-    """Open forms of one festival (``?festival=<id>``), for the festival page."""
+    """
+    Forms of one festival (``?festival=<id>``) for the festival page: the open
+    ones, or with ``all=1`` every active form with its status. Inactive forms are
+    drafts and never listed.
+    """
 
     permission_classes = [AllowAny]
 
@@ -72,24 +80,32 @@ class FormListView(APIView):
         festival_id = request.query_params.get('festival', '')
         if not festival_id.isdigit():
             return get_bad_request_response(message='FESTIVAL_REQUIRED')
+        include_all = request.query_params.get('all') in ('1', 'true')
         forms = (
-            Form.objects.filter(**{f'{festival_field}_id': int(festival_id)})
+            Form.objects.filter(
+                is_active=True, **{f'{festival_field}_id': int(festival_id)}
+            )
             .annotate(response_count=Count('responses'))
-            .order_by('created_at')
+            .order_by('-created_at')
         )
-        return get_successful_response(
-            data=[
+        items = []
+        for form in forms:
+            status = form.closed_reason(form.response_count) or 'OPEN'
+            if status != 'OPEN' and not include_all:
+                continue
+            items.append(
                 {
                     'slug': form.slug,
                     'title': form.title,
+                    'title_en': form.title_en,
                     'description': form.description,
+                    'description_en': form.description_en,
                     'opens_at': form.opens_at,
                     'closes_at': form.closes_at,
+                    'status': status,
                 }
-                for form in forms
-                if form.closed_reason(form.response_count) is None
-            ]
-        )
+            )
+        return get_successful_response(data=items)
 
 
 class FormDetailView(APIView):
@@ -105,9 +121,15 @@ class FormDetailView(APIView):
             data={
                 'slug': form.slug,
                 'title': form.title,
+                'title_en': form.title_en,
                 'description': form.description,
+                'description_en': form.description_en,
                 'notice': form.notice,
+                'notice_en': form.notice_en,
+                'warning': form.warning,
+                'warning_en': form.warning_en,
                 'success_message': form.success_message,
+                'success_message_en': form.success_message_en,
                 'requires_login': form.requires_login
                 or form.unique_by == UniqueBy.USER,
                 'opens_at': form.opens_at,
