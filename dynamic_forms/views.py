@@ -63,6 +63,35 @@ def festival_forms(festival_field):
     return Form.objects.filter(**{f'{festival_field}__isnull': False})
 
 
+class FormListView(APIView):
+    """Open forms of one festival (``?festival=<id>``), for the festival page."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, festival_field):
+        festival_id = request.query_params.get('festival', '')
+        if not festival_id.isdigit():
+            return get_bad_request_response(message='FESTIVAL_REQUIRED')
+        forms = (
+            Form.objects.filter(**{f'{festival_field}_id': int(festival_id)})
+            .annotate(response_count=Count('responses'))
+            .order_by('created_at')
+        )
+        return get_successful_response(
+            data=[
+                {
+                    'slug': form.slug,
+                    'title': form.title,
+                    'description': form.description,
+                    'opens_at': form.opens_at,
+                    'closes_at': form.closes_at,
+                }
+                for form in forms
+                if form.closed_reason(form.response_count) is None
+            ]
+        )
+
+
 class FormDetailView(APIView):
     permission_classes = [AllowAny]
 

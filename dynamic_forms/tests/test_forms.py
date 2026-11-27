@@ -165,6 +165,31 @@ class DynamicFormTests(APITestCase):
         with self.assertRaises(ValidationError):
             self.form.full_clean()
 
+    # Festival list
+
+    def test_festival_lists_only_its_open_forms(self):
+        Form.objects.create(
+            arab_festival=self.festival, slug='closed', title='closed', is_active=False
+        )
+        other = ArabFestival.objects.create(
+            name='other',
+            description='d',
+            start_date=date(2027, 1, 1),
+            end_date=date(2027, 1, 2),
+        )
+        Form.objects.create(arab_festival=other, slug='other', title='other')
+        response = self.client.get(
+            '/hita_arab_festival/forms', {'festival': self.festival.pk}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([f['slug'] for f in response.data['data']], ['masterclass'])
+        self.assertEqual(response.data['data'][0]['title'], 'ماستر كلاس')
+        alt = self.client.get(
+            '/alt_spaces_festival/forms', {'festival': self.festival.pk}
+        )
+        self.assertEqual(alt.data['data'], [])
+        self.assertEqual(self.client.get('/hita_arab_festival/forms').status_code, 400)
+
     # Submission
 
     def test_saves_response_with_normalized_values_and_file(self):
