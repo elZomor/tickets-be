@@ -85,6 +85,7 @@ PROJECT_APPS = [
     'alt_spaces_festival',
     'hita_evaluation',
     'third_side',
+    'dynamic_forms',
 ]
 THIRD_PARTY_APPS = [
     'rest_framework',
@@ -230,6 +231,8 @@ REST_FRAMEWORK = {
         ),
         'third_side_read': env.str('THIRD_SIDE_READ_RATE', default='120/min'),
         'arab_festival_apply': env.str('ARAB_FESTIVAL_APPLY_RATE', default='5/hour'),
+        # Per IP for anonymous users; students often share a network.
+        'forms_submit': env.str('FORMS_SUBMIT_RATE', default='30/hour'),
     },
 }
 
