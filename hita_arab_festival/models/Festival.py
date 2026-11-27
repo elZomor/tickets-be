@@ -18,6 +18,9 @@ class ArabFestival(models.Model):
     # Hidden festivals are left out of the public festivals list (e.g. an upcoming
     # edition that is only accepting applications).
     is_visible = models.BooleanField(default=True)
+    # Off while the edition's dates are not confirmed: the site hides the dates
+    # (and the soon/running/finished status derived from them).
+    show_dates = models.BooleanField(default=True)
 
     @property
     def festival_status(self):

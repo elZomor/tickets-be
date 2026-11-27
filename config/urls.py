@@ -10,7 +10,7 @@ from dynamic_forms.models.Form import FESTIVAL_FIELDS
 
 # Each festival site reaches only its own forms: /<festival prefix>/forms/<slug>.
 festival_form_urls = [
-    path(f'{prefix}/forms/', include('dynamic_forms.urls'), {'festival_field': field})
+    path(f'{prefix}/', include('dynamic_forms.urls'), {'festival_field': field})
     for field, prefix in FESTIVAL_FIELDS.items()
 ]
 
