@@ -6,8 +6,15 @@ from drf_spectacular.views import SpectacularAPIView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from config.views import CustomTokenObtainPairView
+from dynamic_forms.models.Form import FESTIVAL_FIELDS
 
-urlpatterns = [
+# Each festival site reaches only its own forms: /<festival prefix>/forms/<slug>.
+festival_form_urls = [
+    path(f'{prefix}/forms/', include('dynamic_forms.urls'), {'festival_field': field})
+    for field, prefix in FESTIVAL_FIELDS.items()
+]
+
+urlpatterns = festival_form_urls + [
     path('admin/', admin.site.urls),
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

@@ -260,3 +260,14 @@ def upload_to_arab_festival_application_script(instance, filename):
 
 def upload_to_arab_festival_application_national_id(instance, filename):
     return _upload_to_arab_festival_application('national_id', filename)
+
+
+def upload_to_form_response_file(instance, filename):
+    ext = os.path.splitext(filename)[1].lower()
+    return os.path.join(
+        'media',
+        'forms',
+        instance.response.form.slug,
+        instance.field_key,
+        f"{uuid.uuid4()}{ext}",
+    )
