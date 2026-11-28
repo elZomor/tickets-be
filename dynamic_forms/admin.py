@@ -8,6 +8,10 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 from django.utils.text import slugify
+from import_export import resources
+from import_export.admin import ExportMixin
+from import_export.formats.base_formats import XLSX
+import tablib
 from openpyxl import Workbook
 
 from dynamic_forms.models import FieldType, Form, FormField, FormResponse
@@ -240,8 +244,48 @@ class FormAdmin(admin.ModelAdmin):
             )
 
 
+class FormResponseResource(resources.ModelResource):
+    """One column per form field (union across the exported forms)."""
+
+    class Meta:
+        model = FormResponse
+
+    def export(self, queryset=None, **kwargs):
+        if queryset is None:
+            queryset = self.get_queryset()
+        responses = list(
+            queryset.select_related('form').prefetch_related('files', 'form__fields')
+        )
+        columns = []  # (header, form_id, field)
+        for form in {r.form_id: r.form for r in responses}.values():
+            for field in form.fields.all():
+                columns.append((field.label, form.pk, field))
+        multi_form = len({r.form_id for r in responses}) > 1
+        headers = ['ID', 'النموذج', 'التاريخ', 'البريد'] + [
+            f'{label} ({form_id})' if multi_form else label
+            for label, form_id, _ in columns
+        ]
+        dataset = tablib.Dataset(headers=headers)
+        for r in responses:
+            dataset.append(
+                [
+                    r.pk,
+                    r.form.title,
+                    timezone.localtime(r.created_at).strftime('%Y-%m-%d %H:%M'),
+                    r.email,
+                ]
+                + [
+                    _cell(field, r) if form_id == r.form_id else ''
+                    for _, form_id, field in columns
+                ]
+            )
+        return dataset
+
+
 @admin.register(FormResponse)
-class FormResponseAdmin(admin.ModelAdmin):
+class FormResponseAdmin(ExportMixin, admin.ModelAdmin):
+    resource_classes = [FormResponseResource]
+    formats = [XLSX]
     list_display = ('id', 'form', 'email', 'summary', 'created_at')
     list_filter = ('form',)
     search_fields = ('email', 'answers', 'unique_value')
