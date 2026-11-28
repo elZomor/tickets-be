@@ -236,7 +236,7 @@ class NotificationTests(APITestCase):
                 festival=festival, type='text', body_i18n={'ar': 'x'}
             )
         row = self.inbox(self.other, type=NotificationType.NEW_FESTIVAL_POST).get()
-        self.assertEqual(row.params['paths']['en'], '/en/festivals/fest')
+        self.assertEqual(row.params['paths']['en'], '/en/events/fest')
 
     def test_inactive_user_gets_nothing(self):
         self.author.is_active = False

@@ -26,3 +26,7 @@ from .ExpoPushDevice import *  # noqa:F401, F403
 from .NotificationPreference import *  # noqa:F401, F403
 from .SavedArticle import *  # noqa:F401, F403
 from .Follow import *  # noqa:F401, F403
+from .CertificateTemplate import *  # noqa:F401, F403
+from .LabProgram import *  # noqa:F401, F403
+from .LabRegistration import *  # noqa:F401, F403
+from .Certificate import *  # noqa:F401, F403

@@ -55,6 +55,13 @@ COPY = {
         T.NEW_ARTICLE: 'مقال جديد: «{title}»',
         T.NEW_ARTICLE + '_by': 'مقال جديد من {critic}: «{title}»',
         T.NEW_FESTIVAL_POST: 'جديد في {festival}',
+        T.NEW_LAB_PROGRAM: 'جديد في مختبر الضلع: «{title}»',
+        T.LAB_REGISTRATION: {
+            'accepted': 'تم قبولك في «{title}»',
+            'waitlisted': 'أنت على قائمة الانتظار في «{title}»',
+            'rejected': 'لم يتم قبول طلبك في «{title}»',
+        },
+        T.NEW_CERTIFICATE: 'شهادتك في «{title}» جاهزة',
     },
     'en': {
         'site': 'Third Side',
@@ -82,6 +89,13 @@ COPY = {
         T.NEW_ARTICLE: 'New article: “{title}”',
         T.NEW_ARTICLE + '_by': 'New article by {critic}: “{title}”',
         T.NEW_FESTIVAL_POST: 'New in {festival}',
+        T.NEW_LAB_PROGRAM: 'New in the Third Side Lab: “{title}”',
+        T.LAB_REGISTRATION: {
+            'accepted': 'You are in: “{title}”',
+            'waitlisted': 'You are on the waiting list for “{title}”',
+            'rejected': 'Your application to “{title}” was not accepted',
+        },
+        T.NEW_CERTIFICATE: 'Your certificate for “{title}” is ready',
     },
 }
 
@@ -126,6 +140,12 @@ def render(notification, lang):
     elif kind == T.NEW_FESTIVAL_POST:
         name = localize(params.get('festival_names'), lang, params.get('festival', ''))
         body = copy[kind].format(festival=name)
+    elif kind in (T.NEW_LAB_PROGRAM, T.LAB_REGISTRATION, T.NEW_CERTIFICATE):
+        title = localize(params.get('titles'), lang, '')
+        text = copy[kind]
+        if isinstance(text, dict):
+            text = text.get(params.get('status'), text['accepted'])
+        body = text.format(title=title)
     else:
         body = copy[kind]
 

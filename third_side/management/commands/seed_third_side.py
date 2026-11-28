@@ -16,6 +16,7 @@ from third_side.models import (
     Festival,
     FestivalPost,
     FestivalPostMedia,
+    LabProgram,
     NavGroup,
     SiteSettings,
     Tag,
@@ -58,6 +59,8 @@ class Command(BaseCommand):
         self._terms(_load(directory, 'terms.json'))
         self._ads(_load(directory, 'ads.json')['ads'])
         festivals = self._festivals(_load(directory, 'festivals.json'), home)
+        if (directory / 'lab.json').exists():
+            self._lab(_load(directory, 'lab.json'))
         self.stdout.write(
             self.style.SUCCESS(
                 f'Seeded {len(groups)} groups, {len(categories)} categories, '
@@ -303,6 +306,55 @@ class Command(BaseCommand):
         return len(by_mock)
 
     @staticmethod
+    @staticmethod
+    def _lab(data):
+        """Lab programs (mock lab.json, all-locale camelCase records)."""
+        for raw in data.get('programs', []):
+            registration = raw.get('registration') or {}
+            partner = raw.get('partner') or {}
+            LabProgram.objects.update_or_create(
+                mock_id=raw['id'],
+                defaults={
+                    'slug': raw['slug']['en'],
+                    'slug_i18n': raw['slug'],
+                    'kind': raw['kind'],
+                    'title_i18n': raw['title'],
+                    'summary_i18n': raw.get('summary', {}),
+                    'cover_url': raw.get('cover', ''),
+                    'mode': raw.get('mode', 'in_person'),
+                    'location_i18n': raw.get('location', {}),
+                    'language': raw.get('language', 'ar'),
+                    'starts_on': raw['startsOn'],
+                    'ends_on': raw['endsOn'],
+                    'hours': raw.get('hours'),
+                    'sessions': [
+                        {
+                            'date': s.get('date', ''),
+                            'time': s.get('time', ''),
+                            'title_i18n': s.get('title', {}),
+                        }
+                        for s in raw.get('sessions', [])
+                    ],
+                    'instructors': [
+                        {
+                            'name_i18n': i.get('name', {}),
+                            'bio_i18n': i.get('bio', {}),
+                            'photo_url': i.get('photo', ''),
+                            'critic': None,
+                        }
+                        for i in raw.get('instructors', [])
+                    ],
+                    'partner_name_i18n': partner.get('name', {}),
+                    'partner_logo_url': partner.get('logo', ''),
+                    'registration_mode': registration.get('mode', 'closed'),
+                    'external_url': registration.get('externalUrl', ''),
+                    'capacity': registration.get('capacity'),
+                    'is_published': True,
+                    'is_featured': raw.get('featured', False),
+                    'certificate_enabled': raw.get('certificate', True),
+                },
+            )
+
     @staticmethod
     def _mock_article(slugs):
         """The seeded article with one of these per-locale slugs (an article

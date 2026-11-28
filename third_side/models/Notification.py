@@ -10,6 +10,9 @@ class NotificationType(models.TextChoices):
     ARTICLE_RATING = 'article_rating', 'New rating'
     NEW_ARTICLE = 'new_article', 'New article'
     NEW_FESTIVAL_POST = 'new_festival_post', 'New festival post'
+    NEW_LAB_PROGRAM = 'new_lab_program', 'New Lab program'
+    LAB_REGISTRATION = 'lab_registration', 'Lab registration status'
+    NEW_CERTIFICATE = 'new_certificate', 'New certificate'
 
 
 class Notification(models.Model):

@@ -21,6 +21,10 @@ class ActivityObject(models.TextChoices):
     ABOUT = 'about', 'About page'
     SITE_SETTINGS = 'site_settings', 'Site settings'
     AD = 'ad', 'Ad'
+    LAB_PROGRAM = 'lab_program', 'Lab program'
+    LAB_REGISTRATION = 'lab_registration', 'Lab registration'
+    CERTIFICATE = 'certificate', 'Certificate'
+    CERTIFICATE_TEMPLATE = 'cert_template', 'Certificate template'
 
 
 class ActivityLog(models.Model):

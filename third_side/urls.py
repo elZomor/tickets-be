@@ -2,6 +2,15 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from third_side.views import (
+    CertificateEnglishView,
+    CertificateHtmlView,
+    CertificateTemplateViewSet,
+    CertificateVerifyView,
+    CertificateViewSet,
+    LabProgramViewSet,
+    LabRegistrationViewSet,
+    MyCertificatesView,
+    MyLabRegistrationsView,
     AboutDocView,
     AboutView,
     ActivityLogViewSet,
@@ -66,6 +75,16 @@ router.register(r'reports', ReportViewSet, basename='report-view')
 router.register(r'activity-log', ActivityLogViewSet, basename='activity-log-view')
 router.register(r'ads', AdViewSet, basename='ad-view')
 router.register(r'notifications', NotificationViewSet, basename='notification-view')
+router.register(r'lab-programs', LabProgramViewSet, basename='lab-program-view')
+router.register(
+    r'lab-registrations', LabRegistrationViewSet, basename='lab-registration-view'
+)
+router.register(r'certificates', CertificateViewSet, basename='certificate-view')
+router.register(
+    r'certificate-templates',
+    CertificateTemplateViewSet,
+    basename='certificate-template-view',
+)
 
 urlpatterns = [
     path('auth/login', LoginView.as_view(), name='auth-login'),
@@ -121,5 +140,26 @@ urlpatterns = [
         'follows/<str:target_type>/<str:target_ref>',
         FollowView.as_view(),
         name='follow',
+    ),
+    path(
+        'lab-registrations/mine',
+        MyLabRegistrationsView.as_view(),
+        name='lab-registrations-mine',
+    ),
+    path('certificates/mine', MyCertificatesView.as_view(), name='certificates-mine'),
+    path(
+        'certificates/verify/<str:code>',
+        CertificateVerifyView.as_view(),
+        name='certificate-verify',
+    ),
+    path(
+        'certificates/<str:code>/html',
+        CertificateHtmlView.as_view(),
+        name='certificate-html',
+    ),
+    path(
+        'certificates/<str:code>/english',
+        CertificateEnglishView.as_view(),
+        name='certificate-english',
     ),
 ] + router.urls

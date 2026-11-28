@@ -13,6 +13,9 @@ from django.utils import timezone
 
 from third_side.models import (
     Article,
+    Certificate,
+    LabProgram,
+    LabRegistration,
     Comment,
     Follow,
     FestivalPost,
@@ -233,6 +236,78 @@ def notify_festival_post(post_id):
             'paths': festival_paths(festival),
         },
         f'festival_post:{post.pk}',
+    )
+
+
+@shared_task
+def notify_lab_program(program_id):
+    from third_side.services.lab import program_paths
+
+    program = LabProgram.objects.filter(pk=program_id, is_published=True).first()
+    if program is None:
+        return
+    notify(
+        Follow.objects.filter(target_type=FollowTarget.LAB).values_list(
+            'user_id', flat=True
+        ),
+        NotificationType.NEW_LAB_PROGRAM,
+        {
+            'program_id': program.pk,
+            'titles': program.title_i18n,
+            'kind': program.kind,
+            'paths': program_paths(program),
+        },
+        f'lab_program:{program.pk}',
+    )
+
+
+@shared_task
+def notify_lab_registration(registration_id, new_status):
+    from third_side.services.lab import program_paths
+
+    registration = (
+        LabRegistration.objects.select_related('program')
+        .filter(pk=registration_id)
+        .first()
+    )
+    if registration is None:
+        return
+    program = registration.program
+    notify(
+        [registration.user_id],
+        NotificationType.LAB_REGISTRATION,
+        {
+            'program_id': program.pk,
+            'titles': program.title_i18n,
+            'status': new_status,
+            'paths': program_paths(program),
+        },
+        f'lab_registration:{registration.pk}:{new_status}',
+    )
+
+
+@shared_task
+def notify_certificate(certificate_id):
+    from third_side.services.lab import MY_CERTIFICATES_SEGMENT
+    from third_side.services.notify import account_paths
+
+    certificate = (
+        Certificate.objects.select_related('program').filter(pk=certificate_id).first()
+    )
+    if certificate is None or certificate.revoked:
+        return
+    program = certificate.program
+    notify(
+        [certificate.user_id],
+        NotificationType.NEW_CERTIFICATE,
+        {
+            'program_id': program.pk,
+            'titles': program.title_i18n,
+            'code': certificate.code,
+            'language': certificate.language,
+            'paths': account_paths(MY_CERTIFICATES_SEGMENT),
+        },
+        f'certificate:{certificate.pk}',
     )
 
 

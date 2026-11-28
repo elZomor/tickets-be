@@ -1,4 +1,5 @@
 import os
+import secrets
 import uuid
 from datetime import datetime
 
@@ -34,3 +35,11 @@ class AsciiUploadTo:
         unique = uuid.uuid4().hex[:8]
         key = f"{name}-{unique}" if name else uuid.uuid4().hex
         return f"{self.folder}/{key}{ext.lower()}"
+
+
+# No 0/O/1/I: certificate codes get typed in from paper.
+CERTIFICATE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+
+def new_certificate_code():
+    return ''.join(secrets.choice(CERTIFICATE_CODE_ALPHABET) for _ in range(10))
