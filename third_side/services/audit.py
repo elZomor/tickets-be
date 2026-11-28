@@ -16,6 +16,10 @@ from third_side.models import (
     ActivityLog,
     Article,
     ArticleTranslation,
+    Certificate,
+    CertificateTemplate,
+    LabProgram,
+    LabRegistration,
     Category,
     Critic,
     FestivalPost,
@@ -39,6 +43,10 @@ OBJECT_TYPES = {
     AboutPage: ActivityObject.ABOUT,
     SiteSettings: ActivityObject.SITE_SETTINGS,
     Ad: ActivityObject.AD,
+    LabProgram: ActivityObject.LAB_PROGRAM,
+    LabRegistration: ActivityObject.LAB_REGISTRATION,
+    Certificate: ActivityObject.CERTIFICATE,
+    CertificateTemplate: ActivityObject.CERTIFICATE_TEMPLATE,
 }
 
 # Bookkeeping and counters: they change without an editor doing anything.

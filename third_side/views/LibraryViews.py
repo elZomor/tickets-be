@@ -23,6 +23,7 @@ from third_side.models.Article import live_q
 from third_side.models.Follow import FollowTarget
 from third_side.read_serializers import ArticleReadSerializer
 from third_side.services.festivals import article_path, shown_translation
+from third_side.services.lab import LAB_SECTION
 
 
 def _readable_articles():
@@ -157,6 +158,7 @@ class FollowsView(GenericAPIView):
             ids = {f.target_id for f in follows if f.target_type == target_type}
             for target in model.objects.filter(pk__in=ids):
                 targets[(target_type, target.pk)] = target
+        targets[(FollowTarget.LAB, LAB_SECTION.pk)] = LAB_SECTION
         lang = clean_locale(request.query_params.get('lang'))
         data = FollowSerializer(
             follows, many=True, context={'targets': targets, 'lang': lang}
@@ -166,6 +168,8 @@ class FollowsView(GenericAPIView):
 
 def find_target(target_type, ref):
     """The followed object: `ref` is its id, or its slug where it has one."""
+    if target_type == FollowTarget.LAB:
+        return LAB_SECTION
     model = TARGET_MODELS.get(target_type)
     if model is None:
         return None

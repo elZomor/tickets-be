@@ -6,6 +6,8 @@ class FollowTarget(models.TextChoices):
     CATEGORY = 'category', 'Category'
     NAVGROUP = 'navgroup', 'Sub-category group'
     FESTIVAL = 'festival', 'Festival'
+    # The whole Lab section (target_id 0): told about new programs.
+    LAB = 'lab', 'Lab'
 
 
 class Follow(models.Model):

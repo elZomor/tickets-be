@@ -21,6 +21,10 @@ from third_side.models import (
     OutgoingEmail,
     SiteSettings,
     Rating,
+    Certificate,
+    CertificateTemplate,
+    LabProgram,
+    LabRegistration,
     ModerationAction,
     Report,
     Tag,
@@ -257,6 +261,33 @@ class FestivalPostAdmin(JsonFieldsAdmin):
     date_hierarchy = 'published_at'
     raw_id_fields = ('article',)
     inlines = [FestivalPostMediaInline]
+
+
+@admin.register(LabProgram)
+class LabProgramAdmin(JsonFieldsAdmin):
+    list_display = ('slug', 'kind', 'starts_on', 'ends_on', 'is_published')
+    list_filter = ('kind', 'is_published', 'registration_mode')
+    search_fields = ('slug',)
+
+
+@admin.register(LabRegistration)
+class LabRegistrationAdmin(JsonFieldsAdmin):
+    list_display = ('program', 'user', 'status', 'attended', 'created_at')
+    list_filter = ('program', 'status', 'attended')
+    raw_id_fields = ('user',)
+
+
+@admin.register(Certificate)
+class CertificateAdmin(JsonFieldsAdmin):
+    list_display = ('code', 'program', 'user', 'language', 'issued_at', 'revoked')
+    list_filter = ('program', 'language', 'revoked')
+    search_fields = ('code', 'participant_name')
+    raw_id_fields = ('user', 'registration', 'source')
+
+
+@admin.register(CertificateTemplate)
+class CertificateTemplateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'language', 'is_default', 'updated_at')
 
 
 @admin.register(ActivityLog)

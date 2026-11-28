@@ -4,8 +4,11 @@ from django.dispatch import receiver
 
 from third_side.models import (
     Article,
+    Certificate,
     Comment,
     FestivalPost,
+    LabProgram,
+    LabRegistration,
     Rating,
     Report,
 )
@@ -66,6 +69,47 @@ def notify_on_festival_post(sender, instance, created, **kwargs):
 
     if created:
         enqueue(tasks.notify_festival_post, instance.pk)
+
+
+@receiver(post_save, sender=LabProgram, dispatch_uid='lab_program_saved')
+def on_lab_program_saved(sender, instance, created, **kwargs):
+    from third_side import tasks
+    from third_side.services.certificates import issue_waiting_english
+
+    if instance.is_published:
+        enqueue(tasks.notify_lab_program, instance.pk)
+    # English certificates held until the program had English text.
+    issue_waiting_english(instance)
+
+
+@receiver(pre_save, sender=LabRegistration, dispatch_uid='lab_reg_remember_status')
+def remember_registration_status(sender, instance, **kwargs):
+    instance._old_status = (
+        LabRegistration.objects.filter(pk=instance.pk)
+        .values_list('status', flat=True)
+        .first()
+        if instance.pk
+        else None
+    )
+
+
+@receiver(post_save, sender=LabRegistration, dispatch_uid='notify_lab_registration')
+def notify_on_registration(sender, instance, created, **kwargs):
+    from third_side import tasks
+
+    old = getattr(instance, '_old_status', None)
+    # The reader's own moves (registering, cancelling) need no telling.
+    if created or instance.status == old or instance.status in ('cancelled', 'pending'):
+        return
+    enqueue(tasks.notify_lab_registration, instance.pk, instance.status)
+
+
+@receiver(post_save, sender=Certificate, dispatch_uid='notify_certificate')
+def notify_on_certificate(sender, instance, created, **kwargs):
+    from third_side import tasks
+
+    if created:
+        enqueue(tasks.notify_certificate, instance.pk)
 
 
 @receiver(pre_save, sender=Article, dispatch_uid='article_remember_status')

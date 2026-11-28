@@ -51,3 +51,14 @@ from .LibraryViews import (  # noqa:F401
     SavedArticlesView,
     SavedArticleView,
 )
+from .LabViews import (  # noqa:F401
+    CertificateEnglishView,
+    CertificateHtmlView,
+    CertificateTemplateViewSet,
+    CertificateVerifyView,
+    CertificateViewSet,
+    LabProgramViewSet,
+    LabRegistrationViewSet,
+    MyCertificatesView,
+    MyLabRegistrationsView,
+)

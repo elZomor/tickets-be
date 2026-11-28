@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<title>{{ certificate_title }} - {{ participant_name }}</title>
+{% comment %}
+  Third Side certificate (English). A4 landscape, 1123 x 794 CSS px.
+  Variables: participant_name, certificate_title, certificate_title_latin,
+  completed_verb, kind_label, program_title_html (already escaped, accent
+  spans marked with *...* in the admin), details (list), partner_text,
+  partner_logo_url, issued_date, signatory_title, signatory_name,
+  signature_url, code, verify_url, qr_svg, site_url.
+{% endcomment %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cormorant+Garamond:wght@300&family=Cormorant+Garamond:wght@600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=block" rel="stylesheet">
+<style>
+  @page { size: 297mm 210mm; margin: 0; }
+  :root {
+    --paper: #fbfaf3;
+    --ink: #2e2e2b;
+    --mustard: #f4be3a;
+    --ember: #e2583a;
+    --sage: #e8eddf;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color: var(--ink);
+    font-family: "IBM Plex Sans Arabic", sans-serif;
+  }
+  .page {
+    position: relative;
+    width: 1123px;
+    height: 794px;
+    overflow: hidden;
+    background: var(--paper);
+  }
+  .abs { position: absolute; }
+  .center { left: 0; right: 0; text-align: center; }
+  .frame-outer { left: 36px; top: 35px; width: 1052px; height: 724px; border: 2px solid var(--mustard); }
+  .frame-inner { left: 44px; top: 44px; width: 1035px; height: 706px; border: 1px solid rgba(46, 46, 43, .25); }
+  .triangle { left: 278px; top: 150px; width: 567px; height: 437px; }
+  .rule { height: 1px; background: var(--mustard); }
+  .latin {
+    font-family: "Cormorant Garamond", serif;
+    font-weight: 300;
+    text-transform: uppercase;
+    direction: ltr;
+  }
+
+  /* header */
+  .brand { top: 93px; left: 0; right: 0; height: 60px; display: flex; justify-content: center; align-items: center; gap: 24px; direction: ltr; }
+  .brand .wordmark { height: 56px; }
+  .brand .divider { width: 1px; height: 53px; background: var(--mustard); }
+  .brand .partner { max-height: 54px; max-width: 160px; object-fit: contain; }
+  .with { top: 172px; display: flex; justify-content: center; align-items: center; gap: 14px; font-size: 12.5px; color: rgba(46, 46, 43, .72); }
+  .with .rule { width: 98px; }
+
+  /* body */
+  .title { top: 222px; font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 58px; line-height: 1.4; }
+  .title-latin { top: 306px; font-family: "Amiri", serif; font-weight: 700; font-size: 17px; color: var(--mustard); }
+  .statement { top: 352px; font-size: 19.5px; }
+  .statement b { font-weight: 600; }
+  .name { top: 386px; left: 271px; width: 582px; height: 54px; display: flex; align-items: flex-end; justify-content: center; font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 36px; line-height: 1.3; white-space: nowrap; }
+  .name-rule { top: 440px; left: 271px; width: 582px; }
+  .name-label { top: 449px; font-size: 10px; letter-spacing: .9em; color: rgba(46, 46, 43, .3); padding-inline-start: .9em; }
+  .completed { top: 472px; font-size: 19.5px; }
+  .program { top: 506px; font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 28px; line-height: 1.6; padding: 0 120px; }
+  .program .accent { color: var(--ember); }
+  .details { top: 560px; font-size: 14.2px; color: rgba(46, 46, 43, .72); display: flex; justify-content: center; align-items: center; gap: 9px; }
+  .details .sep { color: var(--mustard); font-size: 10px; }
+
+  /* verification */
+  .verify { top: 548px; right: 66px; width: 70px; text-align: center; direction: ltr; }
+  .verify svg { display: block; width: 54px; height: 54px; margin: 0 auto; opacity: .7; }
+  .verify .code { margin-top: 5px; font-size: 8.5px; letter-spacing: .14em; color: rgba(46, 46, 43, .5); }
+
+  /* footer */
+  .band { left: 44px; top: 629px; width: 1035px; height: 121px; background: var(--ink); border-top: 1px solid var(--mustard); }
+  .sign { top: 668px; width: 235px; text-align: center; color: var(--sage); }
+  .sign .rule { width: 100%; }
+  .sign .value { position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; font-size: 14px; color: var(--sage); }
+  .sign .value img { max-height: 46px; max-width: 200px; filter: invert(1) brightness(1.6); }
+  .sign .label { margin-top: 10px; font-weight: 500; font-size: 13.3px; }
+  .sign .label-latin { margin-top: 3px; font-size: 9px; letter-spacing: .9em; color: rgba(232, 237, 223, .3); padding-inline-start: .9em; }
+  .sign-right { left: 105px; }
+  .sign-left { left: 784px; }
+  .seal { left: 516px; top: 644px; width: 91px; height: 91px; border-radius: 50%; background: var(--sage); border: 1px solid var(--mustard); display: flex; align-items: center; justify-content: center; }
+  .seal::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; border: 1px solid rgba(46, 46, 43, .9); }
+  .seal img { width: 62px; position: relative; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="abs frame-outer"></div>
+  <div class="abs frame-inner"></div>
+
+  <svg class="abs triangle" viewBox="0 0 200 154" aria-hidden="true">
+    <path d="M100 4 196 150M100 4 4 150" fill="none" stroke="#2e2e2b" stroke-width="2.2" opacity=".045"/>
+    <path d="M100 30 172 144M100 30 28 144" fill="none" stroke="#f4be3a" stroke-width="1" opacity=".18"/>
+  </svg>
+
+  <div class="abs brand">
+    <img class="wordmark" src="{{ site_url }}/logo-wordmark.svg" alt="Third Side">
+    {% if partner_logo_url %}
+      <span class="divider"></span>
+      <img class="partner" src="{{ partner_logo_url }}" alt="{{ partner_text }}">
+    {% endif %}
+  </div>
+
+  {% if partner_text %}
+  <div class="abs center with">
+    <span class="rule"></span>
+    <span>In collaboration with {{ partner_text }}</span>
+    <span class="rule"></span>
+  </div>
+  {% endif %}
+
+  <div class="abs center title">{{ certificate_title }}</div>
+  <div class="abs center title-latin" lang="ar" dir="rtl">{{ certificate_title_latin }}</div>
+
+  <div class="abs center statement">The <b>Third Side</b> platform certifies that</div>
+
+  <div class="abs name">{{ participant_name }}</div>
+  <div class="abs rule name-rule"></div>
+  <div class="abs center latin name-label">Participant name</div>
+
+  <div class="abs center completed">{{ completed_verb }} {{ kind_label }}</div>
+  <div class="abs center program">“{{ program_title_html }}”</div>
+
+  {% if details %}
+  <div class="abs center details">
+    {% for item in details %}{% if not forloop.first %}<span class="sep">◆</span>{% endif %}<span>{{ item }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if qr_svg %}
+  <div class="abs verify">
+    {{ qr_svg }}
+    <div class="code">{{ code }}</div>
+  </div>
+  {% endif %}
+
+  <div class="abs band"></div>
+
+  <div class="abs sign sign-right">
+    <div class="value">{% if signature_url %}<img src="{{ signature_url }}" alt="">{% else %}{{ signatory_name }}{% endif %}</div>
+    <div class="rule"></div>
+    <div class="label">{{ signatory_title }}</div>
+    <div class="latin label-latin">Signature</div>
+  </div>
+
+  <div class="abs seal"><img src="{{ site_url }}/certificates/seal.png" alt=""></div>
+
+  <div class="abs sign sign-left">
+    <div class="value">{{ issued_date }}</div>
+    <div class="rule"></div>
+    <div class="label">Date</div>
+  </div>
+</div>
+</body>
+</html>

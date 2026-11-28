@@ -29,6 +29,9 @@ PREFERENCE_OF = {
     NotificationType.ARTICLE_RATING: 'activity',
     NotificationType.NEW_ARTICLE: 'follows',
     NotificationType.NEW_FESTIVAL_POST: 'follows',
+    NotificationType.NEW_LAB_PROGRAM: 'follows',
+    NotificationType.LAB_REGISTRATION: 'status',
+    NotificationType.NEW_CERTIFICATE: 'status',
 }
 
 PUSH_CHUNK = 500
